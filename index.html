@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特质与职位连连看</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义颜色和字体 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#EC4899',
+                        accent: '#10B981',
+                        neutral: '#1F2937',
+                        light: '#F9FAFB'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .card-shadow-hover {
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+            .line-animation {
+                stroke-dasharray: 1000;
+                stroke-dashoffset: 1000;
+                animation: dash 1s linear forwards;
+            }
+            @keyframes dash {
+                to {
+                    stroke-dashoffset: 0;
+                }
+            }
+            .scale-up {
+                transition: transform 0.3s ease;
+            }
+            .scale-up:hover {
+                transform: scale(1.05);
+            }
+            .pulse-correct {
+                animation: pulse-correct 0.5s ease-in-out;
+            }
+            @keyframes pulse-correct {
+                0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+                70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+                100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+            }
+            .pulse-wrong {
+                animation: pulse-wrong 0.5s ease-in-out;
+            }
+            @keyframes pulse-wrong {
+                0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.4); }
+                70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(236, 72, 153, 0); }
+                100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-purple-50 min-h-screen font-sans">
+    <!-- 游戏容器 -->
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- 游戏标题 -->
+        <div class="text-center mb-8">
+            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold text-neutral mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">特质与职位连连看</h1>
+            <p class="text-gray-600 text-lg">连接左侧特质与右侧最匹配的职位</p>
+        </div>
+        
+        <!-- 游戏状态 -->
+        <div class="flex justify-between items-center mb-6 px-4 py-2 bg-white rounded-lg shadow-md">
+            <div class="flex items-center">
+                <i class="fa fa-check-circle text-accent mr-2 text-xl"></i>
+                <span id="matches" class="font-medium">已匹配: 0/5</span>
+            </div>
+            <div class="flex items-center">
+                <i class="fa fa-clock-o text-primary mr-2 text-xl"></i>
+                <span id="timer" class="font-medium">时间: 0秒</span>
+            </div>
+            <button id="restart-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all flex items-center">
+                <i class="fa fa-refresh mr-2"></i> 重新开始
+            </button>
+        </div>
+        
+        <!-- 游戏区域 -->
+        <div class="relative">
+            <!-- 连接线的SVG容器 -->
+            <svg id="connection-layer" class="absolute top-0 left-0 w-full h-full pointer-events-none z-0"></svg>
+            
+            <div class="flex flex-col md:flex-row justify-between items-center md:items-stretch gap-8 relative z-10">
+                <!-- 左侧特质卡片 -->
+                <div class="w-full md:w-1/2 grid grid-cols-1 gap-4">
+                    <div class="trait-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="1">
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 p-3 rounded-full mr-4">
+                                <i class="fa fa-database text-primary text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-neutral">数据敏感，逻辑怪</h3>
+                                <p class="text-gray-500 mt-1">对数据有敏锐洞察力，逻辑思维强</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="trait-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="2">
+                        <div class="flex items-start">
+                            <div class="bg-purple-100 p-3 rounded-full mr-4">
+                                <i class="fa fa-comments text-purple-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-neutral">嘴皮子溜，气场强</h3>
+                                <p class="text-gray-500 mt-1">口才出众，具有强大的气场和说服力</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="trait-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="3">
+                        <div class="flex items-start">
+                            <div class="bg-pink-100 p-3 rounded-full mr-4">
+                                <i class="fa fa-paint-brush text-secondary text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-neutral">审美在线，PS大神</h3>
+                                <p class="text-gray-500 mt-1">拥有出色审美，精通图片处理技能</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="trait-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="4">
+                        <div class="flex items-start">
+                            <div class="bg-green-100 p-3 rounded-full mr-4">
+                                <i class="fa fa-smile-o text-accent text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-neutral">脾气超好，打字飞快</h3>
+                                <p class="text-gray-500 mt-1">性格温和有耐心，文字输入速度快</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="trait-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="5">
+                        <div class="flex items-start">
+                            <div class="bg-amber-100 p-3 rounded-full mr-4">
+                                <i class="fa fa-line-chart text-amber-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-neutral">擅长策划，执行力强</h3>
+                                <p class="text-gray-500 mt-1">善于制定计划，能高效执行并达成目标</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 中间提示 -->
+                <div class="hidden md:flex flex-col items-center justify-center">
+                    <i class="fa fa-exchange text-4xl text-gray-300 mb-2"></i>
+                    <p class="text-gray-500 text-center">连接匹配项</p>
+                </div>
+                
+                <!-- 右侧职位卡片 -->
+                <div class="w-full md:w-1/2 grid grid-cols-1 gap-4">
+                    <div class="job-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="A">
+                        <div class="flex items-start">
+                            <div class="bg-red-100 p-3 rounded-full mr-4">
+                                <i class="fa fa-video-camera text-red-500 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-neutral">主播</h3>
+                                <p class="text-gray-500 mt-1">在镜头前展示内容，与观众互动</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="job-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="B">
+                        <div class="flex items-start">
+                            <div class="bg-amber-100 p-3 rounded-full mr-4">
+                                <i class="fa fa-cogs text-amber-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-neutral">运营</h3>
+                                <p class="text-gray-500 mt-1">负责产品推广和用户维护</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="job-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="C">
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 p-3 rounded-full mr-4">
+                                <i class="fa fa-headphones text-blue-500 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-neutral">客服</h3>
+                                <p class="text-gray-500 mt-1">解答用户疑问，提供服务支持</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="job-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="D">
+                        <div class="flex items-start">
+                            <div class="bg-pink-100 p-3 rounded-full mr-4">
+                                <i class="fa fa-image text-pink-500 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-neutral">美工</h3>
+                                <p class="text-gray-500 mt-1">负责视觉设计和图像处理</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="job-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="E">
+                        <div class="flex items-start">
+                            <div class="bg-green-100 p-3 rounded-full mr-4">
+                                <i class="fa fa-bar-chart text-green-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-neutral">数据分析师</h3>
+                                <p class="text-gray-500 mt-1">分析数据，提供决策支持</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 游戏完成弹窗 -->
+        <div id="success-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 transform transition-all">
+                <div class="text-center">
+                    <div class="inline-block bg-green-100 p-4 rounded-full mb-4">
+                        <i class="fa fa-trophy text-4xl text-yellow-500"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-neutral mb-2">恭喜完成！</h2>
+                    <p class="text-gray-600 mb-6">你成功匹配了所有特质与职位</p>
+                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                        <p class="text-gray-700 mb-2"><span class="font-medium">用时：</span><span id="final-time">0</span>秒</p>
+                        <p class="text-gray-700"><span class="font-medium">正确率：</span><span id="accuracy">0</span>%</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button id="play-again-btn" class="flex-1 bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg transition-all font-medium">
+                            再玩一次
+                        </button>
+                        <button id="share-btn" class="flex-1 bg-white border border-primary text-primary hover:bg-primary/5 px-6 py-3 rounded-lg transition-all font-medium">
+                            <i class="fa fa-share-alt mr-2"></i> 分享
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 扫码提示 -->
+        <div class="mt-12 text-center">
+            <p class="text-gray-600 mb-4">线下扫码玩这个游戏</p>
+            <div class="inline-block bg-white p-3 rounded-lg shadow-md">
+                <div id="qrcode" class="w-48 h-48 bg-gray-100 flex items-center justify-center">
+                    <!-- 这里会通过JS生成二维码 -->
+                    <i class="fa fa-qrcode text-6xl text-gray-300"></i>
+                </div>
+            </div>
+            <p class="text-gray-500 text-sm mt-4">保存图片或截图，打印出来供线下使用</p>
+        </div>
+    </div>
+    
+    <!-- 引入二维码生成库 -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    
+    <script>
+        // 正确的匹配关系
+        const correctMatches = {
+            1: 'E',  // 数据敏感，逻辑怪 -> 数据分析师
+            2: 'A',  // 嘴皮子溜，气场强 -> 主播
+            3: 'D',  // 审美在线，PS大神 -> 美工
+            4: 'C',  // 脾气超好，打字飞快 -> 客服
+            5: 'B'   // 擅长策划，执行力强 -> 运营
+        };
+        
+        // 游戏状态
+        let gameState = {
+            selectedTrait: null,
+            matches: 0,
+            attempts: 0,
+            correctAttempts: 0,
+            startTime: null,
+            timerInterval: null,
+            completedConnections: []
+        };
+        
+        // DOM元素
+        const traitCards = document.querySelectorAll('.trait-card');
+        const jobCards = document.querySelectorAll('.job-card');
+        const connectionLayer = document.getElementById('connection-layer');
+        const matchesDisplay = document.getElementById('matches');
+        const timerDisplay = document.getElementById('timer');
+        const restartBtn = document.getElementById('restart-btn');
+        const successModal = document.getElementById('success-modal');
+        const finalTimeDisplay = document.getElementById('final-time');
+        const accuracyDisplay = document.getElementById('accuracy');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const shareBtn = document.getElementById('share-btn');
+        
+        // 初始化游戏
+        function initGame() {
+            // 重置游戏状态
+            gameState = {
+                selectedTrait: null,
+                matches: 0,
+                attempts: 0,
+                correctAttempts: 0,
+                startTime: new Date(),
+                timerInterval: setInterval(updateTimer, 1000),
+                completedConnections: []
+            };
+            
+            // 清空连接线
+            connectionLayer.innerHTML = '';
+            
+            // 更新显示
+            matchesDisplay.textContent = `已匹配: 0/5`;
+            timerDisplay.textContent = `时间: 0秒`;
+            successModal.classList.add('hidden');
+            
+            // 重置卡片状态
+            document.querySelectorAll('.trait-card, .job-card').forEach(card => {
+                card.classList.remove('opacity-50', 'pulse-correct', 'pulse-wrong');
+                card.classList.add('cursor-pointer');
+            });
+            
+            // 添加事件监听
+            traitCards.forEach(card => {
+                card.addEventListener('click', handleTraitClick);
+            });
+            
+            jobCards.forEach(card => {
+                card.addEventListener('click', handleJobClick);
+            });
+            
+            // 生成二维码
+            generateQRCode();
+        }
+        
+        // 处理特质卡片点击
+        function handleTraitClick(e) {
+            const traitCard = e.currentTarget;
+            const traitId = traitCard.getAttribute('data-id');
+            
+            // 如果已经匹配，不响应点击
+            if (gameState.completedConnections.some(conn => conn.trait === traitId)) {
+                return;
+            }
+            
+            // 重置所有卡片的选中状态
+            traitCards.forEach(card => {
+                card.classList.remove('ring-2', 'ring-primary');
+            });
+            
+            // 设置当前选中的特质
+            gameState.selectedTrait = traitId;
+            traitCard.classList.add('ring-2', 'ring-primary');
+        }
+        
+        // 处理职位卡片点击
+        function handleJobClick(e) {
+            const jobCard = e.currentTarget;
+            const jobId = jobCard.getAttribute('data-id');
+            
+            // 如果没有选中特质，不响应点击
+            if (!gameState.selectedTrait) return;
+            
+            // 如果已经匹配，不响应点击
+            if (gameState.completedConnections.some(conn => conn.job === jobId)) {
+                return;
+            }
+            
+            gameState.attempts++;
+            
+            // 检查是否匹配正确
+            const isCorrect = correctMatches[gameState.selectedTrait] === jobId;
+            
+            // 获取卡片位置，绘制连接线
+            const traitCard = document.querySelector(`.trait-card[data-id="${gameState.selectedTrait}"]`);
+            drawConnection(traitCard, jobCard, isCorrect);
+            
+            // 添加动画效果
+            if (isCorrect) {
+                gameState.correctAttempts++;
+                gameState.matches++;
+                traitCard.classList.add('pulse-correct', 'opacity-50');
+                jobCard.classList.add('pulse-correct', 'opacity-50');
+                traitCard.classList.remove('cursor-pointer', 'ring-2', 'ring-primary');
+                jobCard.classList.remove('cursor-pointer');
+                
+                // 记录已完成的连接
+                gameState.completedConnections.push({
+                    trait: gameState.selectedTrait,
+                    job: jobId
+                });
+                
+                // 更新匹配数显示
+                matchesDisplay.textContent = `已匹配: ${gameState.matches}/5`;
+                
+                // 检查游戏是否完成
+                if (gameState.matches === 5) {
+                    endGame();
+                }
+            } else {
+                traitCard.classList.add('pulse-wrong');
+                jobCard.classList.add('pulse-wrong');
+                
+                // 错误动画后移除效果
+                setTimeout(() => {
+                    traitCard.classList.remove('pulse-wrong', 'ring-2', 'ring-primary');
+                    jobCard.classList.remove('pulse-wrong');
+                }, 500);
+            }
+            
+            // 重置选中状态
+            gameState.selectedTrait = null;
+        }
+        
+        // 绘制连接线
+        function drawConnection(traitCard, jobCard, isCorrect) {
+            // 获取卡片位置信息
+            const traitRect = traitCard.getBoundingClientRect();
+            const jobRect = jobCard.getBoundingClientRect();
+            const svgRect = connectionLayer.getBoundingClientRect();
+            
+            // 计算相对位置
+            const startX = traitRect.right - svgRect.left;
+            const startY = traitRect.top + traitRect.height / 2 - svgRect.top;
+            const endX = jobRect.left - svgRect.left;
+            const endY = jobRect.top + jobRect.height / 2 - svgRect.top;
+            
+            // 创建路径
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            
+            // 创建平滑曲线
+            const controlX1 = startX + (endX - startX) / 3;
+            const controlX2 = startX + (endX - startX) * 2 / 3;
+            
+            const d = `M ${startX} ${startY} C ${controlX1} ${startY}, ${controlX2} ${endY}, ${endX} ${endY}`;
+            
+            path.setAttribute("d", d);
+            path.setAttribute("stroke", isCorrect ? "#10B981" : "#EC4899");
+            path.setAttribute("stroke-width", isCorrect ? "3" : "2");
+            path.setAttribute("stroke-dasharray", isCorrect ? "1000" : "10");
+            path.setAttribute("fill", "none");
+            path.setAttribute("class", isCorrect ? "line-animation" : "");
+            
+            // 如果不正确，一段时间后移除线条
+            if (!isCorrect) {
+                path.setAttribute("stroke-opacity", "0.7");
+                setTimeout(() => {
+                    path.setAttribute("stroke-opacity", "0");
+                    setTimeout(() => {
+                        if (path.parentNode === connectionLayer) {
+                            connectionLayer.removeChild(path);
+                        }
+                    }, 500);
+                }, 1000);
+            }
+            
+            connectionLayer.appendChild(path);
+        }
+        
+        // 更新计时器
+        function updateTimer() {
+            if (!gameState.startTime) return;
+            
+            const currentTime = new Date();
+            const seconds = Math.floor((currentTime - gameState.startTime) / 1000);
+            timerDisplay.textContent = `时间: ${seconds}秒`;
+            finalTimeDisplay.textContent = `${seconds}秒`;
+        }
+        
+        // 结束游戏
+        function endGame() {
+            clearInterval(gameState.timerInterval);
+            
+            // 计算正确率
+            const accuracy = Math.round((gameState.correctAttempts / gameState.attempts) * 100);
+            accuracyDisplay.textContent = `${accuracy}`;
+            
+            // 显示成功弹窗
+            setTimeout(() => {
+                successModal.classList.remove('hidden');
+            }, 500);
+        }
+        
+        // 生成二维码
+        function generateQRCode() {
+            // 使用当前页面URL生成二维码
+            const url = window.location.href;
+            
+            // 清空之前的二维码
+            document.getElementById('qrcode').innerHTML = '';
+            
+            // 生成新的二维码
+            QRCode.toCanvas(url, {
+                width: 192,
+                margin: 1,
+                color: {
+                    dark: "#1F2937",
+                    light: "#FFFFFF"
+                }
+            }, function(error, canvas) {
+                if (error) console.error(error);
+                document.getElementById('qrcode').appendChild(canvas);
+            });
+        }
+        
+        // 事件监听
+        restartBtn.addEventListener('click', initGame);
+        playAgainBtn.addEventListener('click', initGame);
+        shareBtn.addEventListener('click', () => {
+            alert('分享功能：可以将这个页面截图分享给朋友，或打印二维码供线下使用');
+        });
+        
+        // 初始化游戏
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
