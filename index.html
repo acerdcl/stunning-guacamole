@@ -67,20 +67,27 @@
                 70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(236, 72, 153, 0); }
                 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
             }
+            /* 移动端触摸反馈优化 */
+            @media (max-width: 768px) {
+                .trait-card, .job-card {
+                    touch-action: manipulation;
+                    -webkit-tap-highlight-color: transparent;
+                }
+            }
         }
     </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-50 to-purple-50 min-h-screen font-sans">
     <!-- 游戏容器 -->
-    <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <div class="container mx-auto px-3 py-6 max-w-6xl"> <!-- 减小移动端内边距 -->
         <!-- 游戏标题 -->
-        <div class="text-center mb-8">
-            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold text-neutral mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">特质与职位连连看</h1>
-            <p class="text-gray-600 text-lg">连接左侧特质与右侧最匹配的职位</p>
+        <div class="text-center mb-6"> <!-- 减小移动端间距 -->
+            <h1 class="text-[clamp(1.5rem,5vw,2.5rem)] font-bold text-neutral mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">特质与职位连连看</h1>
+            <p class="text-gray-600 text-sm md:text-lg">连接左侧特质与右侧最匹配的职位</p>
         </div>
         
         <!-- 游戏状态 -->
-        <div class="flex justify-between items-center mb-6 px-4 py-2 bg-white rounded-lg shadow-md">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-4 px-3 py-2 bg-white rounded-lg shadow-md"> <!-- 移动端换行和间距优化 -->
             <div class="flex items-center">
                 <i class="fa fa-check-circle text-accent mr-2 text-xl"></i>
                 <span id="matches" class="font-medium">已匹配: 0/5</span>
@@ -89,8 +96,8 @@
                 <i class="fa fa-clock-o text-primary mr-2 text-xl"></i>
                 <span id="timer" class="font-medium">时间: 0秒</span>
             </div>
-            <button id="restart-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all flex items-center">
-                <i class="fa fa-refresh mr-2"></i> 重新开始
+            <button id="restart-btn" class="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg transition-all flex items-center text-sm"> <!-- 减小按钮大小 -->
+                <i class="fa fa-refresh mr-1.5"></i> 重新开始
             </button>
         </div>
         
@@ -99,134 +106,139 @@
             <!-- 连接线的SVG容器 -->
             <svg id="connection-layer" class="absolute top-0 left-0 w-full h-full pointer-events-none z-0"></svg>
             
-            <div class="flex flex-col md:flex-row justify-between items-center md:items-stretch gap-8 relative z-10">
+            <div class="flex flex-col md:flex-row justify-between items-center md:items-stretch gap-6 relative z-10"> <!-- 调整间距 -->
                 <!-- 左侧特质卡片 -->
-                <div class="w-full md:w-1/2 grid grid-cols-1 gap-4">
-                    <div class="trait-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="1">
+                <div class="w-full md:w-1/2 grid grid-cols-1 gap-3"> <!-- 减小卡片间距 -->
+                    <div class="trait-card bg-white rounded-xl p-4 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="1"> <!-- 减小内边距 -->
                         <div class="flex items-start">
-                            <div class="bg-blue-100 p-3 rounded-full mr-4">
-                                <i class="fa fa-database text-primary text-xl"></i>
+                            <div class="bg-blue-100 p-2.5 rounded-full mr-3"> <!-- 减小图标容器 -->
+                                <i class="fa fa-database text-primary text-lg"></i> <!-- 减小图标 -->
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-neutral">数据敏感，逻辑怪</h3>
-                                <p class="text-gray-500 mt-1">对数据有敏锐洞察力，逻辑思维强</p>
+                                <h3 class="font-bold text-base md:text-lg text-neutral">数据敏感，逻辑怪</h3> <!-- 响应式字体 -->
+                                <p class="text-gray-500 mt-1 text-sm">对数据有敏锐洞察力，逻辑思维强</p> <!-- 减小字体 -->
                             </div>
                         </div>
                     </div>
                     
-                    <div class="trait-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="2">
+                    <div class="trait-card bg-white rounded-xl p-4 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="2">
                         <div class="flex items-start">
-                            <div class="bg-purple-100 p-3 rounded-full mr-4">
-                                <i class="fa fa-comments text-purple-600 text-xl"></i>
+                            <div class="bg-purple-100 p-2.5 rounded-full mr-3">
+                                <i class="fa fa-comments text-purple-600 text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-neutral">嘴皮子溜，气场强</h3>
-                                <p class="text-gray-500 mt-1">口才出众，具有强大的气场和说服力</p>
+                                <h3 class="font-bold text-base md:text-lg text-neutral">嘴皮子溜，气场强</h3>
+                                <p class="text-gray-500 mt-1 text-sm">口才出众，具有强大的气场和说服力</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="trait-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="3">
+                    <div class="trait-card bg-white rounded-xl p-4 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="3">
                         <div class="flex items-start">
-                            <div class="bg-pink-100 p-3 rounded-full mr-4">
-                                <i class="fa fa-paint-brush text-secondary text-xl"></i>
+                            <div class="bg-pink-100 p-2.5 rounded-full mr-3">
+                                <i class="fa fa-paint-brush text-secondary text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-neutral">审美在线，PS大神</h3>
-                                <p class="text-gray-500 mt-1">拥有出色审美，精通图片处理技能</p>
+                                <h3 class="font-bold text-base md:text-lg text-neutral">审美在线，PS大神</h3>
+                                <p class="text-gray-500 mt-1 text-sm">拥有出色审美，精通图片处理技能</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="trait-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="4">
+                    <div class="trait-card bg-white rounded-xl p-4 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="4">
                         <div class="flex items-start">
-                            <div class="bg-green-100 p-3 rounded-full mr-4">
-                                <i class="fa fa-smile-o text-accent text-xl"></i>
+                            <div class="bg-green-100 p-2.5 rounded-full mr-3">
+                                <i class="fa fa-smile-o text-accent text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-neutral">脾气超好，打字飞快</h3>
-                                <p class="text-gray-500 mt-1">性格温和有耐心，文字输入速度快</p>
+                                <h3 class="font-bold text-base md:text-lg text-neutral">脾气超好，打字飞快</h3>
+                                <p class="text-gray-500 mt-1 text-sm">性格温和有耐心，文字输入速度快</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="trait-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="5">
+                    <div class="trait-card bg-white rounded-xl p-4 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="5">
                         <div class="flex items-start">
-                            <div class="bg-amber-100 p-3 rounded-full mr-4">
-                                <i class="fa fa-line-chart text-amber-600 text-xl"></i>
+                            <div class="bg-amber-100 p-2.5 rounded-full mr-3">
+                                <i class="fa fa-line-chart text-amber-600 text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-neutral">擅长策划，执行力强</h3>
-                                <p class="text-gray-500 mt-1">善于制定计划，能高效执行并达成目标</p>
+                                <h3 class="font-bold text-base md:text-lg text-neutral">擅长策划，执行力强</h3>
+                                <p class="text-gray-500 mt-1 text-sm">善于制定计划，能高效执行并达成目标</p>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- 中间提示 -->
+                <!-- 中间提示 - 移动端优化 -->
                 <div class="hidden md:flex flex-col items-center justify-center">
                     <i class="fa fa-exchange text-4xl text-gray-300 mb-2"></i>
                     <p class="text-gray-500 text-center">连接匹配项</p>
                 </div>
+                <!-- 移动端提示 -->
+                <div class="flex md:hidden items-center justify-center w-full py-2">
+                    <i class="fa fa-exchange text-2xl text-gray-300 mr-2"></i>
+                    <p class="text-gray-500">点击左侧特质，再点击右侧匹配职位</p>
+                </div>
                 
                 <!-- 右侧职位卡片 -->
-                <div class="w-full md:w-1/2 grid grid-cols-1 gap-4">
-                    <div class="job-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="A">
+                <div class="w-full md:w-1/2 grid grid-cols-1 gap-3">
+                    <div class="job-card bg-white rounded-xl p-4 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="A">
                         <div class="flex items-start">
-                            <div class="bg-red-100 p-3 rounded-full mr-4">
-                                <i class="fa fa-video-camera text-red-500 text-xl"></i>
+                            <div class="bg-red-100 p-2.5 rounded-full mr-3">
+                                <i class="fa fa-video-camera text-red-500 text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-neutral">主播</h3>
-                                <p class="text-gray-500 mt-1">在镜头前展示内容，与观众互动</p>
+                                <h3 class="font-bold text-base md:text-lg text-neutral">主播</h3>
+                                <p class="text-gray-500 mt-1 text-sm">在镜头前展示内容，与观众互动</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="job-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="B">
+                    <div class="job-card bg-white rounded-xl p-4 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="B">
                         <div class="flex items-start">
-                            <div class="bg-amber-100 p-3 rounded-full mr-4">
-                                <i class="fa fa-cogs text-amber-600 text-xl"></i>
+                            <div class="bg-amber-100 p-2.5 rounded-full mr-3">
+                                <i class="fa fa-cogs text-amber-600 text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-neutral">运营</h3>
-                                <p class="text-gray-500 mt-1">负责产品推广和用户维护</p>
+                                <h3 class="font-bold text-base md:text-lg text-neutral">运营</h3>
+                                <p class="text-gray-500 mt-1 text-sm">负责产品推广和用户维护</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="job-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="C">
+                    <div class="job-card bg-white rounded-xl p-4 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="C">
                         <div class="flex items-start">
-                            <div class="bg-blue-100 p-3 rounded-full mr-4">
-                                <i class="fa fa-headphones text-blue-500 text-xl"></i>
+                            <div class="bg-blue-100 p-2.5 rounded-full mr-3">
+                                <i class="fa fa-headphones text-blue-500 text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-neutral">客服</h3>
-                                <p class="text-gray-500 mt-1">解答用户疑问，提供服务支持</p>
+                                <h3 class="font-bold text-base md:text-lg text-neutral">客服</h3>
+                                <p class="text-gray-500 mt-1 text-sm">解答用户疑问，提供服务支持</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="job-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="D">
+                    <div class="job-card bg-white rounded-xl p-4 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="D">
                         <div class="flex items-start">
-                            <div class="bg-pink-100 p-3 rounded-full mr-4">
-                                <i class="fa fa-image text-pink-500 text-xl"></i>
+                            <div class="bg-pink-100 p-2.5 rounded-full mr-3">
+                                <i class="fa fa-image text-pink-500 text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-neutral">美工</h3>
-                                <p class="text-gray-500 mt-1">负责视觉设计和图像处理</p>
+                                <h3 class="font-bold text-base md:text-lg text-neutral">美工</h3>
+                                <p class="text-gray-500 mt-1 text-sm">负责视觉设计和图像处理</p>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="job-card bg-white rounded-xl p-5 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="E">
+                    <div class="job-card bg-white rounded-xl p-4 card-shadow hover:card-shadow-hover transition-all cursor-pointer scale-up" data-id="E">
                         <div class="flex items-start">
-                            <div class="bg-green-100 p-3 rounded-full mr-4">
-                                <i class="fa fa-bar-chart text-green-600 text-xl"></i>
+                            <div class="bg-green-100 p-2.5 rounded-full mr-3">
+                                <i class="fa fa-bar-chart text-green-600 text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-neutral">数据分析师</h3>
-                                <p class="text-gray-500 mt-1">分析数据，提供决策支持</p>
+                                <h3 class="font-bold text-base md:text-lg text-neutral">数据分析师</h3>
+                                <p class="text-gray-500 mt-1 text-sm">分析数据，提供决策支持</p>
                             </div>
                         </div>
                     </div>
@@ -234,32 +246,32 @@
             </div>
         </div>
         
-        <!-- 游戏完成弹窗 -->
-        <div id="success-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
-            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 transform transition-all">
+        <!-- 游戏完成弹窗 - 优化移动端显示 -->
+        <div id="success-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden p-4">
+            <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 transform transition-all">
                 <div class="text-center">
                     <div class="inline-block bg-green-100 p-4 rounded-full mb-4">
                         <i class="fa fa-trophy text-4xl text-yellow-500"></i>
                     </div>
-                    <h2 class="text-2xl font-bold text-neutral mb-2">恭喜完成！</h2>
-                    <p class="text-gray-600 mb-6">你成功匹配了所有特质与职位</p>
-                    <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                        <p class="text-gray-700 mb-2"><span class="font-medium">用时：</span><span id="final-time">0</span>秒</p>
+                    <h2 class="text-xl font-bold text-neutral mb-2">恭喜完成！</h2>
+                    <p class="text-gray-600 mb-4">你成功匹配了所有特质与职位</p>
+                    <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                        <p class="text-gray-700 mb-1"><span class="font-medium">用时：</span><span id="final-time">0</span>秒</p>
                         <p class="text-gray-700"><span class="font-medium">正确率：</span><span id="accuracy">0</span>%</p>
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <button id="play-again-btn" class="flex-1 bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg transition-all font-medium">
+                    <div class="flex flex-col gap-3">
+                        <button id="play-again-btn" class="flex-1 bg-primary hover:bg-primary/90 text-white px-4 py-3 rounded-lg transition-all font-medium">
                             再玩一次
                         </button>
-                        <button id="share-btn" class="flex-1 bg-white border border-primary text-primary hover:bg-primary/5 px-6 py-3 rounded-lg transition-all font-medium">
+                        <button id="share-btn" class="flex-1 bg-white border border-primary text-primary hover:bg-primary/5 px-4 py-3 rounded-lg transition-all font-medium">
                             <i class="fa fa-share-alt mr-2"></i> 分享
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="mt-12 text-center">
-            <p class="text-gray-600 mb-4">Copyright © 2025 by 电商杜老师</p>
+        <div class="mt-8 text-center"> <!-- 减小底部间距 -->
+            <p class="text-gray-600 text-sm">Copyright © 2025 by 电商杜老师</p>
         </div>
     </div>
     <script>
@@ -326,10 +338,20 @@
             // 添加事件监听
             traitCards.forEach(card => {
                 card.addEventListener('click', handleTraitClick);
+                // 添加触摸事件支持
+                card.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); // 防止点击延迟
+                    handleTraitClick.call(card, e);
+                });
             });
             
             jobCards.forEach(card => {
                 card.addEventListener('click', handleJobClick);
+                // 添加触摸事件支持
+                card.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); // 防止点击延迟
+                    handleJobClick.call(card, e);
+                });
             });
             
             // 生成二维码
@@ -354,6 +376,14 @@
             // 设置当前选中的特质
             gameState.selectedTrait = traitId;
             traitCard.classList.add('ring-2', 'ring-primary');
+            
+            // 移动端选中反馈
+            if (window.innerWidth < 768) {
+                traitCard.classList.add('bg-primary/5');
+                setTimeout(() => {
+                    traitCard.classList.remove('bg-primary/5');
+                }, 200);
+            }
         }
         
         // 处理职位卡片点击
@@ -415,25 +445,32 @@
             gameState.selectedTrait = null;
         }
         
-        // 绘制连接线
+        // 绘制连接线 - 优化移动端连接线
         function drawConnection(traitCard, jobCard, isCorrect) {
             // 获取卡片位置信息
             const traitRect = traitCard.getBoundingClientRect();
             const jobRect = jobCard.getBoundingClientRect();
             const svgRect = connectionLayer.getBoundingClientRect();
             
-            // 计算相对位置
+            // 计算相对位置 - 移动端优化连接线路径
+            const isMobile = window.innerWidth < 768;
             const startX = traitRect.right - svgRect.left;
             const startY = traitRect.top + traitRect.height / 2 - svgRect.top;
             const endX = jobRect.left - svgRect.left;
             const endY = jobRect.top + jobRect.height / 2 - svgRect.top;
             
-            // 创建路径
+            // 创建路径 - 移动端使用更平缓的曲线
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
             
-            // 创建平滑曲线
-            const controlX1 = startX + (endX - startX) / 3;
-            const controlX2 = startX + (endX - startX) * 2 / 3;
+            let controlX1, controlX2;
+            if (isMobile) {
+                // 移动端连接线更平缓，避免穿过其他卡片
+                controlX1 = startX + (endX - startX) / 4;
+                controlX2 = startX + (endX - startX) * 3 / 4;
+            } else {
+                controlX1 = startX + (endX - startX) / 3;
+                controlX2 = startX + (endX - startX) * 2 / 3;
+            }
             
             const d = `M ${startX} ${startY} C ${controlX1} ${startY}, ${controlX2} ${endY}, ${endX} ${endY}`;
             
@@ -486,30 +523,55 @@
         
         // 生成二维码
         function generateQRCode() {
+            // 检查是否存在qrcode元素
+            let qrcodeContainer = document.getElementById('qrcode');
+            if (!qrcodeContainer) {
+                qrcodeContainer = document.createElement('div');
+                qrcodeContainer.id = 'qrcode';
+                qrcodeContainer.style.display = 'none'; // 默认隐藏
+                document.body.appendChild(qrcodeContainer);
+            }
+            
             // 使用当前页面URL生成二维码
             const url = window.location.href;
             
             // 清空之前的二维码
-            document.getElementById('qrcode').innerHTML = '';
+            qrcodeContainer.innerHTML = '';
             
-            // 生成新的二维码
-            QRCode.toCanvas(url, {
-                width: 192,
-                margin: 1,
-                color: {
-                    dark: "#1F2937",
-                    light: "#FFFFFF"
-                }
-            }, function(error, canvas) {
-                if (error) console.error(error);
-                document.getElementById('qrcode').appendChild(canvas);
-            });
+            // 生成新的二维码（这里假设QRCode库已加载）
+            if (typeof QRCode !== 'undefined') {
+                QRCode.toCanvas(url, {
+                    width: 192,
+                    margin: 1,
+                    color: {
+                        dark: "#1F2937",
+                        light: "#FFFFFF"
+                    }
+                }, function(error, canvas) {
+                    if (error) console.error(error);
+                    qrcodeContainer.appendChild(canvas);
+                });
+            }
         }
         
         // 事件监听
         restartBtn.addEventListener('click', initGame);
+        restartBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            initGame();
+        });
+        
         playAgainBtn.addEventListener('click', initGame);
+        playAgainBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            initGame();
+        });
+        
         shareBtn.addEventListener('click', () => {
+            alert('分享功能：可以将这个页面截图分享给朋友，或打印二维码供线下使用');
+        });
+        shareBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
             alert('分享功能：可以将这个页面截图分享给朋友，或打印二维码供线下使用');
         });
         
@@ -518,5 +580,3 @@
     </script>
 </body>
 </html>
-
-
