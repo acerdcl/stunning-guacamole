@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>职业性格测试（MBTI）</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#10B981',
+            accent: '#F59E0B',
+            neutral: '#64748B',
+            dark: '#1E293B'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .btn-hover {
+        @apply transition-all duration-300 hover:shadow-lg transform hover:-translate-y-0.5;
+      }
+      .option-card {
+        @apply p-4 border rounded-lg transition-all duration-200 hover:border-primary/50 cursor-pointer;
+      }
+      .progress-height {
+        height: 8px;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen font-sans text-dark">
+  <div class="container mx-auto px-4 py-8 max-w-4xl">
+    <!-- 页面标题 -->
+    <header class="text-center mb-8">
+      <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-primary mb-2">职业性格测试</h1>
+      <p class="text-slate-600">了解你的MBTI类型，探索适合的职业方向</p>
+    </header>
+
+    <!-- 容器 -->
+    <div class="bg-white rounded-2xl shadow-md p-6 md:p-8 transition-all duration-500">
+      <!-- 开始界面 -->
+      <div id="start-screen" class="text-center py-6">
+        <div class="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 text-primary">
+          <i class="fa fa-user-circle text-4xl"></i>
+        </div>
+        <h2 class="text-xl md:text-2xl font-bold mb-4">探索你的职业性格</h2>
+        <p class="text-slate-600 mb-8 max-w-lg mx-auto">
+          本测试包含44个问题，帮助你了解自己的MBTI职业性格类型。
+          请根据第一印象选择最符合你的选项，无需过度思考。
+        </p>
+        <button id="start-btn" class="bg-primary hover:bg-primary/90 text-white font-semibold px-8 py-3 rounded-full btn-hover">
+          开始测试 <i class="fa fa-arrow-right ml-2"></i>
+        </button>
+      </div>
+
+      <!-- 测试界面 -->
+      <div id="quiz-screen" class="hidden">
+        <!-- 进度条 -->
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-2 text-sm">
+            <span class="text-slate-600">问题 <span id="current-question">1</span>/44</span>
+            <span class="text-primary font-medium" id="progress-text">0%</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full progress-height">
+            <div id="progress-bar" class="bg-primary rounded-full progress-height transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 问题容器 -->
+        <div id="question-container" class="mb-8">
+          <h2 id="question" class="text-lg md:text-xl font-bold mb-6"></h2>
+          <div id="options" class="space-y-4"></div>
+        </div>
+
+        <!-- 导航按钮 -->
+        <div class="flex justify-between">
+          <button id="prev-btn" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium px-6 py-2 rounded-lg btn-hover">
+            <i class="fa fa-arrow-left mr-2"></i> 上一题
+          </button>
+          <button id="next-btn" class="bg-primary hover:bg-primary/90 text-white font-medium px-6 py-2 rounded-lg btn-hover">
+            下一题 <i class="fa fa-arrow-right ml-2"></i>
+          </button>
+          <button id="submit-btn" class="hidden bg-secondary hover:bg-secondary/90 text-white font-medium px-6 py-2 rounded-lg btn-hover">
+            提交测试 <i class="fa fa-check ml-2"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 结果界面 -->
+      <div id="results-screen" class="hidden text-center py-6">
+        <!-- MBTI类型展示 -->
+        <div class="mb-8">
+          <h2 class="text-2xl font-bold mb-2 text-primary" id="mbti-type">____</h2>
+          <p class="text-xl text-slate-600 mb-6" id="type-name"></p>
+        </div>
+
+        <!-- 维度得分 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h3 class="text-sm text-slate-500 mb-1">外向(E)</h3>
+            <p class="text-lg font-bold" id="e-score">0</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h3 class="text-sm text-slate-500 mb-1">内向(I)</h3>
+            <p class="text-lg font-bold" id="i-score">0</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h3 class="text-sm text-slate-500 mb-1">感觉(S)</h3>
+            <p class="text-lg font-bold" id="s-score">0</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h3 class="text-sm text-slate-500 mb-1">直觉(N)</h3>
+            <p class="text-lg font-bold" id="n-score">0</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h3 class="text-sm text-slate-500 mb-1">思考(T)</h3>
+            <p class="text-lg font-bold" id="t-score">0</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h3 class="text-sm text-slate-500 mb-1">情感(F)</h3>
+            <p class="text-lg font-bold" id="f-score">0</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h3 class="text-sm text-slate-500 mb-1">判断(J)</h3>
+            <p class="text-lg font-bold" id="j-score">0</p>
+          </div>
+          <div class="bg-slate-50 rounded-xl p-4">
+            <h3 class="text-sm text-slate-500 mb-1">知觉(P)</h3>
+            <p class="text-lg font-bold" id="p-score">0</p>
+          </div>
+        </div>
+
+        <!-- 性格描述 -->
+        <div class="bg-slate-50 rounded-xl p-6 mb-8 text-left">
+          <h3 class="text-lg font-bold mb-4 text-primary">性格特点</h3>
+          <p id="personality-desc" class="text-slate-700 leading-relaxed"></p>
+        </div>
+
+        <!-- 职业推荐 -->
+        <div class="bg-slate-50 rounded-xl p-6 text-left">
+          <h3 class="text-lg font-bold mb-4 text-primary">适合的职业方向</h3>
+          <ul id="career-recommendations" class="text-slate-700 space-y-2 list-disc pl-5"></ul>
+        </div>
+
+        <!-- 重新测试按钮 -->
+        <button id="restart-btn" class="mt-8 bg-primary hover:bg-primary/90 text-white font-semibold px-8 py-3 rounded-full btn-hover">
+          重新测试 <i class="fa fa-refresh ml-2"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="text-center text-slate-500 text-sm mt-8">
+      <p>职业性格测试仅供参考，帮助你更好地认识自己</p>
+    </footer>
+  </div>
+
+  <script>
+    // 题目数据（共44题，每题A/B选项）
+    const questions = [
+      { id: 1, text: "当你某日想去一个地方，你会______。", options: ["A. 去之前先计划好要做的事", "B. 去了再说"] },
+      { id: 2, text: "如果你是一位老师，你愿教______。", options: ["A. 偏重于实践的课程", "B. 偏重于理论的课程"] },
+      { id: 3, text: "你是一个______。", options: ["A. 容易和大家打成一片的人", "B. 安静、拘谨的人"] },
+      { id: 4, text: "你更喜欢______。", options: ["A. 预先把聚会或活动的内容安排好", "B. 聚会时再自由安排任何有趣的节目"] },
+      { id: 5, text: "你通常和______相处得更好。", options: ["A. 爱想象的人", "B. 现实的人"] },
+      { id: 6, text: "你通常______。", options: ["A. 以“心”（情感体验）做决定", "B. 以“脑”（思考）做决定"] },
+      { id: 7, text: "和一群人在一起时，你更多时间是______。", options: ["A. 参与大家的谈话", "B. 和认识的人单独说话"] },
+      { id: 8, text: "你更喜欢______。", options: ["A. 按当时的兴致做事情", "B. 按计划做事情"] },
+      { id: 9, text: "你觉得自己更像是一个______。", options: ["A. 注重实际的人", "B. 具有创作性的人"] },
+      { id: 10, text: "在群体中，你经常______。", options: ["A. 主动去结识新朋友", "B. 更多时候等着别人来认识你"] },
+      { id: 11, text: "你更容易被______吸引。", options: ["A. 想法新奇、思维敏捷的人", "B. 判断力强、务实的人"] },
+      { id: 12, text: "按日程表办事______。", options: ["A. 正合你愿", "B. 束缚了你"] },
+      { id: 13, text: "你觉得别人通常______。", options: ["A. 要花很长时间才能和你熟悉起来", "B. 很快就能和你熟悉起来"] },
+      { id: 14, text: "你更欣赏______。", options: ["A. 一个真情流露的人", "B. 一个始终有理性的人"] },
+      { id: 15, text: "你倾向于______。", options: ["A. 关注情感重于逻辑", "B. 关注逻辑重于情感"] },
+      { id: 16, text: "你更喜欢______。", options: ["A. 抽象的", "B. 具体的"] },
+      { id: 17, text: "你更喜欢______。", options: ["A. 计划好的", "B. 未计划好的"] },
+      { id: 18, text: "你更喜欢______。", options: ["A. 温和的", "B. 坚定的"] },
+      { id: 19, text: "你更喜欢______。", options: ["A. 事实", "B. 猜想"] },
+      { id: 20, text: "你更喜欢______。", options: ["A. 思考的", "B. 情感的"] },
+      { id: 21, text: "你更喜欢______。", options: ["A. 强烈的", "B. 平静的"] },
+      { id: 22, text: "你更喜欢______。", options: ["A. 令人信服", "B. 令人感动"] },
+      { id: 23, text: "你更喜欢______。", options: ["A. 阐述事实", "B. 阐述概念"] },
+      { id: 24, text: "你更喜欢______。", options: ["A. 分析", "B. 体验"] },
+      { id: 25, text: "你更喜欢______。", options: ["A. 有计划的", "B. 自发性的"] },
+      { id: 26, text: "你更喜欢______。", options: ["A. 敏感细腻", "B. 正确合理"] },
+      { id: 27, text: "你更喜欢______。", options: ["A. 寡言的", "B. 健谈的"] },
+      { id: 28, text: "你更喜欢______。", options: ["A. 实际的", "B. 理论的"] },
+      { id: 29, text: "你更喜欢______。", options: ["A. 计划与规划", "B. 临时与随意"] },
+      { id: 30, text: "你更喜欢______。", options: ["A. 宁静的", "B. 活跃的"] },
+      { id: 31, text: "你更喜欢______。", options: ["A. 冲动的", "B. 果断的"] },
+      { id: 32, text: "你更喜欢______。", options: ["A. 喜安静的", "B. 好社交的"] },
+      { id: 33, text: "你更喜欢______。", options: ["A. 经验的", "B. 创新的"] },
+      { id: 34, text: "身边有很多人______。", options: ["A. 会令你变得更有精神", "B. 会令你感到疲于应付"] },
+      { id: 35, text: "你做一个决定时，会更多地考虑______。", options: ["A. 客观事实", "B. 他人的感受和意见"] },
+      { id: 36, text: "你的社会活动，通常______。", options: ["A. 提前一段时间计划好", "B. 事先不计划，根据当时情景而定"] },
+      { id: 37, text: "参加聚会活动，你往往会______。", options: ["A. 感到厌烦、疲倦", "B. 玩得高兴、尽兴"] },
+      { id: 38, text: "多数情况下，你会______。", options: ["A. 按兴致做事", "B. 按计划表做事"] },
+      { id: 39, text: "你更喜欢______。", options: ["A. 和他人交往", "B. 和自己内心交流"] },
+      { id: 40, text: "你做事情喜欢______。", options: ["A. 等事情发生了再做计划", "B. 很早就把事情计划好"] },
+      { id: 41, text: "你更喜欢上那些______。", options: ["A. 原理和理论的课", "B. 具体、直观的课"] },
+      { id: 42, text: "哪一种对你来说是更高的评价______？", options: ["A. 有竞争心", "B. 有同情心"] },
+      { id: 43, text: "你更喜欢______。", options: ["A. 用已证明行之有效的方法解决问题", "B. 分析错误，寻找新方法解决未解决的问题"] },
+      { id: 44, text: "你更愿意有一个______的老板。", options: ["A. 和蔼可亲但反复无常", "B. 严厉苛刻但讲道理"] }
+    ];
+
+    // 计分规则：正向题（A=1，B=0）和反向题（A=0，B=1）
+    const scoring = {
+      // 正向计分（A=1，B=0）
+      positive: {
+        E: [3,7,10,21,27,30,32,34,37,39],
+        S: [2,5,9,11,16,19,23,28,33,41],
+        T: [6,14,15,18,22,24,26,42],
+        J: [1,4,8,12,17,25,29,31,36,38,40]
+      },
+      // 反向计分（A=0，B=1）
+      negative: {
+        E: [13],
+        S: [5,11,16,41],
+        T: [6,14,15,18,26,44],
+        J: [8,17,31,38,40]
+      }
+    };
+
+    // 性格类型与描述、职业推荐（MBTI 16型）
+    const personalityTypes = {
+      "ISTJ": {
+        name: "物流师型人格",
+        desc: "ISTJ型的人严肃、有责任心，重视承诺与实际。他们工作缜密、有条理，值得信赖，对细节和准确性有高要求，一旦确定行动方法就难以动摇。",
+        careers: ["会计师", "审计师", "工程师", "律师", "项目经理", "行政管理人员"]
+      },
+      "ISFJ": {
+        name: "守卫者型人格",
+        desc: "ISFJ型的人忠诚、有奉献精神，富有同情心，重视他人感受。他们务实、有责任心，擅长记住细节，乐于帮助他人，具有强烈的职业道德。",
+        careers: ["护士", "教师", "图书管理员", "行政助理", "社会工作者", "咨询师"]
+      },
+      "INFJ": {
+        name: "提倡者型人格",
+        desc: "INFJ型的人是理想主义者，富有洞察力与创造力，重视个人价值与内在和谐。他们相信自己的信念，能看到事物深层含义，对灵感与使命有强烈追求。",
+        careers: ["心理咨询师", "作家", "艺术家", "设计师", "人力资源经理", "精神导师"]
+      },
+      "INTJ": {
+        name: "建筑师型人格",
+        desc: "INTJ型的人是完美主义者与战略思想家，逻辑缜密、富有远见。他们独立且有独创性，擅长分析与规划，对知识与效率有极高要求。",
+        careers: ["科学家", "建筑师", "战略规划师", "企业家", "技术专家", "研究员"]
+      },
+      "ISTP": {
+        name: "鉴赏家型人格",
+        desc: "ISTP型的人务实、坦率，擅长行动与动手实践。他们冷静理性，有出色的机械与技术理解力，喜欢通过实践解决问题，享受当下。",
+        careers: ["机械师", "程序员", "消防员", "运动员", "工匠", "技术人员"]
+      },
+      "ISFP": {
+        name: "探险家型人格",
+        desc: "ISFP型的人温和、敏感，重视个人价值观与生活热情。他们通过行动表达情感，谦逊且富有创造力，喜欢和谐与美的事物，不喜欢过度表露自我。",
+        careers: ["艺术家", "设计师", "厨师", "护士", "园艺师", "按摩师"]
+      },
+      "INFP": {
+        name: "调停者型人格",
+        desc: "INFP型的人是理想主义者，富有同理心与创造力，重视内在和谐与个人信仰。他们思维开阔、有洞察力，乐于为有价值的事业奉献。",
+        careers: ["作家", "心理学家", "教师", "咨询师", "编辑", "公益组织人员"]
+      },
+      "INTP": {
+        name: "逻辑学家型人格",
+        desc: "INTP型的人是理性的问题解决者，好奇且善于分析。他们热爱理论与逻辑，思维缜密，喜欢探索抽象概念，对知识有强烈渴求。",
+        careers: ["科学家", "程序员", "哲学家", "数学家", "研究员", "理论家"]
+      },
+      "ESTP": {
+        name: "企业家型人格",
+        desc: "ESTP型的人活泼、务实，享受行动与社交。他们适应力强，天生擅长应对突发情况，喜欢通过实践学习，是天生的创业者与推动者。",
+        careers: ["销售", "企业家", "消防员", "运动员", "警察", "创业者"]
+      },
+      "ESFP": {
+        name: "表演者型人格",
+        desc: "ESFP型的人热情、外向，善于交际与表达。他们充满活力，喜欢成为焦点，通过真诚与幽默感染他人，享受当下的快乐与互动。",
+        careers: ["演员", "主持人", "销售", "导游", "健身教练", "服务行业人员"]
+      },
+      "ENFP": {
+        name: "竞选者型人格",
+        desc: "ENFP型的人充满热情与创造力，乐观且善于启发他人。他们富有想象力，喜欢探索可能性，擅长与人建立深度连接，推动创意与变革。",
+        careers: ["市场营销", "教师", "咨询师", "记者", "创业者", "公共关系"]
+      },
+      "ENTP": {
+        name: "辩论家型人格",
+        desc: "ENTP型的人聪明、好奇，善于辩论与创新。他们热爱挑战与新思路，能快速分析问题并提出解决方案，是天生的思想者与发明家。",
+        careers: ["律师", "企业家", "发明家", "记者", "咨询师", "演说家"]
+      },
+      "ESTJ": {
+        name: "总经理型人格",
+        desc: "ESTJ型的人高效、务实，擅长组织与管理。他们重视规则与效率，有强烈的责任心，能在制度明确的环境中发挥领导作用。",
+        careers: ["经理", "主管", "警察", "军人", "律师", "行政人员"]
+      },
+      "ESFJ": {
+        name: "执政官型人格",
+        desc: "ESFJ型的人友好、有同情心，重视人际关系与责任。他们善于合作，能敏锐察觉他人需求，通过实际行动帮助他人，是优秀的协调者。",
+        careers: ["教师", "护士", "行政助理", "销售", "公关人员", "客服经理"]
+      },
+      "ENFJ": {
+        name: "主人公型人格",
+        desc: "ENFJ型的人温暖、有感染力，擅长领导与激励他人。他们富有同理心，能激发他人潜能，重视个人成长与团队和谐，是天生的领导者。",
+        careers: ["教师", "咨询师", "公关经理", "人力资源", "教练", "社会工作者"]
+      },
+      "ENTJ": {
+        name: "指挥官型人格",
+        desc: "ENTJ型的人果断、有战略眼光，是天生的领导者。他们逻辑清晰、目标明确，能高效组织资源并推动计划执行，擅长应对复杂挑战。",
+        careers: ["CEO", "企业家", "领导者", "律师", "战略规划师", "高管"]
+      }
+    };
+
+    // DOM元素
+    const startScreen = document.getElementById('start-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultsScreen = document.getElementById('results-screen');
+    const startBtn = document.getElementById('start-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const questionElement = document.getElementById('question');
+    const optionsElement = document.getElementById('options');
+    const currentQuestionElement = document.getElementById('current-question');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    const mbtiTypeElement = document.getElementById('mbti-type');
+    const typeNameElement = document.getElementById('type-name');
+    const eScoreElement = document.getElementById('e-score');
+    const iScoreElement = document.getElementById('i-score');
+    const sScoreElement = document.getElementById('s-score');
+    const nScoreElement = document.getElementById('n-score');
+    const tScoreElement = document.getElementById('t-score');
+    const fScoreElement = document.getElementById('f-score');
+    const jScoreElement = document.getElementById('j-score');
+    const pScoreElement = document.getElementById('p-score');
+    const personalityDescElement = document.getElementById('personality-desc');
+    const careerRecommendationsElement = document.getElementById('career-recommendations');
+
+    // 测验状态
+    let currentQuestionIndex = 0;
+    let userAnswers = new Array(questions.length).fill(null); // 存储用户答案：0=A，1=B
+
+    // 事件监听器
+    startBtn.addEventListener('click', startQuiz);
+    prevBtn.addEventListener('click', goToPreviousQuestion);
+    nextBtn.addEventListener('click', goToNextQuestion);
+    submitBtn.addEventListener('click', submitQuiz);
+    restartBtn.addEventListener('click', restartQuiz);
+
+    // 开始测验
+    function startQuiz() {
+      startScreen.classList.add('hidden');
+      quizScreen.classList.remove('hidden');
+      currentQuestionIndex = 0;
+      userAnswers = new Array(questions.length).fill(null);
+      showQuestion(currentQuestionIndex);
+      updateProgress();
+    }
+
+    // 显示当前问题
+    function showQuestion(index) {
+      const question = questions[index];
+      questionElement.textContent = question.text;
+      currentQuestionElement.textContent = index + 1;
+      
+      // 清空选项
+      optionsElement.innerHTML = '';
+      
+      // 创建选项
+      question.options.forEach((option, optionIndex) => {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = `option-card ${
+          userAnswers[index] === optionIndex ? 'border-primary bg-primary/5' : 'border-slate-200'
+        }`;
+        
+        const radioBtn = document.createElement('input');
+        radioBtn.type = 'radio';
+        radioBtn.name = `question-${index}`;
+        radioBtn.id = `option-${index}-${optionIndex}`;
+        radioBtn.className = 'mr-3 h-4 w-4 text-primary focus:ring-primary';
+        radioBtn.checked = userAnswers[index] === optionIndex;
+        
+        const label = document.createElement('label');
+        label.htmlFor = `option-${index}-${optionIndex}`;
+        label.className = 'cursor-pointer';
+        label.textContent = option;
+        
+        optionDiv.appendChild(radioBtn);
+        optionDiv.appendChild(label);
+        
+        // 点击选项时选中
+        optionDiv.addEventListener('click', () => {
+          userAnswers[index] = optionIndex;
+          showQuestion(index); // 重新渲染以更新选中状态
+        });
+        
+        optionsElement.appendChild(optionDiv);
+      });
+      
+      // 更新导航按钮状态
+      prevBtn.classList.toggle('hidden', index === 0);
+      
+      if (index === questions.length - 1) {
+        nextBtn.classList.add('hidden');
+        submitBtn.classList.remove('hidden');
+      } else {
+        nextBtn.classList.remove('hidden');
+        submitBtn.classList.add('hidden');
+      }
+    }
+
+    // 前往上一题
+    function goToPreviousQuestion() {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        showQuestion(currentQuestionIndex);
+        updateProgress();
+        scrollToTop();
+      }
+    }
+
+    // 前往下一题
+    function goToNextQuestion() {
+      if (currentQuestionIndex < questions.length - 1) {
+        // 检查是否已回答当前问题
+        if (userAnswers[currentQuestionIndex] === null) {
+          alert('请选择一个答案后再继续');
+          return;
+        }
+        
+        currentQuestionIndex++;
+        showQuestion(currentQuestionIndex);
+        updateProgress();
+        scrollToTop();
+      }
+    }
+
+    // 更新进度
+    function updateProgress() {
+      const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+      progressBar.style.width = `${progress}%`;
+      progressText.textContent = `${Math.round(progress)}%`;
+    }
+
+    // 提交测验
+    function submitQuiz() {
+      // 检查是否已回答最后一个问题
+      if (userAnswers[currentQuestionIndex] === null) {
+        alert('请选择一个答案后再提交');
+        return;
+      }
+      
+      // 计算各维度得分
+      const scores = calculateScores();
+      
+      // 显示结果
+      showResults(scores);
+    }
+
+    // 计算各维度得分
+    function calculateScores() {
+      const scores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+      
+      // 遍历所有问题
+      questions.forEach((question, index) => {
+        const answer = userAnswers[index];
+        if (answer === null) return; // 未回答则跳过
+        
+        // 检查正向计分题
+        Object.keys(scoring.positive).forEach(dimension => {
+          if (scoring.positive[dimension].includes(question.id)) {
+            if (answer === 0) { // A选项
+              scores[dimension]++;
+            } else { // B选项
+              const oppositeDimension = getOppositeDimension(dimension);
+              scores[oppositeDimension]++;
+            }
+          }
+        });
+        
+        // 检查反向计分题
+        Object.keys(scoring.negative).forEach(dimension => {
+          if (scoring.negative[dimension].includes(question.id)) {
+            if (answer === 1) { // B选项
+              scores[dimension]++;
+            } else { // A选项
+              const oppositeDimension = getOppositeDimension(dimension);
+              scores[oppositeDimension]++;
+            }
+          }
+        });
+      });
+      
+      return scores;
+    }
+
+    // 获取对立维度
+    function getOppositeDimension(dimension) {
+      const opposites = {
+        'E': 'I',
+        'I': 'E',
+        'S': 'N',
+        'N': 'S',
+        'T': 'F',
+        'F': 'T',
+        'J': 'P',
+        'P': 'J'
+      };
+      return opposites[dimension];
+    }
+
+    // 确定MBTI类型
+    function determinePersonalityType(scores) {
+      const EorI = scores.E > scores.I ? 'E' : 'I';
+      const SorN = scores.S > scores.N ? 'S' : 'N';
+      const TorF = scores.T > scores.F ? 'T' : 'F';
+      const JorP = scores.J > scores.P ? 'J' : 'P';
+      
+      return EorI + SorN + TorF + JorP;
+    }
+
+    // 显示结果
+    function showResults(scores) {
+      quizScreen.classList.add('hidden');
+      resultsScreen.classList.remove('hidden');
+      
+      // 显示各维度得分
+      eScoreElement.textContent = scores.E;
+      iScoreElement.textContent = scores.I;
+      sScoreElement.textContent = scores.S;
+      nScoreElement.textContent = scores.N;
+      tScoreElement.textContent = scores.T;
+      fScoreElement.textContent = scores.F;
+      jScoreElement.textContent = scores.J;
+      pScoreElement.textContent = scores.P;
+      
+      // 确定MBTI类型
+      const mbtiType = determinePersonalityType(scores);
+      mbtiTypeElement.textContent = mbtiType;
+      
+      // 获取性格描述和职业推荐
+      const personality = personalityTypes[mbtiType] || {
+        name: "未知类型",
+        desc: "你的性格类型较为特殊，或处于维度的中间地带。建议进一步探索自我，或重复测试以确认结果。",
+        careers: ["多种职业都可能适合你，可尝试不同方向探索"]
+      };
+      
+      typeNameElement.textContent = personality.name;
+      personalityDescElement.textContent = personality.desc;
+      
+      // 显示职业推荐
+      careerRecommendationsElement.innerHTML = '';
+      personality.careers.forEach(career => {
+        const li = document.createElement('li');
+        li.textContent = career;
+        careerRecommendationsElement.appendChild(li);
+      });
+    }
+
+    // 重新开始测验
+    function restartQuiz() {
+      resultsScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+    }
+
+    // 滚动到顶部
+    function scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  </script>
+</body>
+</html>
