@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商技能自评系统</title>
+    <!-- 引入外部资源 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        dark: '#1F2937',
+                        light: '#F9FAFB'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            }
+            .progress-animation {
+                transition: width 1s ease-in-out;
+            }
+            .tab-active {
+                border-bottom: 3px solid theme('colors.primary');
+                color: theme('colors.primary');
+                font-weight: 600;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <!-- 顶部导航 -->
+    <header class="bg-primary text-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold">
+                <i class="fa fa-line-chart mr-2"></i>电商技能自评系统
+            </h1>
+            <div id="user-status" class="text-sm">
+                <i class="fa fa-user-circle"></i> <span>首次评估</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-6">
+        <!-- 评估说明 -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+            <h2 class="text-lg md:text-xl font-semibold mb-2 text-dark">评估说明</h2>
+            <p class="text-gray-600 mb-2">请对以下30项电商常用技能进行自评（1-5分），1分表示基础了解，5分表示熟练掌握。</p>
+            <p class="text-gray-600">每个设备只能提交一次评估，提交后可查看个人能力云图及与班级平均水平的对比。</p>
+        </div>
+        
+        <!-- 标签页导航 -->
+        <div class="flex border-b mb-6">
+            <div id="assessment-tab" class="tab-active px-4 py-2 cursor-pointer">技能评估</div>
+            <div id="result-tab" class="px-4 py-2 cursor-pointer text-gray-500">评估结果</div>
+        </div>
+        
+        <!-- 评估表单区域 -->
+        <div id="assessment-section">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <!-- 技能卡片将通过JS动态生成 -->
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button id="submit-assessment" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all" disabled>
+                    <i class="fa fa-paper-plane mr-2"></i>提交评估
+                </button>
+            </div>
+        </div>
+        
+        <!-- 结果展示区域 -->
+        <div id="result-section" class="hidden">
+            <div class="bg-white bg-white-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4 text-dark">个人能力云图 vs 班级平均水平</h2>
+                <div class="h-[500px]">
+                    <canvas id="skills-radar-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-dark">班级技能掌握情况排行</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="py-3 px-4 text-left">排名</th>
+                                <th class="py-3 px-4 text-left">技能</th>
+                                <th class="py-3 px-4 text-left">班级平均分</th>
+                                <th class="py-3 px-4 text-left">你的得分</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ranking-table-body">
+                            <!-- 排名数据将通过JS动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white mt-10 py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p>电商技能自评系统 &copy; 2023</p>
+        </div>
+    </footer>
+
+    <!-- 提交成功弹窗 -->
+    <div id="success-modal" class="fixed inset-0 bg-black/50 flex items items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full w-full mx-4 text-center">
+            <div class="text-5xl text-green-500 mb-4">
+                <i class="fa fa-check-circle"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2">评估提交成功！</h3>
+            <p class="text-gray-600 mb-4">你的技能评估已提交，现在可以查看评估结果和班级对比。</p>
+            <button id="view-results" class="bg-primary hover:bg-primary/90 text-white font-bold py-2 px-6 rounded-full">
+                查看结果
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 30项电商通用能力及对应的图标和分类
+        const skills = [
+            { name: "Excel", icon: "fa-table", color: "bg-green-500", category: "工具" },
+            { name: "Premiere", icon: "fa-film", color: "bg-purple-500", category: "工具" },
+            { name: "Python基础", icon: "fa-code", color: "bg-blue-500", category: "编程" },
+            { name: "谈判", icon: "fa-handshake-o", color: "bg-yellow-500", category: "软技能" },
+            { name: "写文案", icon: "fa-pencil", color: "bg-red-500", category: "内容" },
+            { name: "数据分析", icon: "fa-bar-chart", color: "bg-teal-500", category: "分析" },
+            { name: "Photoshop", icon: "fa-picture-o", color: "bg-pink-500", category: "工具" },
+            { name: "PPT制作", icon: "fa-file-powerpoint-o", color: "bg-orange-500", category: "工具" },
+            { name: "市场调研", icon: "fa-search", color: "bg-indigo-500", category: "分析" },
+            { name: "SEO优化", icon: "fa-search-plus", color: "bg-cyan-500", category: "运营" },
+            { name: "视频剪辑", icon: "fa-video-camera", color: "bg-red-600", category: "内容" },
+            { name: "公众号运营", icon: "fa-wechat", color: "bg-green-600", category: "运营" },
+            { name: "直播技巧", icon: "fa-microphone", color: "bg-purple-600", category: "运营" },
+            { name: "用户研究", icon: "fa-users", color: "bg-blue-600", category: "分析" },
+            { name: "竞品分析", icon: "fa-eye", color: "bg-yellow-600", category: "分析" },
+            { name: "UI设计", icon: "fa-desktop", color: "bg-gray-500", category: "设计" },
+            { name: "SQL", icon: "fa-database", color: "bg-amber-500", category: "编程" },
+            { name: "短视频策划", icon: "fa-lightbulb-o", color: "bg-lime-500", category: "内容" },
+            { name: "电商运营", icon: "fa-shopping-cart", color: "bg-pink-600", category: "运营" },
+            { name: "社群运营", icon: "fa-comments", color: "bg-teal-600", category: "运营" },
+            { name: "供应链管理", icon: "fa-truck", color: "bg-slate-500", category: "管理" },
+            { name: "跨境电商", icon: "fa-globe", color: "bg-fuchsia-500", category: "运营" },
+            { name: "内容创作", icon: "fa-paint-brush", color: "bg-rose-500", category: "内容" },
+            { name: "活动策划", icon: "fa-calendar-check-o", color: "bg-emerald-500", category: "运营" },
+            { name: "品牌推广", icon: "fa-bullhorn", color: "bg-violet-500", category: "营销" },
+            { name: "客户关系", icon: "fa-heart", color: "bg-rose-600", category: "软技能" },
+            { name: "产品经理", icon: "fa-cubes", color: "bg-cyan-600", category: "管理" },
+            { name: "数据可视化", icon: "fa-line-chart", color: "bg-blue-700", category: "分析" },
+            { name: "新媒体营销", icon: "fa-share-alt", color: "bg-purple-700", category: "营销" },
+            { name: "转化率优化", icon: "fa-rocket", color: "bg-red-700", category: "运营" }
+        ];
+
+        // 全局变量
+        let userScores = {}; // 用户评分数据
+        let classAverage = {}; // 班级平均分
+        let hasSubmitted = false; // 用户是否已提交
+        let deviceId = localStorage.getItem('ecommerceSkillDeviceId'); // 设备唯一标识
+        let Assessment; // LeanCloud Assessment类
+        let radarChart = null; // 雷达图实例
+        let subscription; // 实时订阅对象
+
+        // 初始化设备ID（确保每个设备唯一）
+        if (!deviceId) {
+            // 生成一个相对唯一的设备ID
+            deviceId = 'device_' + Math.random().toString(36).substr(2, 10) + 
+                      '_' + new Date().getTime().toString().substr(-6);
+            localStorage.setItem('ecommerceSkillDeviceId', deviceId);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化评分数据
+            skills.forEach(skill => {
+                userScores[skill.name] = 0;
+            });
+            
+            // 生成技能评估卡片
+            generateAssessmentCards();
+            
+            // 初始化LeanCloud
+            initLeanCloud();
+            
+            // 绑定标签页切换事件
+            document.getElementById('assessment-tab').addEventListener('click', () => {
+                showAssessmentSection();
+            });
+            document.getElementById('result-tab').addEventListener('click', () => {
+                if (hasSubmitted) {
+                    showResultSection();
+                } else {
+                    alert('请先完成并提交技能评估');
+                }
+            });
+            
+            // 绑定其他事件
+            document.getElementById('submit-assessment').addEventListener('click', submitAssessment);
+            document.getElementById('view-results').addEventListener('click', () => {
+                document.getElementById('success-modal').classList.add('hidden');
+                showResultSection();
+            });
+        });
+
+        // 生成技能评估卡片
+        function generateAssessmentCards() {
+            const container = document.querySelector('#assessment-section .grid');
+            container.innerHTML = ''; // 清空容器
+            
+            // 创建每张评估卡片
+            skills.forEach(skill => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow-md p-4 card-hover';
+                card.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center mr-3 ${skill.color} text-white flex-shrink-0">
+                            <i class="fa ${skill.icon}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-medium text-gray-800">${skill.name}</h3>
+                                <span class="text-sm font-semibold text-gray-500 score-display">0分</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mb-2">${skill.category}</div>
+                            <div class="flex justify-between">
+                                ${[1, 2, 3, 4, 5].map(score => `
+                                    <button class="score-btn w-8 h-8 rounded-full border flex items-center justify-center 
+                                                  hover:bg-primary hover:text-white hover:border-primary transition-colors"
+                                            data-skill="${skill.name}" 
+                                            data-score="${score}">
+                                        ${score}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            // 绑定评分按钮事件
+            document.querySelectorAll('.score-btn').forEach(btn => {
+                btn.addEventListener('click', handleScoreSelection);
+            });
+        }
+
+        // 处理评分选择
+        function handleScoreSelection(e) {
+            if (hasSubmitted) return;
+            
+            const skill = e.target.dataset.skill;
+            const score = parseInt(e.target.dataset.score);
+            
+            // 更新用户评分数据
+            userScores[skill] = score;
+            
+            // 更新UI
+            const card = e.target.closest('.card-hover');
+            const scoreBtns = card.querySelectorAll('.score-btn');
+            const scoreDisplay = card.querySelector('.score-display');
+            
+            // 更新按钮状态
+            scoreBtns.forEach(btn => {
+                const btnScore = parseInt(btn.dataset.score);
+                if (btnScore <= score) {
+                    btn.classList.add('bg-primary', 'text-white', 'border-primary');
+                    btn.classList.remove('hover:bg-primary', 'hover:text-white', 'hover:border-primary');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white', 'border-primary');
+                    btn.classList.add('hover:bg-primary', 'hover:text-white', 'hover:border-primary');
+                }
+            });
+            
+            // 更新分数显示
+            scoreDisplay.textContent = `${score}分`;
+            
+            // 检查是否所有技能都已评分
+            checkAllScoresComplete();
+        }
+
+        // 检查是否所有技能都已评分
+        function checkAllScoresComplete() {
+            let allComplete = true;
+            
+            for (const skill in userScores) {
+                if (userScores[skill] === 0) {
+                    allComplete = false;
+                    break;
+                }
+            }
+            
+            // 更新提交按钮状态
+            document.getElementById('submit-assessment').disabled = !allComplete;
+        }
+
+        // 初始化LeanCloud
+        function initLeanCloud() {
+            try {
+                AV.init({
+                    appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
+                    appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
+                    serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com"
+                });
+                
+                // 创建Assessment类
+                Assessment = AV.Object.extend('Assessment');
+                
+                // 检查设备是否已提交评估
+                checkIfSubmitted();
+                
+                // 加载班级平均数据并监听更新
+                loadAndWatchClassAverage();
+                
+            } catch (error) {
+                console.error('LeanCloud初始化失败:', error);
+                alert('数据服务初始化失败，部分功能可能无法使用');
+            }
+        }
+
+        // 检查设备是否已提交评估
+        function checkIfSubmitted() {
+            if (!Assessment) return;
+            
+            const query = new AV.Query(Assessment);
+            query.equalTo('deviceId', deviceId);
+            query.find().then(results => {
+                if (results.length > 0) {
+                    // 设备已提交过评估
+                    hasSubmitted = true;
+                    document.getElementById('user-status').innerHTML = 
+                        '<i class="fa fa-user-circle"></i> <span>已完成评估</span>';
+                    
+                    // 禁用评估表单
+                    disableAssessmentForm();
+                    
+                    // 加载用户之前的评分
+                    const userAssessment = results[0];
+                    const scores = userAssessment.get('scores') || {};
+                    
+                    // 更新用户评分数据
+                    for (const skill in scores) {
+                        if (userScores.hasOwnProperty(skill)) {
+                            userScores[skill] = scores[skill];
+                        }
+                    }
+                    
+                    // 更新UI显示用户之前的评分
+                    updateAssessmentUIScores();
+                    
+                    // 自动切换到结果页
+                    setTimeout(showResultSection, 1000);
+                }
+            }).catch(error => {
+                console.error('检查提交状态失败:', error);
+            });
+        }
+
+        // 禁用评估表单
+        function disableAssessmentForm() {
+            document.querySelectorAll('.score-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-primary', 'hover:text-white', 'hover:border-primary');
+            });
+            document.getElementById('submit-assessment').disabled = true;
+        }
+
+        // 更新评估UI显示用户评分
+        function updateAssessmentUIScores() {
+            for (const skill in userScores) {
+                const score = userScores[skill];
+                if (score > 0) {
+                    const scoreBtns = document.querySelectorAll(`.score-btn[data-skill="${skill}"]`);
+                    const scoreDisplay = document.querySelector(`.card-hover:has(.score-btn[data-skill="${skill}"]) .score-display`);
+                    
+                    if (scoreBtns.length && scoreDisplay) {
+                        // 更新按钮状态
+                        scoreBtns.forEach(btn => {
+                            const btnScore = parseInt(btn.dataset.score);
+                            if (btnScore <= score) {
+                                btn.classList.add('bg-primary', 'text-white', 'border-primary');
+                            } else {
+                                btn.classList.remove('bg-primary', 'text-white', 'border-primary');
+                            }
+                        });
+                        
+                        // 更新分数显示
+                        scoreDisplay.textContent = `${score}分`;
+                    }
+                }
+            }
+        }
+
+        // 提交评估
+        function submitAssessment() {
+            if (!Assessment || hasSubmitted) return;
+            
+            // 显示提交中状态
+            const submitBtn = document.getElementById('submit-assessment');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>提交中...';
+            
+            // 创建评估对象
+            const assessment = new Assessment();
+            assessment.set('deviceId', deviceId);
+            assessment.set('scores', userScores);
+            assessment.set('submitTime', new Date());
+            
+            // 保存到云端
+            assessment.save().then(() => {
+                hasSubmitted = true;
+                document.getElementById('user-status').innerHTML = 
+                    '<i class="fa fa-user-circle"></i> <span>已完成评估</span>';
+                
+                // 禁用评估表单
+                disableAssessmentForm();
+                
+                // 显示成功弹窗
+                document.getElementById('success-modal').classList.remove('hidden');
+                
+            }).catch(error => {
+                console.error('提交评估失败:', error);
+                alert('提交失败，请重试');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa fa-paper-plane mr-2"></i>提交评估';
+            });
+        }
+
+        // 加载并监听班级平均数据
+        function loadAndWatchClassAverage() {
+            if (!Assessment) return;
+            
+            const query = new AV.Query(Assessment);
+            
+            try {
+                // 先取消可能存在的旧订阅
+                if (subscription) {
+                    subscription.unsubscribe();
+                }
+                
+                // 实时监听数据变化
+                subscription = query.subscribe();
+                
+                // 初始加载数据
+                calculateClassAverage();
+                
+                // 数据更新时重新计算平均值
+                subscription.on('create', () => {
+                    console.log('检测到新的评估提交，更新班级平均值');
+                    calculateClassAverage();
+                });
+                subscription.on('update', () => {
+                    console.log('检测到评估更新，更新班级平均值');
+                    calculateClassAverage();
+                });
+                subscription.on('error', (error) => {
+                    console.error('实时订阅错误:', error);
+                    // 错误后尝试重新订阅
+                    setTimeout(loadAndWatchClassAverage, 5000);
+                });
+                
+            } catch (error) {
+                console.error('设置数据监听失败:', error);
+                // 失败后仍尝试加载一次数据
+                calculateClassAverage();
+            }
+        }
+
+        // 计算班级平均值
+        function calculateClassAverage() {
+            if (!Assessment) return;
+            
+            const query = new AV.Query(Assessment);
+            query.find().then(results => {
+                console.log('共加载到', results.length, '份评估数据');
+                
+                // 初始化平均值计算
+                const skillScores = {};
+                const skillCount = {};
+                
+                skills.forEach(skill => {
+                    skillScores[skill.name] = 0;
+                    skillCount[skill.name] = 0;
+                });
+                
+                // 累加所有评分
+                results.forEach(assessment => {
+                    const scores = assessment.get('scores') || {};
+                    
+                    for (const skill in scores) {
+                        if (skillScores.hasOwnProperty(skill) && scores[skill] > 0) {
+                            skillScores[skill] += scores[skill];
+                            skillCount[skill]++;
+                        }
+                    }
+                });
+                
+                // 计算平均值
+                for (const skill in skillScores) {
+                    if (skillCount[skill] > 0) {
+                        classAverage[skill] = parseFloat((skillScores[skill] / skillCount[skill]).toFixed(1));
+                    } else {
+                        classAverage[skill] = 0;
+                    }
+                }
+                
+                // 如果用户已提交评估，更新结果展示
+                if (hasSubmitted) {
+                    updateResultDisplay();
+                }
+                
+            }).catch(error => {
+                console.error('计算班级平均值失败:', error);
+            });
+        }
+
+        // 更新结果展示
+        function updateResultDisplay() {
+            // 更新雷达图
+            updateRadarChart();
+            
+            // 更新排名表格
+            updateRankingTable();
+        }
+
+        // 更新雷达图
+        function updateRadarChart() {
+            const ctx = document.getElementById('skills-radar-chart').getContext('2d');
+            
+            // 准备图表数据
+            const labels = skills.map(skill => skill.name);
+            const userData = skills.map(skill => userScores[skill.name]);
+            const classData = skills.map(skill => classAverage[skill.name] || 0);
+            
+            // 如果图表已存在，销毁它
+            if (radarChart) {
+                radarChart.destroy();
+            }
+            
+            // 创建新图表
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '你的技能水平',
+                            data: userData,
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(59, 130, 246, 1)'
+                        },
+                        {
+                            label: '班级平均水平',
+                            data: classData,
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            borderColor: 'rgba(245, 158, 11, 1)',
+                            pointBackgroundColor: 'rgba(245, 158, 11, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(245, 158, 11, 1)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 5,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw + '分';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新排名表格
+        function updateRankingTable() {
+            const tableBody = document.getElementById('ranking-table-body');
+            tableBody.innerHTML = '';
+            
+            // 按班级平均分排序
+            const sortedSkills = [...skills].sort((a, b) => {
+                return (classAverage[b.name] || 0) - (classAverage[a.name] || 0);
+            });
+            
+            // 生成表格行
+            sortedSkills.forEach((skill, index) => {
+                const avgScore = classAverage[skill.name] || 0;
+                const userScore = userScores[skill.name] || 0;
+                
+                // 比较用户得分与班级平均分
+                let comparisonClass = '';
+                if (userScore > avgScore) {
+                    comparisonClass = 'text-green-600';
+                } else if (userScore < avgScore) {
+                    comparisonClass = 'text-red-600';
+                }
+                
+                const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                row.innerHTML = `
+                    <td class="py-3 px-4">${index + 1}</td>
+                    <td class="py-3 px-4">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center mr-2 ${skill.color} text-white text-xs">
+                                <i class="fa ${skill.icon}"></i>
+                            </div>
+                            ${skill.name}
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">${avgScore.toFixed(1)}</td>
+                    <td class="py-3 px-4 font-medium ${comparisonClass}">${userScore}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // 显示评估区域
+        function showAssessmentSection() {
+            document.getElementById('assessment-section').classList.remove('hidden');
+            document.getElementById('result-section').classList.add('hidden');
+            
+            document.getElementById('assessment-tab').classList.add('tab-active');
+            document.getElementById('result-tab').classList.remove('tab-active');
+            document.getElementById('result-tab').classList.add('text-gray-500');
+        }
+
+        // 显示结果区域
+        function showResultSection() {
+            document.getElementById('assessment-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+            
+            document.getElementById('result-tab').classList.add('tab-active');
+            document.getElementById('result-tab').classList.remove('text-gray-500');
+            document.getElementById('assessment-tab').classList.remove('tab-active');
+            
+            // 确保结果数据已加载
+            updateResultDisplay();
+        }
+    </script>
+</body>
+</html>
