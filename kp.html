@@ -7,10 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-    <!-- 引入LeanCloud SDK用于数据存储和实时更新 -->
+    <!-- 引入LeanCloud SDK -->
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-min.js"></script>
     
-    <!-- 配置Tailwind自定义颜色和字体 -->
     <script>
         tailwind.config = {
             theme: {
@@ -18,8 +17,6 @@
                     colors: {
                         primary: '#FF7A00',
                         secondary: '#165DFF',
-                        dark: '#1D2939',
-                        light: '#F9FAFB',
                         star: '#FFD700'
                     },
                     fontFamily: {
@@ -56,7 +53,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen font-sans text-dark">
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
     <!-- 顶部导航栏 -->
     <header class="bg-white shadow-md sticky top-0 z-50 transition-all duration-300">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -109,13 +106,16 @@
             </h2>
             <div id="cardsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 <!-- 卡牌将通过JavaScript动态生成 -->
+                <div class="col-span-full flex justify-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                </div>
             </div>
         </section>
 
         <!-- 排行榜区域 -->
         <section id="rankingSection" class="bg-white rounded-xl shadow-sm p-6 mb-8 hidden">
             <h2 class="text-xl font-bold mb-6 text-secondary flex items-center">
-                <i class="fa fa-trophy mr-2"></i>实时排行榜
+                <i class="fa fa-trophy mr-2"></i>班级实时排行榜
             </h2>
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -123,6 +123,9 @@
                 <div class="lg:col-span-2">
                     <div id="rankingList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                         <!-- 排行榜将通过JavaScript动态生成 -->
+                        <div class="flex justify-center py-8">
+                            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-secondary"></div>
+                        </div>
                     </div>
                 </div>
                 
@@ -142,7 +145,7 @@
                 <h2 class="text-2xl font-bold mb-2">投票成功！</h2>
                 <p class="mb-6 text-gray-600">感谢你的参与，你的星星已成功分配。</p>
                 <button id="viewResults" class="bg-secondary hover:bg-secondary/90 text-white py-2 px-6 rounded-lg transition-colors">
-                    查看实时排行榜
+                    查看班级排行榜
                 </button>
             </div>
         </section>
@@ -154,7 +157,7 @@
                     <i class="fa fa-bar-chart"></i>
                 </div>
                 <h2 class="text-xl font-bold mb-2">你已完成投票</h2>
-                <p class="mb-4 text-gray-600">查看当前的实时排行榜结果</p>
+                <p class="mb-4 text-gray-600">查看当前的班级排行榜结果</p>
                 <button id="showRankBtn" class="bg-secondary hover:bg-secondary/90 text-white py-2 px-6 rounded-lg transition-colors">
                     查看排行榜
                 </button>
@@ -163,7 +166,7 @@
     </main>
 
     <!-- 页脚 -->
-    <footer class="bg-dark text-white py-6">
+    <footer class="bg-gray-800 text-white py-6">
         <div class="container mx-auto px-4 text-center">
             <p>能力卡牌大作战 &copy; 2023</p>
             <p class="text-sm text-gray-400 mt-2">用星星为你最想拥有的电商能力投票吧！</p>
@@ -171,17 +174,17 @@
     </footer>
 
     <script>
-        // 初始化LeanCloud - 请替换为你自己的App ID和App Key
+        // LeanCloud配置（使用你提供的App ID和App Key）
         const APP_ID = 'uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz';
         const APP_KEY = 'JEsdiH1q5v1NzqyLCLqJVWvt';
         
-        // 添加错误处理的初始化
+        // 初始化LeanCloud并添加错误处理
         try {
-            AV.init({ appId: APP_ID, appKey: APP_KEY });
+            AV.init({ appId: APP_ID, appKey: APP_KEY, serverURLs: 'https://uj3ksasv.lc-cn-n1-shared.com' });
             console.log('LeanCloud初始化成功');
         } catch (error) {
             console.error('LeanCloud初始化失败:', error);
-            showError('服务器连接失败，请检查LeanCloud配置');
+            showError('服务器连接失败，请检查网络或稍后重试');
         }
 
         // 30种电商通用能力卡牌数据
@@ -245,19 +248,23 @@
         function showError(message) {
             errorText.textContent = message;
             errorMessage.classList.remove('hidden');
-            // 即使有错误，也允许用户使用界面（但可能无法保存）
+            // 即使有错误，也允许用户操作（降级体验）
             submitVotesBtn.disabled = false;
         }
 
         // 初始化页面
         function init() {
-            // 检查用户是否已投票
-            checkUserVoteStatus();
+            // 生成用户唯一标识
+            userId = localStorage.getItem('abilityCardUserId') || ('user_' + Math.random().toString(36).substr(2, 9));
+            localStorage.setItem('abilityCardUserId', userId);
             
             // 初始化投票对象
             abilities.forEach(ability => {
                 votes[ability.id] = 0;
             });
+            
+            // 检查用户是否已投票
+            checkUserVoteStatus();
             
             // 渲染卡牌
             renderCards();
@@ -265,7 +272,7 @@
             // 获取并监听投票数据
             fetchAndListenToVotes();
             
-            // 添加事件监听器
+            // 事件监听器
             submitVotesBtn.addEventListener('click', submitVotes);
             viewResultsBtn.addEventListener('click', () => {
                 successMessage.classList.add('hidden');
@@ -276,22 +283,8 @@
             toggleViewBtn.addEventListener('click', toggleView);
         }
 
-        // 生成用户唯一标识
-        function generateUserId() {
-            return 'user_' + Math.random().toString(36).substr(2, 9);
-        }
-
         // 检查用户是否已投票
         function checkUserVoteStatus() {
-            // 从localStorage获取用户ID
-            userId = localStorage.getItem('abilityCardUserId');
-            
-            if (!userId) {
-                userId = generateUserId();
-                localStorage.setItem('abilityCardUserId', userId);
-            }
-            
-            // 检查该用户是否已投票
             try {
                 const UserVote = AV.Object.extend('UserVote');
                 const query = new AV.Query(UserVote);
@@ -302,17 +295,16 @@
                         showVotedView();
                     } else {
                         hasVoted = false;
-                        submitVotesBtn.disabled = false;
+                        submitVotesBtn.disabled = false; // 未投票时启用提交按钮
                     }
                 }).catch(error => {
-                    console.error('查询用户投票状态失败:', error);
-                    showError('无法验证投票状态，请稍后重试');
-                    // 失败时仍然允许用户尝试投票
-                    submitVotesBtn.disabled = false;
+                    console.error('查询投票状态失败:', error);
+                    showError('验证投票状态失败，可尝试投票');
+                    submitVotesBtn.disabled = false; // 允许尝试投票
                 });
             } catch (error) {
-                console.error('检查用户投票状态时出错:', error);
-                showError('系统错误，请刷新页面重试');
+                console.error('检查投票状态异常:', error);
+                showError('系统异常，可尝试投票');
                 submitVotesBtn.disabled = false;
             }
         }
@@ -326,7 +318,7 @@
 
         // 渲染卡牌
         function renderCards() {
-            cardsContainer.innerHTML = '';
+            cardsContainer.innerHTML = ''; // 清空加载动画
             
             abilities.forEach(ability => {
                 const card = document.createElement('div');
@@ -351,7 +343,7 @@
                 cardsContainer.appendChild(card);
             });
             
-            // 为投票按钮添加事件监听器
+            // 绑定投票按钮事件
             document.querySelectorAll('.plus-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     if (starsRemaining > 0 && !hasVoted) {
@@ -391,10 +383,10 @@
 
         // 更新投票UI
         function updateVoteUI(abilityId) {
-            // 更新星星数量显示
+            // 更新星星数量
             starsRemainingEl.textContent = starsRemaining;
             
-            // 更新卡牌上的投票数
+            // 更新卡牌投票数
             const voteCountEl = document.querySelector(`.vote-count[data-id="${abilityId}"]`);
             voteCountEl.textContent = votes[abilityId];
             voteCountEl.classList.toggle('text-primary', votes[abilityId] > 0);
@@ -410,7 +402,7 @@
                 btn.classList.toggle('cursor-not-allowed', starsRemaining === 0);
             });
             
-            // 当星星分配完毕，确保提交按钮可用
+            // 星星分配完毕时启用提交按钮
             if (starsRemaining === 0) {
                 submitVotesBtn.disabled = false;
             }
@@ -420,7 +412,6 @@
         function submitVotes() {
             if (starsRemaining === 0) {
                 try {
-                    // 创建投票记录
                     const UserVote = AV.Object.extend('UserVote');
                     const userVote = new UserVote();
                     
@@ -430,19 +421,17 @@
                     userVote.save().then(() => {
                         hasVoted = true;
                         successMessage.classList.remove('hidden');
-                        
-                        // 记录已投票，避免重复投票
-                        localStorage.setItem('hasVoted', 'true');
+                        localStorage.setItem('abilityCardHasVoted', 'true');
                     }).catch(error => {
                         console.error('提交投票失败:', error);
-                        alert('提交投票失败: ' + (error.message || '请稍后再试'));
+                        alert('提交失败：' + (error.message || '请稍后重试'));
                     });
                 } catch (error) {
-                    console.error('提交投票时出错:', error);
-                    alert('系统错误，无法提交投票，请稍后重试');
+                    console.error('提交投票异常:', error);
+                    alert('系统异常，提交失败');
                 }
             } else {
-                alert('请分配完所有10颗星星再提交');
+                alert('请分配完10颗星星再提交～');
             }
         }
 
@@ -452,40 +441,28 @@
                 const UserVote = AV.Object.extend('UserVote');
                 const query = new AV.Query(UserVote);
                 
-                // 初始获取所有投票数据
+                // 初始获取数据
                 query.find().then(results => {
                     processVotesData(results);
                 }).catch(error => {
                     console.error('获取投票数据失败:', error);
-                    showError('无法加载排行榜数据');
+                    showError('加载排行榜失败，可尝试查看');
                 });
                 
-                // 监听数据变化，实现实时更新
+                // 实时监听数据变化
                 const liveQuery = query.subscribe();
-                liveQuery.on('update', (object) => {
-                    query.find().then(results => {
-                        processVotesData(results);
-                    });
-                });
-                
-                liveQuery.on('create', (object) => {
-                    query.find().then(results => {
-                        processVotesData(results);
-                    });
-                });
-                
-                liveQuery.on('error', (error) => {
-                    console.error('实时更新出错:', error);
-                });
+                liveQuery.on('update', () => query.find().then(processVotesData));
+                liveQuery.on('create', () => query.find().then(processVotesData));
+                liveQuery.on('delete', () => query.find().then(processVotesData));
+                liveQuery.on('error', (err) => console.error('实时监听错误:', err));
             } catch (error) {
-                console.error('获取投票数据时出错:', error);
-                showError('无法连接到服务器获取排行榜');
+                console.error('数据监听异常:', error);
+                showError('实时更新功能异常');
             }
         }
 
         // 处理投票数据
         function processVotesData(results) {
-            // 计算每个能力的总得票数
             const abilityTotals = {};
             abilities.forEach(ability => {
                 abilityTotals[ability.id] = 0;
@@ -494,19 +471,16 @@
             results.forEach(result => {
                 const votes = result.get('votes');
                 for (const [id, count] of Object.entries(votes)) {
-                    abilityTotals[id] += count;
+                    abilityTotals[id] = (abilityTotals[id] || 0) + count;
                 }
             });
             
-            // 转换为排序后的数组
-            allVotesData = abilities.map(ability => {
-                return {
-                    ...ability,
-                    total: abilityTotals[ability.id] || 0
-                };
-            }).sort((a, b) => b.total - a.total);
+            // 排序并生成排行榜数据
+            allVotesData = abilities.map(ability => ({
+                ...ability,
+                total: abilityTotals[ability.id] || 0
+            })).sort((a, b) => b.total - a.total);
             
-            // 更新排行榜
             updateRanking();
         }
 
@@ -515,21 +489,16 @@
             rankingList.innerHTML = '';
             
             allVotesData.forEach((ability, index) => {
-                if (ability.total > 0 || index < 10) { // 显示所有有投票的能力，至少显示前10名
+                if (ability.total > 0 || index < 10) {
                     const rankItem = document.createElement('div');
                     rankItem.className = `flex items-center p-3 rounded-lg ${index < 3 ? 'bg-gray-50' : 'hover:bg-gray-50'} transition-colors`;
                     
-                    // 前三名显示奖牌
+                    // 前三名奖牌
                     let rankIcon = '';
-                    if (index === 0) {
-                        rankIcon = '<i class="fa fa-trophy text-yellow-500 mr-2"></i>';
-                    } else if (index === 1) {
-                        rankIcon = '<i class="fa fa-trophy text-gray-400 mr-2"></i>';
-                    } else if (index === 2) {
-                        rankIcon = '<i class="fa fa-trophy text-amber-700 mr-2"></i>';
-                    } else {
-                        rankIcon = `<span class="w-6 text-center mr-2 text-gray-500">${index + 1}</span>`;
-                    }
+                    if (index === 0) rankIcon = '<i class="fa fa-trophy text-yellow-500 mr-2"></i>';
+                    else if (index === 1) rankIcon = '<i class="fa fa-trophy text-gray-400 mr-2"></i>';
+                    else if (index === 2) rankIcon = '<i class="fa fa-trophy text-amber-700 mr-2"></i>';
+                    else rankIcon = `<span class="w-6 text-center mr-2 text-gray-500">${index + 1}</span>`;
                     
                     rankItem.innerHTML = `
                         <div class="mr-3">${rankIcon}</div>
@@ -548,11 +517,10 @@
                 }
             });
             
-            // 更新图表
             updateChart();
         }
 
-        // 计算百分比（用于进度条）
+        // 计算百分比
         function calculatePercentage(value) {
             if (allVotesData.length === 0) return 0;
             const max = allVotesData[0].total;
@@ -561,18 +529,12 @@
 
         // 更新图表
         function updateChart() {
-            // 只显示前5名的数据
             const topAbilities = allVotesData.slice(0, 5);
-            
             const ctx = document.getElementById('rankingChart').getContext('2d');
             
-            // 销毁已存在的图表
-            if (window.rankingChartInstance) {
-                window.rankingChartInstance.destroy();
-            }
+            if (window.rankingChart) window.rankingChart.destroy();
             
-            // 创建新图表
-            window.rankingChartInstance = new Chart(ctx, {
+            window.rankingChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: topAbilities.map(a => a.name),
@@ -580,7 +542,6 @@
                         label: '星星数量',
                         data: topAbilities.map(a => a.total),
                         backgroundColor: topAbilities.map(a => {
-                            // 从颜色类中提取实际颜色值
                             const colorMap = {
                                 'bg-green-100': 'rgba(110, 231, 183, 0.7)',
                                 'bg-purple-100': 'rgba(216, 180, 254, 0.7)',
@@ -608,24 +569,10 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                display: true,
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
+                        y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
@@ -646,14 +593,11 @@
         // 切换视图（卡片/列表）
         function toggleView() {
             const isGrid = cardsContainer.classList.contains('grid-cols-2');
-            
             if (isGrid) {
-                // 切换到列表视图
                 cardsContainer.classList.remove('grid-cols-2', 'sm:grid-cols-3', 'md:grid-cols-4', 'lg:grid-cols-5', 'xl:grid-cols-6');
                 cardsContainer.classList.add('grid-cols-1');
                 toggleViewBtn.innerHTML = '<i class="fa fa-list text-secondary"></i>';
             } else {
-                // 切换到网格视图
                 cardsContainer.classList.add('grid-cols-2', 'sm:grid-cols-3', 'md:grid-cols-4', 'lg:grid-cols-5', 'xl:grid-cols-6');
                 cardsContainer.classList.remove('grid-cols-1');
                 toggleViewBtn.innerHTML = '<i class="fa fa-th-large text-secondary"></i>';
