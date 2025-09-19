@@ -4,14 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>能力卡牌大作战</title>
-    <!-- 引入Tailwind CSS -->
+    <!-- 引入外部资源 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <!-- 引入LeanCloud SDK -->
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-min.js"></script>
     
-    <!-- Tailwind配置 -->
+    <!-- Tailwind 配置 -->
     <script>
         tailwind.config = {
             theme: {
@@ -31,6 +29,7 @@
         }
     </script>
     
+    <!-- 自定义工具类 -->
     <style type="text/tailwindcss">
         @layer utilities {
             .content-auto {
@@ -91,7 +90,7 @@
                     <!-- 卡牌将通过JS动态生成 -->
                     <div class="col-span-full text-center py-12 text-gray-500">
                         <i class="fa fa-circle-o-notch fa-spin text-3xl mb-3"></i>
-                        <p>正在加载能力卡牌...</p>
+                        <p>正在初始化系统...</p>
                     </div>
                 </div>
                 
@@ -141,14 +140,17 @@
     </div>
 
     <script>
-        // 初始化LeanCloud
-        AV.init({
-            appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
-            appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
-            serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com"
-        });
+        // 全局变量
+        let voteData = {}; // 存储用户的投票数据
+        let remainingStars = 10; // 剩余星星数量
+        let hasVoted = false; // 用户是否已投票
+        let userId = localStorage.getItem('skillCardUserId'); // 用户ID
+        const cardsContainer = document.getElementById('cards-container');
+        const cardCountElement = document.getElementById('card-count');
+        const remainingStarsElement = document.getElementById('remaining-stars');
+        const submitButton = document.getElementById('submit-vote');
 
-        // 30个电商通用能力
+        // 30个电商通用能力卡牌
         const skills = [
             "Excel", "Premiere", "Python基础", "谈判", "写文案",
             "数据分析", "Photoshop", "PPT制作", "市场调研", "SEO优化",
@@ -158,47 +160,55 @@
             "客户关系", "产品经理", "数据可视化", "新媒体营销", "转化率优化"
         ];
 
-        // 全局变量
-        let voteData = {}; // 存储用户的投票数据
-        let remainingStars = 10; // 剩余星星数量
-        let hasVoted = false; // 用户是否已投票
-        let userId = localStorage.getItem('skillCardUserId'); // 用户ID
-        const cardsContainer = document.getElementById('cards-container');
-        const cardCountElement = document.getElementById('card-count');
-
-        // 初始化用户ID
+        // 初始化用户ID（确保每个用户唯一）
         if (!userId) {
             userId = AV.Object._createObjectId();
             localStorage.setItem('skillCardUserId', userId);
         }
 
-        // 获取Vote类
-        const Vote = AV.Object.extend('Vote');
-        
-        // 初始化页面
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('页面加载完成，开始初始化...');
-            // 生成卡牌
-            generateCards();
-            
-            // 检查用户是否已投票
-            checkIfVoted();
-            
-            // 加载并监听投票数据
-            loadAndWatchVotes();
-            
-            // 绑定事件
-            document.getElementById('submit-vote').addEventListener('click', submitVote);
-            document.getElementById('close-modal').addEventListener('click', () => {
-                document.getElementById('success-modal').classList.add('hidden');
-            });
-        });
+        // 初始化应用
+        async function initApp() {
+            try {
+                // 初始化LeanCloud
+                await new Promise((resolve) => {
+                    AV.init({
+                        appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
+                        appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
+                        serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com"
+                    });
+                    resolve();
+                });
+
+                // 获取Vote数据模型
+                const Vote = AV.Object.extend('Vote');
+                
+                // 生成能力卡牌
+                generateCards();
+                
+                // 检查用户是否已投票
+                await checkIfVoted(Vote);
+                
+                // 加载并监听投票数据
+                loadAndWatchVotes(Vote);
+                
+                // 绑定事件处理
+                bindEvents();
+
+            } catch (error) {
+                console.error('应用初始化失败:', error);
+                cardsContainer.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-red-500">
+                        <i class="fa fa-exclamation-triangle text-3xl mb-3"></i>
+                        <p>系统初始化失败，请刷新页面重试</p>
+                        <p class="text-sm mt-2">错误信息: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
 
         // 生成能力卡牌
         function generateCards() {
-            console.log('开始生成卡牌，共', skills.length, '个技能');
-            
-            // 清空容器的加载提示
+            // 清空容器
             cardsContainer.innerHTML = '';
             
             // 初始化投票数据
@@ -208,6 +218,7 @@
             
             let cardsCreated = 0;
             
+            // 创建卡牌
             skills.forEach(skill => {
                 try {
                     const card = document.createElement('div');
@@ -230,43 +241,42 @@
                     cardsContainer.appendChild(card);
                     cardsCreated++;
                     
-                    // 绑定星星点击事件
+                    // 绑定星星星星点击事件
                     const stars = card.querySelectorAll('.fa-star[data-skill]');
                     stars.forEach(star => {
                         star.addEventListener('click', handleStarClick);
                     });
                 } catch (error) {
-                    console.error('生成卡牌时出错:', skill, error);
+                    console.error('生成卡牌失败（' + skill + '）:', error);
                 }
             });
             
             // 更新卡牌计数
-            cardCountElement.textContent = `${cardsCreated}/${skills.length}`;
-            console.log('卡牌生成完成，成功创建', cardsCreated, '张卡牌');
+            cardCountElement.textContent = `${cardsCreatedsCreated}/${skills.length}`;
         }
 
         // 处理星星点击事件
         function handleStarClick(e) {
-            if (hasVoted) return; // 已投票则不能再修改
+            if (hasVoted) return;
             
             const skill = e.target.dataset.skill;
             const value = parseInt(e.target.dataset.value);
             const stars = document.querySelectorAll(`.fa-star[data-skill="${skill}"]`);
             
-            // 计算之前的投票数
+            // 计算星星变化量
             const previousVotes = voteData[skill];
             const difference = value - previousVotes;
             
             // 检查是否有足够的星星
             if (remainingStars - difference >= 0) {
-                // 更新剩余星星数量
+                // 更新剩余星星
                 remainingStars -= difference;
-                document.getElementById('remaining-stars').textContent = remainingStars;
+                remainingStarsElement.textContent = remainingStars;
                 
                 // 更新投票数据
                 voteData[skill] = value;
                 
-                // 更新UI
+                // 更新星星显示状态
                 stars.forEach((star, index) => {
                     if (index < value) {
                         star.classList.add('text-accent', 'star-active');
@@ -277,114 +287,107 @@
                     }
                 });
                 
-                // 更新卡片上的计数
+                // 更新卡片计数
                 const countElement = e.target.closest('.card-shadow').querySelector('.vote-count span');
-                countElement.textContent = value;
+                if (countElement) countElement.textContent = value;
                 
-                // 控制提交按钮状态
+                // 更新提交按钮状态
                 updateSubmitButtonState();
             }
         }
 
         // 更新提交按钮状态
         function updateSubmitButtonState() {
-            const submitBtn = document.getElementById('submit-vote');
-            // 至少投1颗星星才能提交
-            submitBtn.disabled = remainingStars === 10;
+            submitButton.disabled = remainingStars === 10;
         }
 
         // 检查用户是否已投票
-        function checkIfVoted() {
-            console.log('检查用户是否已投票...');
-            const query = new AV.Query(Vote);
-            query.equalTo('userId', userId);
-            query.find().then(results => {
+        async function checkIfVoted(VoteClass) {
+            try {
+                const query = new AV.Query(VoteClass);
+                query.equalTo('userId', userId);
+                const results = await query.find();
+                
                 if (results.length > 0) {
                     hasVoted = true;
-                    console.log('用户已投票');
                     disableVoting();
-                } else {
-                    console.log('用户未投票');
                 }
-            }).catch(error => {
-                console.error('检查投票状态时出错:', error);
-            });
+            } catch (error) {
+                console.error('检查投票状态失败:', error);
+            }
         }
 
         // 禁用投票功能
         function disableVoting() {
-            // 隐藏星星计数，显示已投票状态
+            // 更新UI状态
             document.getElementById('star-count').classList.add('hidden');
             document.getElementById('vote-status').classList.remove('hidden');
             
-            // 禁用所有星星和提交按钮
+            // 禁用交互元素
             document.querySelectorAll('.fa-star[data-skill]').forEach(star => {
                 star.classList.remove('cursor-pointer');
                 star.classList.add('opacity-70');
             });
-            document.getElementById('submit-vote').disabled = true;
+            submitButton.disabled = true;
         }
 
         // 提交投票
-        function submitVote() {
+        async function submitVote() {
             if (remainingStars < 10 && remainingStars >= 0) {
-                // 保存每个技能的投票
-                const votePromises = [];
-                
-                skills.forEach(skill => {
-                    if (voteData[skill] > 0) {
-                        const vote = new Vote();
-                        vote.set('userId', userId);
-                        vote.set('skill', skill);
-                        vote.set('stars', voteData[skill]);
-                        votePromises.push(vote.save());
-                    }
-                });
-                
-                // 批量保存
-                Promise.all(votePromises).then(() => {
+                try {
+                    const VoteClass = AV.Object.extend('Vote');
+                    const votePromises = [];
+                    
+                    // 收集所有投票
+                    skills.forEach(skill => {
+                        if (voteData[skill] > 0) {
+                            const vote = new VoteClass();
+                            vote.set('userId', userId);
+                            vote.set('skill', skill);
+                            vote.set('stars', voteData[skill]);
+                            votePromises.push(vote.save());
+                        }
+                    });
+                    
+                    // 提交所有投票
+                    await Promise.all(votePromises);
+                    
+                    // 更新状态
                     hasVoted = true;
                     disableVoting();
-                    // 显示成功弹窗
                     document.getElementById('success-modal').classList.remove('hidden');
-                }).catch(error => {
+                } catch (error) {
                     console.error('提交投票失败:', error);
                     alert('提交失败，请重试');
-                });
+                }
             }
         }
 
         // 加载并监听投票数据
-        function loadAndWatchVotes() {
-            console.log('开始加载并监听投票数据...');
-            const query = new AV.Query(Vote);
-            
-            // 实时监听数据变化
-            const subscription = query.subscribe();
-            
-            // 初始加载数据
-            loadVoteData();
-            
-            // 数据更新时重新加载
-            subscription.on('create', () => {
-                console.log('检测到新投票，更新数据...');
-                loadVoteData();
-            });
-            subscription.on('update', () => {
-                console.log('检测到投票更新，更新数据...');
-                loadVoteData();
-            });
-            subscription.on('delete', () => {
-                console.log('检测到投票删除，更新数据...');
-                loadVoteData();
-            });
+        function loadAndWatchVotes(VoteClass) {
+            try {
+                const query = new AV.Query(VoteClass);
+                
+                // 实时监听数据变化
+                const subscription = query.subscribe();
+                
+                // 初始加载
+                loadVoteData(query);
+                
+                // 数据变化时更新
+                subscription.on('create', () => loadVoteData(query));
+                subscription.on('update', () => loadVoteData(query));
+                subscription.on('delete', () => loadVoteData(query));
+            } catch (error) {
+                console.error('设置数据监听失败:', error);
+            }
         }
 
         // 加载投票数据并更新排行榜
-        function loadVoteData() {
-            const query = new AV.Query(Vote);
-            query.find().then(results => {
-                console.log('加载到', results.length, '条投票数据');
+        async function loadVoteData(query) {
+            try {
+                const results = await query.find();
+                
                 // 计算每个技能的总得票数
                 const skillScores = {};
                 skills.forEach(skill => {
@@ -394,19 +397,17 @@
                 results.forEach(vote => {
                     const skill = vote.get('skill');
                     const stars = vote.get('stars');
-                    if (skillScores.hasOwnProperty(skill)) {
+                    if (skillScores[skill] !== undefined) {
                         skillScores[skill] += stars;
                     }
                 });
                 
-                // 更新排行榜
+                // 更新排行榜和卡牌显示
                 updateRanking(skillScores);
-                
-                // 更新卡片上的总票数
                 updateCardScores(skillScores);
-            }).catch(error => {
+            } catch (error) {
                 console.error('加载投票数据失败:', error);
-            });
+            }
         }
 
         // 更新排行榜
@@ -417,9 +418,9 @@
             // 排序技能
             const sortedSkills = Object.entries(skillScores)
                 .sort((a, b) => b[1] - a[1])
-                .filter(([_, score]) => score > 0); // 只显示有票数的技能
+                .filter(([_, score]) => score > 0);
             
-            // 如果没有数据
+            // 无数据状态
             if (sortedSkills.length === 0) {
                 rankingList.innerHTML = `
                     <div class="text-center text-gray-400 py-8">
@@ -432,11 +433,10 @@
             // 生成排行榜项
             sortedSkills.forEach(([skill, score], index) => {
                 const item = document.createElement('div');
-                
-                // 前三名添加特殊样式
                 let rankClass = '';
                 let rankIcon = '';
                 
+                // 前三名样式
                 if (index === 0) {
                     rankClass = 'bg-yellow-50 border-yellow-200';
                     rankIcon = '<i class="fa fa-trophy text-yellow-500 mr-2"></i>';
@@ -465,17 +465,26 @@
             });
         }
 
-        // 更新卡片上的总票数
+        // 更新卡牌上的总票数
         function updateCardScores(skillScores) {
             document.querySelectorAll('#cards-container > div').forEach(card => {
                 const skill = card.querySelector('h3').textContent;
                 const score = skillScores[skill] || 0;
                 const countElement = card.querySelector('.vote-count span');
-                if (countElement) {
-                    countElement.textContent = score;
-                }
+                if (countElement) countElement.textContent = score;
             });
         }
+
+        // 绑定事件处理函数
+        function bindEvents() {
+            submitButton.addEventListener('click', submitVote);
+            document.getElementById('close-modal').addEventListener('click', () => {
+                document.getElementById('success-modal').classList.add('hidden');
+            });
+        }
+
+        // 页面加载完成后初始化应用
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
