@@ -47,10 +47,10 @@
                 <h1 class="text-xl font-bold text-primary">能力卡牌大作战</h1>
             </div>
             <div class="flex items-center space-x-4">
-                <button id="toggleView" class="p-2 rounded-full hover:bg-gray-100">
+                <button id="toggleView" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
                     <i class="fa fa-th-large text-secondary"></i>
                 </button>
-                <button id="toggleRank" class="p-2 rounded-full hover:bg-gray-100">
+                <button id="toggleRank" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
                     <i class="fa fa-trophy text-secondary"></i>
                 </button>
             </div>
@@ -96,7 +96,7 @@
             <h2 class="text-xl font-bold mb-6 text-secondary">班级实时排行榜</h2>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-2">
-                    <div id="rankingList" class="space-y-3 max-h-[500px] overflow-y-auto">
+                    <div id="rankingList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                         <!-- 排行榜将动态生成 -->
                     </div>
                 </div>
@@ -114,6 +114,7 @@
                 </div>
                 <h2 class="text-2xl font-bold mb-2">投票成功！</h2>
                 <p class="mb-6 text-gray-600">感谢你的参与，你的星星已成功分配。</p>
+                <!-- 修复按钮ID大小写问题 -->
                 <button id="viewResults" class="bg-secondary hover:bg-secondary/90 text-white py-2 px-6 rounded-lg transition-colors">
                     查看班级排行榜
                 </button>
@@ -146,7 +147,6 @@
         const APP_ID = 'uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz';
         const APP_KEY = 'JEsdiH1q5v1NzqyLCLqJVWvt';
         
-        // 关键修改：使用正确的服务器地址
         try {
             AV.init({ 
                 appId: APP_ID, 
@@ -206,7 +206,8 @@
         const starsRemainingEl = document.getElementById('starsRemaining');
         const submitVotesBtn = document.getElementById('submitVotes');
         const successMessage = document.getElementById('successMessage');
-        const viewResultsBtn = document.getElementById('viewresults');
+        // 确保ID大小写完全匹配
+        const viewResultsBtn = document.getElementById('viewResults');
         const rankingSection = document.getElementById('rankingSection');
         const rankingList = document.getElementById('rankingList');
         const toggleRankBtn = document.getElementById('toggleRank');
@@ -235,17 +236,33 @@
             // 检查投票状态
             checkUserVoteStatus();
             
-            // 获取排行榜数据（增加超时处理）
+            // 获取排行榜数据
             fetchVotesWithTimeout();
             
-            // 事件监听
+            // 绑定所有事件（确保正确绑定）
+            bindEvents();
+        }
+
+        // 统一绑定所有事件
+        function bindEvents() {
+            // 提交投票按钮
             submitVotesBtn.addEventListener('click', submitVotes);
+            
+            // 投票成功后查看排行榜按钮（修复的核心绑定）
             viewResultsBtn.addEventListener('click', () => {
                 successMessage.classList.add('hidden');
                 showRanking();
+                // 强制刷新排行榜数据
+                fetchVotesWithTimeout();
             });
+            
+            // 切换排行榜按钮
             toggleRankBtn.addEventListener('click', toggleRanking);
+            
+            // 已投票状态查看排行榜
             showRankBtn.addEventListener('click', showRanking);
+            
+            // 切换视图按钮
             toggleViewBtn.addEventListener('click', toggleView);
         }
 
@@ -261,7 +278,7 @@
                 query.find().then(results => {
                     resolve(results);
                 }).catch(error => {
-                    resolve([]); // 出错时返回空数组，避免连锁错误
+                    resolve([]);
                 });
             });
             
@@ -269,9 +286,9 @@
                 .then(results => {
                     if (results.length > 0) {
                         processVotesData(results);
-                        errorMessage.classList.add('hidden'); // 成功获取数据后隐藏错误
+                        errorMessage.classList.add('hidden');
                     } else {
-                        showError('暂无投票数据，第一个投票吧！');
+                        showError('暂无投票数据，成为第一个投票的人吧！');
                     }
                 })
                 .catch(error => {
@@ -292,7 +309,6 @@
                 }
             }).catch(error => {
                 console.error('检查投票状态失败:', error);
-                // 失败时仍允许用户投票
             });
         }
 
@@ -329,7 +345,7 @@
                 cardsContainer.appendChild(card);
             });
             
-            // 绑定投票事件
+            // 绑定投票按钮事件
             document.querySelectorAll('.plus-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     if (starsRemaining > 0 && !hasVoted) {
@@ -358,9 +374,15 @@
         // 更新投票UI
         function updateVoteUI(abilityId) {
             starsRemainingEl.textContent = starsRemaining;
-            document.querySelector(`.vote-count[data-id="${abilityId}"]`).textContent = votes[abilityId];
+            const voteCountEl = document.querySelector(`.vote-count[data-id="${abilityId}"]`);
+            voteCountEl.textContent = votes[abilityId];
+            voteCountEl.classList.toggle('text-primary', votes[abilityId] > 0);
             
             // 更新按钮状态
+            const minusBtn = document.querySelector(`.minus-btn[data-id="${abilityId}"]`);
+            minusBtn.classList.toggle('opacity-50', votes[abilityId] === 0);
+            minusBtn.classList.toggle('cursor-not-allowed', votes[abilityId] === 0);
+            
             document.querySelectorAll('.plus-btn').forEach(btn => {
                 btn.classList.toggle('opacity-50', starsRemaining === 0);
                 btn.classList.toggle('cursor-not-allowed', starsRemaining === 0);
@@ -395,7 +417,7 @@
             results.forEach(result => {
                 const votes = result.get('votes');
                 for (const [id, count] of Object.entries(votes)) {
-                    totals[id] += count;
+                    totals[id] = (totals[id] || 0) + count;
                 }
             });
             
@@ -413,31 +435,47 @@
             rankingList.innerHTML = '';
             
             allVotesData.forEach((ability, index) => {
-                const item = document.createElement('div');
-                item.className = `flex items-center p-3 rounded-lg ${index < 3 ? 'bg-gray-50' : ''}`;
-                
-                let rankIcon = index < 3 ? 
-                    `<i class="fa fa-trophy ${index === 0 ? 'text-yellow-500' : index === 1 ? 'text-gray-400' : 'text-amber-700'} mr-2"></i>` : 
-                    `<span class="w-6 text-center mr-2">${index + 1}</span>`;
-                
-                item.innerHTML = `
-                    ${rankIcon}
-                    <div class="w-8 h-8 rounded-full ${ability.color} flex items-center justify-center">
-                        <i class="fa ${ability.icon}"></i>
-                    </div>
-                    <div class="ml-3 flex-grow">
-                        <div class="font-medium">${ability.name}</div>
-                        <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
-                            <div class="bg-primary h-2 rounded-full" style="width: ${Math.min(100, (ability.total / Math.max(...allVotesData.map(a => a.total), 1)) * 100)}%"></div>
+                if (ability.total > 0 || index < 10) {
+                    const item = document.createElement('div');
+                    item.className = `flex items-center p-3 rounded-lg ${index < 3 ? 'bg-gray-50' : 'hover:bg-gray-50'} transition-colors`;
+                    
+                    let rankIcon = '';
+                    if (index === 0) {
+                        rankIcon = '<i class="fa fa-trophy text-yellow-500 mr-2"></i>';
+                    } else if (index === 1) {
+                        rankIcon = '<i class="fa fa-trophy text-gray-400 mr-2"></i>';
+                    } else if (index === 2) {
+                        rankIcon = '<i class="fa fa-trophy text-amber-700 mr-2"></i>';
+                    } else {
+                        rankIcon = `<span class="w-6 text-center mr-2 text-gray-500">${index + 1}</span>`;
+                    }
+                    
+                    item.innerHTML = `
+                        ${rankIcon}
+                        <div class="w-8 h-8 rounded-full ${ability.color} flex items-center justify-center flex-shrink-0">
+                            <i class="fa ${ability.icon}"></i>
                         </div>
-                    </div>
-                    <div class="ml-2 font-bold text-primary">${ability.total} <i class="fa fa-star text-star"></i></div>
-                `;
-                rankingList.appendChild(item);
+                        <div class="ml-3 flex-grow">
+                            <div class="font-medium">${ability.name}</div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                <div class="bg-primary h-2 rounded-full" style="width: ${calculatePercentage(ability.total)}%"></div>
+                            </div>
+                        </div>
+                        <div class="ml-2 font-bold text-primary">${ability.total} <i class="fa fa-star text-star"></i></div>
+                    `;
+                    rankingList.appendChild(item);
+                }
             });
             
             // 更新图表
             updateChart();
+        }
+
+        // 计算百分比
+        function calculatePercentage(value) {
+            if (allVotesData.length === 0) return 0;
+            const max = allVotesData[0].total;
+            return max > 0 ? Math.min(100, (value / max) * 100) : 0;
         }
 
         // 更新图表
@@ -452,8 +490,20 @@
                 data: {
                     labels: top5.map(a => a.name),
                     datasets: [{
+                        label: '星星数量',
                         data: top5.map(a => a.total),
-                        backgroundColor: 'rgba(255, 122, 0, 0.7)',
+                        backgroundColor: top5.map(a => {
+                            const colorMap = {
+                                'bg-green-100': 'rgba(110, 231, 183, 0.7)',
+                                'bg-purple-100': 'rgba(216, 180, 254, 0.7)',
+                                'bg-blue-100': 'rgba(191, 219, 254, 0.7)',
+                                'bg-amber-100': 'rgba(252, 231, 166, 0.7)',
+                                'bg-red-100': 'rgba(254, 202, 202, 0.7)',
+                                'bg-indigo-100': 'rgba(224, 231, 255, 0.7)',
+                            };
+                            return colorMap[a.color] || 'rgba(255, 122, 0, 0.7)';
+                        }),
+                        borderWidth: 0,
                         borderRadius: 4
                     }]
                 },
@@ -461,7 +511,10 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                        x: { grid: { display: false } }
+                    }
                 }
             });
         }
@@ -497,3 +550,4 @@
     </script>
 </body>
 </html>
+    
