@@ -85,13 +85,18 @@
             <div class="lg:w-2/3">
                 <h2 class="text-xl font-semibold mb-4 text-dark flex items-center">
                     <i class="fa fa-th-large mr-2 text-primary"></i>能力卡牌
+                    <span id="card-count" class="ml-2 text-sm bg-gray-200 px-2 py-1 rounded-full">0/30</span>
                 </h2>
                 <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- 卡牌将通过JS动态生成 -->
+                    <div class="col-span-full text-center py-12 text-gray-500">
+                        <i class="fa fa-circle-o-notch fa-spin text-3xl mb-3"></i>
+                        <p>正在加载能力卡牌...</p>
+                    </div>
                 </div>
                 
                 <div class="mt-6 text-center">
-                    <button id="submit-vote" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                    <button id="submit-vote" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all" disabled>
                         <i class="fa fa-paper-plane mr-2"></i>提交我的选择
                     </button>
                 </div>
@@ -158,6 +163,8 @@
         let remainingStars = 10; // 剩余星星数量
         let hasVoted = false; // 用户是否已投票
         let userId = localStorage.getItem('skillCardUserId'); // 用户ID
+        const cardsContainer = document.getElementById('cards-container');
+        const cardCountElement = document.getElementById('card-count');
 
         // 初始化用户ID
         if (!userId) {
@@ -170,6 +177,7 @@
         
         // 初始化页面
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('页面加载完成，开始初始化...');
             // 生成卡牌
             generateCards();
             
@@ -188,38 +196,53 @@
 
         // 生成能力卡牌
         function generateCards() {
-            const container = document.getElementById('cards-container');
+            console.log('开始生成卡牌，共', skills.length, '个技能');
+            
+            // 清空容器的加载提示
+            cardsContainer.innerHTML = '';
             
             // 初始化投票数据
             skills.forEach(skill => {
                 voteData[skill] = 0;
             });
             
+            let cardsCreated = 0;
+            
             skills.forEach(skill => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-lg shadow-md p-4 card-shadow card-hover';
-                card.innerHTML = `
-                    <h3 class="font-semibold text-lg mb-2 text-dark">${skill}</h3>
-                    <div class="flex justify-between items-center">
-                        <div class="stars-container flex">
-                            ${[...Array(5)].map((_, i) => `
-                                <i class="fa fa-star text-gray-300 cursor-pointer text-xl mx-1" 
-                                   data-skill="${skill}" 
-                                   data-value="${i + 1}"></i>
-                            `).join('')}
+                try {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white rounded-lg shadow-md p-4 card-shadow card-hover';
+                    card.innerHTML = `
+                        <h3 class="font-semibold text-lg mb-2 text-dark">${skill}</h3>
+                        <div class="flex justify-between items-center">
+                            <div class="stars-container flex">
+                                ${[...Array(5)].map((_, i) => `
+                                    <i class="fa fa-star text-gray-300 cursor-pointer text-xl mx-1" 
+                                       data-skill="${skill}" 
+                                       data-value="${i + 1}"></i>
+                                `).join('')}
+                            </div>
+                            <span class="vote-count bg-gray-100 px-2 py-1 rounded text-sm">
+                                <i class="fa fa-star text-accent"></i> <span>0</span>
+                            </span>
                         </div>
-                        <span class="vote-count bg-gray-100 px-2 py-1 rounded text-sm">
-                            <i class="fa fa-star text-accent"></i> <span>0</span>
-                        </span>
-                    </div>
-                `;
-                container.appendChild(card);
+                    `;
+                    cardsContainer.appendChild(card);
+                    cardsCreated++;
+                    
+                    // 绑定星星点击事件
+                    const stars = card.querySelectorAll('.fa-star[data-skill]');
+                    stars.forEach(star => {
+                        star.addEventListener('click', handleStarClick);
+                    });
+                } catch (error) {
+                    console.error('生成卡牌时出错:', skill, error);
+                }
             });
             
-            // 绑定星星点击事件
-            document.querySelectorAll('.fa-star[data-skill]').forEach(star => {
-                star.addEventListener('click', handleStarClick);
-            });
+            // 更新卡牌计数
+            cardCountElement.textContent = `${cardsCreated}/${skills.length}`;
+            console.log('卡牌生成完成，成功创建', cardsCreated, '张卡牌');
         }
 
         // 处理星星点击事件
@@ -255,7 +278,7 @@
                 });
                 
                 // 更新卡片上的计数
-                const countElement = e.target.closest('.card').querySelector('.vote-count span');
+                const countElement = e.target.closest('.card-shadow').querySelector('.vote-count span');
                 countElement.textContent = value;
                 
                 // 控制提交按钮状态
@@ -272,13 +295,19 @@
 
         // 检查用户是否已投票
         function checkIfVoted() {
+            console.log('检查用户是否已投票...');
             const query = new AV.Query(Vote);
             query.equalTo('userId', userId);
             query.find().then(results => {
                 if (results.length > 0) {
                     hasVoted = true;
+                    console.log('用户已投票');
                     disableVoting();
+                } else {
+                    console.log('用户未投票');
                 }
+            }).catch(error => {
+                console.error('检查投票状态时出错:', error);
             });
         }
 
@@ -291,6 +320,7 @@
             // 禁用所有星星和提交按钮
             document.querySelectorAll('.fa-star[data-skill]').forEach(star => {
                 star.classList.remove('cursor-pointer');
+                star.classList.add('opacity-70');
             });
             document.getElementById('submit-vote').disabled = true;
         }
@@ -326,6 +356,7 @@
 
         // 加载并监听投票数据
         function loadAndWatchVotes() {
+            console.log('开始加载并监听投票数据...');
             const query = new AV.Query(Vote);
             
             // 实时监听数据变化
@@ -335,15 +366,25 @@
             loadVoteData();
             
             // 数据更新时重新加载
-            subscription.on('create', loadVoteData);
-            subscription.on('update', loadVoteData);
-            subscription.on('delete', loadVoteData);
+            subscription.on('create', () => {
+                console.log('检测到新投票，更新数据...');
+                loadVoteData();
+            });
+            subscription.on('update', () => {
+                console.log('检测到投票更新，更新数据...');
+                loadVoteData();
+            });
+            subscription.on('delete', () => {
+                console.log('检测到投票删除，更新数据...');
+                loadVoteData();
+            });
         }
 
         // 加载投票数据并更新排行榜
         function loadVoteData() {
             const query = new AV.Query(Vote);
             query.find().then(results => {
+                console.log('加载到', results.length, '条投票数据');
                 // 计算每个技能的总得票数
                 const skillScores = {};
                 skills.forEach(skill => {
@@ -429,9 +470,13 @@
             document.querySelectorAll('#cards-container > div').forEach(card => {
                 const skill = card.querySelector('h3').textContent;
                 const score = skillScores[skill] || 0;
-                card.querySelector('.vote-count span').textContent = score;
+                const countElement = card.querySelector('.vote-count span');
+                if (countElement) {
+                    countElement.textContent = score;
+                }
             });
         }
     </script>
 </body>
 </html>
+    
