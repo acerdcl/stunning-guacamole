@@ -7,38 +7,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- 引入LeanCloud SDK用于数据存储和实时更新 -->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-min.js"></script>
     
-    <!-- Tailwind 配置 -->
+    <!-- 配置Tailwind自定义颜色和字体 -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#7C3AED', // 主色调：紫色
-                        secondary: '#F59E0B', // 辅助色：橙色（星星/重点）
-                        accent: '#10B981', // 强调色：绿色（按钮）
-                        dark: '#1E293B',
-                        light: '#F8FAFC'
+                        primary: '#FF7A00',
+                        secondary: '#165DFF',
+                        dark: '#1D2939',
+                        light: '#F9FAFB',
+                        star: '#FFD700'
                     },
                     fontFamily: {
-                        game: ['"Press Start 2P"', 'cursive', 'sans-serif'],
                         sans: ['Inter', 'system-ui', 'sans-serif'],
                     },
-                    animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'float': 'float 3s ease-in-out infinite',
-                        'shine': 'shine 1.5s ease-in-out infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-10px)' },
-                        },
-                        shine: {
-                            '0%, 100%': { boxShadow: '0 0 15px rgba(245, 158, 11, 0.6)' },
-                            '50%': { boxShadow: '0 0 25px rgba(245, 158, 11, 0.9)' },
-                        }
-                    }
                 }
             }
         }
@@ -49,504 +35,573 @@
             .content-auto {
                 content-visibility: auto;
             }
-            .card-shadow {
-                box-shadow: 0 4px 20px rgba(124, 58, 237, 0.2);
-            }
             .card-hover {
-                transition: all 0.3s ease;
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
             }
-            .card-hover:hover {
-                transform: translateY(-5px) scale(1.02);
-                box-shadow: 0 8px 30px rgba(124, 58, 237, 0.3);
+            .star-pulse {
+                animation: pulse 1.5s infinite;
             }
-            .star-active {
-                color: #F59E0B;
-                text-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); }
             }
-            .rank-item {
-                transition: all 0.5s ease;
+            .slide-in {
+                animation: slideIn 0.5s ease-out forwards;
             }
-            .glass-effect {
-                background: rgba(255, 255, 255, 0.1);
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-            }
-            .card-disabled {
-                filter: grayscale(0.7);
-                opacity: 0.7;
-                pointer-events: none;
+            @keyframes slideIn {
+                from { transform: translateY(20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
             }
         }
     </style>
-    
-    <!-- 引入游戏风格字体 -->
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gradient-to-br from-purple-900 to-indigo-900 min-h-screen text-gray-100 font-sans">
-    <!-- 背景装饰 -->
-    <div class="fixed inset-0 overflow-hidden pointer-events-none opacity-10">
-        <div class="absolute -top-40 -left-40 w-96 h-96 bg-purple-500 rounded-full blur-3xl"></div>
-        <div class="absolute top-1/3 -right-20 w-80 h-80 bg-yellow-500 rounded-full blur-3xl"></div>
-        <div class="absolute bottom-0 left-1/4 w-96 h-96 bg-green-500 rounded-full blur-3xl"></div>
-    </div>
-
-    <div class="container mx-auto px-4 py-8 max-w-7xl relative z-10">
-        <!-- 游戏标题 -->
-        <header class="text-center mb-8">
-            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-game text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-500 mb-3 animate-pulse-slow">
-                能力卡牌大作战
-            </h1>
-            <p class="text-purple-200 max-w-2xl mx-auto text-lg">
-                用你的10颗星星，兑换最想掌握的电商技能！看看班级最紧缺的技能是什么？
-            </p>
-        </header>
-        
-        <!-- 游戏状态区 -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <div class="glass-effect rounded-xl p-4 w-full md:w-auto flex items-center">
-                <i class="fa fa-star text-secondary text-2xl mr-3 animate-shine"></i>
-                <div>
-                    <p class="text-sm text-purple-200">剩余星星</p>
-                    <p id="stars-remaining" class="text-3xl font-bold text-secondary">10</p>
-                </div>
+<body class="bg-gray-50 min-h-screen font-sans text-dark">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-md sticky top-0 z-50 transition-all duration-300">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-gamepad text-primary text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold text-primary">能力卡牌大作战</h1>
             </div>
-            
-            <div class="glass-effect rounded-xl p-4 w-full md:w-auto flex items-center">
-                <i class="fa fa-users text-blue-300 text-2xl mr-3"></i>
-                <div>
-                    <p class="text-sm text-purple-200">参与人数</p>
-                    <p id="participants-count" class="text-3xl font-bold text-blue-300">0</p>
-                </div>
-            </div>
-            
-            <div class="glass-effect rounded-xl p-4 w-full md:w-auto flex items-center">
-                <i class="fa fa-check-circle text-green-300 text-2xl mr-3"></i>
-                <button id="submit-vote" class="text-green-300 hover:text-green-200 transition-colors opacity-50 cursor-not-allowed" disabled>
-                    <p class="text-sm text-purple-200">完成后点击</p>
-                    <p class="font-bold">提交投票</p>
+            <div class="flex items-center space-x-4">
+                <button id="toggleView" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                    <i class="fa fa-th-large text-secondary"></i>
+                </button>
+                <button id="toggleRank" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                    <i class="fa fa-trophy text-secondary"></i>
                 </button>
             </div>
         </div>
-        
-        <!-- 主要游戏区 -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- 左侧：卡牌区 -->
-            <div class="lg:col-span-2">
-                <div class="glass-effect rounded-xl p-5 mb-6">
-                    <h2 class="text-xl font-bold mb-4 flex items-center">
-                        <i class="fa fa-th-large text-yellow-400 mr-2"></i> 电商技能卡牌库
-                    </h2>
-                    <p class="text-sm text-purple-200 mb-4">
-                        点击卡牌分配星星，每张卡牌最多可分配5颗星星，总共10颗星星可分配
-                    </p>
-                    
-                    <!-- 投票完成提示（默认隐藏） -->
-                    <div id="voting-complete" class="hidden bg-green-500/20 border border-green-500/40 rounded-lg p-4 mb-4 text-center">
-                        <i class="fa fa-check-circle text-green-400 text-xl mr-2"></i>
-                        <span>你的投票已提交成功！查看右侧班级排行榜。</span>
-                    </div>
-                    
-                    <!-- 卡牌网格 -->
-                    <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto pr-2">
-                        <!-- 卡牌将通过JS动态生成 -->
-                    </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="container mx-auto px-4 py-6">
+        <!-- 介绍区域 -->
+        <section id="intro" class="bg-white rounded-xl shadow-sm p-6 mb-8 slide-in">
+            <h2 class="text-xl font-bold mb-3 text-secondary">🌟 游戏规则</h2>
+            <p class="mb-4">你有10颗星星，可以投给你最想兑换的电商技能。点击卡牌为其分配星星，分配完毕后提交你的选择！</p>
+            <div class="flex items-center">
+                <div class="flex">
+                    <i class="fa fa-star text-star star-pulse"></i>
+                    <i class="fa fa-star text-star star-pulse" style="animation-delay: 0.2s"></i>
+                    <i class="fa fa-star text-star star-pulse" style="animation-delay: 0.4s"></i>
                 </div>
+                <span class="ml-2 text-gray-600">剩余星星: <span id="starsRemaining" class="font-bold text-primary">10</span></span>
             </div>
+            <button id="submitVotes" class="mt-4 bg-primary hover:bg-primary/90 text-white py-2 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                提交我的选择
+            </button>
+        </section>
+
+        <!-- 卡牌区域 -->
+        <section id="cardsSection" class="mb-12">
+            <h2 class="text-xl font-bold mb-4 text-secondary flex items-center">
+                <i class="fa fa-th-large mr-2"></i>能力卡牌库
+            </h2>
+            <div id="cardsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <!-- 卡牌将通过JavaScript动态生成 -->
+            </div>
+        </section>
+
+        <!-- 排行榜区域 -->
+        <section id="rankingSection" class="bg-white rounded-xl shadow-sm p-6 mb-8 hidden">
+            <h2 class="text-xl font-bold mb-6 text-secondary flex items-center">
+                <i class="fa fa-trophy mr-2"></i>实时排行榜
+            </h2>
             
-            <!-- 右侧：排行榜 -->
-            <div>
-                <div class="glass-effect rounded-xl p-5 sticky top-4">
-                    <h2 class="text-xl font-bold mb-4 flex items-center">
-                        <i class="fa fa-trophy text-yellow-500 mr-2"></i> 班级最紧缺技能排行榜
-                    </h2>
-                    <p class="text-sm text-purple-200 mb-4">
-                        获得星星越多，表示该技能越被班级需要
-                    </p>
-                    
-                    <!-- 排行榜图表 -->
-                    <div class="h-64 mb-6">
-                        <canvas id="rankings-chart"></canvas>
-                    </div>
-                    
-                    <!-- 排行榜列表 -->
-                    <div id="rankings-list" class="space-y-2 max-h-[40vh] overflow-y-auto pr-2">
-                        <!-- 排行榜将通过JS动态生成 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- 排行榜列表 -->
+                <div class="lg:col-span-2">
+                    <div id="rankingList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                        <!-- 排行榜将通过JavaScript动态生成 -->
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- 游戏说明 -->
-        <div class="glass-effect rounded-xl p-5 mt-8">
-            <h3 class="text-lg font-bold mb-3 flex items-center">
-                <i class="fa fa-info-circle text-blue-400 mr-2"></i> 游戏规则
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-purple-100">
+                
+                <!-- 数据可视化 -->
                 <div>
-                    <p class="mb-2"><span class="text-yellow-300 font-semibold">1.</span> 每位同学有10颗星星可分配，且只能投票一次</p>
-                    <p class="mb-2"><span class="text-yellow-300 font-semibold">2.</span> 点击技能卡牌为其分配星星</p>
-                    <p class="mb-2"><span class="text-yellow-300 font-semibold">3.</span> 每张卡牌最多可分配5颗星星</p>
-                </div>
-                <div>
-                    <p class="mb-2"><span class="text-yellow-300 font-semibold">4.</span> 再次点击可减少分配的星星</p>
-                    <p class="mb-2"><span class="text-yellow-300 font-semibold">5.</span> 星星分配完毕后点击"提交投票"</p>
-                    <p><span class="text-yellow-300 font-semibold">6.</span> 提交后不可修改，排行榜实时更新</p>
+                    <canvas id="rankingChart" width="400" height="300"></canvas>
                 </div>
             </div>
+        </section>
+
+        <!-- 投票成功提示 -->
+        <section id="successMessage" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 text-center">
+                <div class="text-5xl text-primary mb-4">
+                    <i class="fa fa-check-circle"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">投票成功！</h2>
+                <p class="mb-6 text-gray-600">感谢你的参与，你的星星已成功分配。</p>
+                <button id="viewResults" class="bg-secondary hover:bg-secondary/90 text-white py-2 px-6 rounded-lg transition-colors">
+                    查看实时排行榜
+                </button>
+            </div>
+        </section>
+
+        <!-- 已投票提示 -->
+        <section id="alreadyVoted" class="bg-white rounded-xl shadow-sm p-6 mb-8 hidden">
+            <div class="text-center">
+                <div class="text-4xl text-primary mb-4">
+                    <i class="fa fa-bar-chart"></i>
+                </div>
+                <h2 class="text-xl font-bold mb-2">你已完成投票</h2>
+                <p class="mb-4 text-gray-600">查看当前的实时排行榜结果</p>
+                <button id="showRankBtn" class="bg-secondary hover:bg-secondary/90 text-white py-2 px-6 rounded-lg transition-colors">
+                    查看排行榜
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-6">
+        <div class="container mx-auto px-4 text-center">
+            <p>能力卡牌大作战 &copy; 2023</p>
+            <p class="text-sm text-gray-400 mt-2">用星星为你最想拥有的电商能力投票吧！</p>
         </div>
-        
-        <!-- 页脚 -->
-        <footer class="text-center text-purple-400 text-sm mt-10 opacity-70">
-            <p>电商技能培养计划 &copy; 2023 | 能力卡牌大作战</p>
-        </footer>
-    </div>
+    </footer>
 
     <script>
-        // 电商技能卡牌数据
-        const skillCards = [
-            { id: 1, name: "Excel高级应用", icon: "fa-table", category: "数据处理" },
-            { id: 2, name: "Premiere剪辑", icon: "fa-film", category: "多媒体" },
-            { id: 3, name: "Python基础", icon: "fa-code", category: "编程" },
-            { id: 4, name: "商务谈判", icon: "fa-handshake-o", category: "沟通" },
-            { id: 5, name: "文案写作", icon: "fa-pencil", category: "内容创作" },
-            { id: 6, name: "数据分析", icon: "fa-bar-chart", category: "数据处理" },
-            { id: 7, name: "市场调研", icon: "fa-search", category: "市场" },
-            { id: 8, name: "社交媒体运营", icon: "fa-share-alt", category: "营销" },
-            { id: 9, name: "SEO优化", icon: "fa-search-plus", category: "营销" },
-            { id: 10, name: "广告投放", icon: "fa-bullhorn", category: "营销" },
-            { id: 11, name: "客户关系管理", icon: "fa-users", category: "客户服务" },
-            { id: 12, name: "供应链管理", icon: "fa-truck", category: "运营" },
-            { id: 13, name: "库存管理", icon: "fa-archive", category: "运营" },
-            { id: 14, name: "产品摄影", icon: "fa-camera", category: "多媒体" },
-            { id: 15, name: "PS图片处理", icon: "fa-picture-o", category: "多媒体" },
-            { id: 16, name: "店铺装修", icon: "fa-building", category: "设计" },
-            { id: 17, name: "直播带货", icon: "fa-video-camera", category: "销售" },
-            { id: 18, name: "跨境电商操作", icon: "fa-globe", category: "平台操作" },
-            { id: 19, name: "多平台运营", icon: "fa-exchange", category: "平台操作" },
-            { id: 20, name: "活动策划", icon: "fa-calendar", category: "营销" },
-            { id: 21, name: "品牌建设", icon: "fa-star-o", category: "营销" },
-            { id: 22, name: "物流协调", icon: "fa-truck", category: "运营" },
-            { id: 23, name: "数据报告制作", icon: "fa-file-text", category: "数据处理" },
-            { id: 24, name: "用户画像分析", icon: "fa-user", category: "数据分析" },
-            { id: 25, name: "竞品分析", icon: "fa-eye", category: "市场" },
-            { id: 26, name: "客服技巧", icon: "fa-headphones", category: "客户服务" },
-            { id: 27, name: "短视频制作", icon: "fa-film", category: "多媒体" },
-            { id: 28, name: "内容营销", icon: "fa-newspaper-o", category: "营销" },
-            { id: 29, name: "平台规则掌握", icon: "fa-book", category: "平台操作" },
-            { id: 30, name: "电商法律法规", icon: "fa-gavel", category: "合规" }
+        // 初始化LeanCloud - 请替换为你自己的App ID和App Key
+        const APP_ID = 'uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz';
+        const APP_KEY = 'JEsdiH1q5v1NzqyLCLqJVWvt';
+        AV.init({ appId: APP_ID, appKey: APP_KEY });
+
+        // 30种电商通用能力卡牌数据
+        const abilities = [
+            { id: 1, name: 'Excel', icon: 'fa-table', color: 'bg-green-100 text-green-800' },
+            { id: 2, name: 'Premiere', icon: 'fa-film', color: 'bg-purple-100 text-purple-800' },
+            { id: 3, name: 'Python基础', icon: 'fa-code', color: 'bg-blue-100 text-blue-800' },
+            { id: 4, name: '谈判', icon: 'fa-handshake-o', color: 'bg-amber-100 text-amber-800' },
+            { id: 5, name: '写文案', icon: 'fa-pencil', color: 'bg-red-100 text-red-800' },
+            { id: 6, name: '数据分析', icon: 'fa-bar-chart', color: 'bg-indigo-100 text-indigo-800' },
+            { id: 7, name: 'Photoshop', icon: 'fa-picture-o', color: 'bg-pink-100 text-pink-800' },
+            { id: 8, name: '短视频制作', icon: 'fa-video-camera', color: 'bg-rose-100 text-rose-800' },
+            { id: 9, name: 'SEO优化', icon: 'fa-search', color: 'bg-sky-100 text-sky-800' },
+            { id: 10, name: '社群运营', icon: 'fa-users', color: 'bg-emerald-100 text-emerald-800' },
+            { id: 11, name: 'PPT制作', icon: 'fa-file-powerpoint-o', color: 'bg-orange-100 text-orange-800' },
+            { id: 12, name: '市场调研', icon: 'fa-line-chart', color: 'bg-teal-100 text-teal-800' },
+            { id: 13, name: '用户画像', icon: 'fa-user', color: 'bg-lime-100 text-lime-800' },
+            { id: 14, name: '直播带货', icon: 'fa-microphone', color: 'bg-fuchsia-100 text-fuchsia-800' },
+            { id: 15, name: '跨境电商', icon: 'fa-globe', color: 'bg-cyan-100 text-cyan-800' },
+            { id: 16, name: '供应链管理', icon: 'fa-truck', color: 'bg-slate-100 text-slate-800' },
+            { id: 17, name: '客户服务', icon: 'fa-headphones', color: 'bg-blue-100 text-blue-800' },
+            { id: 18, name: '品牌策划', icon: 'fa-lightbulb-o', color: 'bg-amber-100 text-amber-800' },
+            { id: 19, name: '活动策划', icon: 'fa-calendar', color: 'bg-rose-100 text-rose-800' },
+            { id: 20, name: '财务管理', icon: 'fa-money', color: 'bg-green-100 text-green-800' },
+            { id: 21, name: 'Excel高级', icon: 'fa-table', color: 'bg-green-100 text-green-800' },
+            { id: 22, name: 'Python爬虫', icon: 'fa-code', color: 'bg-blue-100 text-blue-800' },
+            { id: 23, name: 'AI工具应用', icon: 'fa-robot', color: 'bg-purple-100 text-purple-800' },
+            { id: 24, name: '数据可视化', icon: 'fa-pie-chart', color: 'bg-indigo-100 text-indigo-800' },
+            { id: 25, name: '产品设计', icon: 'fa-cube', color: 'bg-teal-100 text-teal-800' },
+            { id: 26, name: '微信运营', icon: 'fa-weixin', color: 'bg-green-100 text-green-800' },
+            { id: 27, name: '抖音运营', icon: 'fa-music', color: 'bg-red-100 text-red-800' },
+            { id: 28, name: '邮件营销', icon: 'fa-envelope', color: 'bg-sky-100 text-sky-800' },
+            { id: 29, name: '竞品分析', icon: 'fa-eye', color: 'bg-slate-100 text-slate-800' },
+            { id: 30, name: '项目管理', icon: 'fa-tasks', color: 'bg-orange-100 text-orange-800' }
         ];
-        
+
         // 全局变量
-        let userStars = {}; // 存储用户分配的星星 {cardId: stars}
-        let totalStarsUsed = 0;
-        const maxStarsPerCard = 5;
-        const totalStarsAvailable = 10;
-        let hasVoted = false; // 标记用户是否已投票
-        let userContribution = {}; // 记录用户的最终贡献
-        
-        // 班级数据（实际应用中应从服务器获取）
-        let classData = {};
-        let participantsCount = 0;
-        
+        let votes = {}; // 存储用户投票
+        let starsRemaining = 10;
+        let allVotesData = []; // 存储所有投票数据
+        let hasVoted = false; // 用户是否已投票
+        let userId = null; // 用户唯一标识
+
         // DOM元素
-        const cardsContainer = document.getElementById('cards-container');
-        const rankingsList = document.getElementById('rankings-list');
-        const starsRemainingEl = document.getElementById('stars-remaining');
-        const participantsCountEl = document.getElementById('participants-count');
-        const submitVoteBtn = document.getElementById('submit-vote');
-        const votingCompleteEl = document.getElementById('voting-complete');
-        let rankingsChart = null;
-        
-        // 初始化班级数据
-        function initClassData() {
-            skillCards.forEach(card => {
-                classData[card.id] = {
-                    name: card.name,
-                    totalStars: 0,
-                    icon: card.icon
-                };
-                userStars[card.id] = 0;
-                userContribution[card.id] = 0;
+        const cardsContainer = document.getElementById('cardsContainer');
+        const starsRemainingEl = document.getElementById('starsRemaining');
+        const submitVotesBtn = document.getElementById('submitVotes');
+        const successMessage = document.getElementById('successMessage');
+        const viewResultsBtn = document.getElementById('viewResults');
+        const rankingSection = document.getElementById('rankingSection');
+        const rankingList = document.getElementById('rankingList');
+        const toggleRankBtn = document.getElementById('toggleRank');
+        const alreadyVotedEl = document.getElementById('alreadyVoted');
+        const showRankBtn = document.getElementById('showRankBtn');
+        const introSection = document.getElementById('intro');
+        const toggleViewBtn = document.getElementById('toggleView');
+
+        // 初始化页面
+        function init() {
+            // 检查用户是否已投票
+            checkUserVoteStatus();
+            
+            // 初始化投票对象
+            abilities.forEach(ability => {
+                votes[ability.id] = 0;
+            });
+            
+            // 渲染卡牌
+            renderCards();
+            
+            // 获取并监听投票数据
+            fetchAndListenToVotes();
+            
+            // 添加事件监听器
+            submitVotesBtn.addEventListener('click', submitVotes);
+            viewResultsBtn.addEventListener('click', () => {
+                successMessage.classList.add('hidden');
+                showRanking();
+            });
+            toggleRankBtn.addEventListener('click', toggleRanking);
+            showRankBtn.addEventListener('click', showRanking);
+            toggleViewBtn.addEventListener('click', toggleView);
+        }
+
+        // 生成用户唯一标识
+        function generateUserId() {
+            return 'user_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // 检查用户是否已投票
+        function checkUserVoteStatus() {
+            // 从localStorage获取用户ID
+            userId = localStorage.getItem('abilityCardUserId');
+            
+            if (!userId) {
+                userId = generateUserId();
+                localStorage.setItem('abilityCardUserId', userId);
+            }
+            
+            // 检查该用户是否已投票
+            const UserVote = AV.Object.extend('UserVote');
+            const query = new AV.Query(UserVote);
+            query.equalTo('userId', userId);
+            query.find().then(results => {
+                if (results.length > 0) {
+                    hasVoted = true;
+                    showVotedView();
+                } else {
+                    hasVoted = false;
+                    submitVotesBtn.disabled = false;
+                }
             });
         }
-        
-        // 创建技能卡牌
-        function createSkillCards() {
+
+        // 显示已投票视图
+        function showVotedView() {
+            introSection.classList.add('hidden');
+            alreadyVotedEl.classList.remove('hidden');
+            submitVotesBtn.disabled = true;
+        }
+
+        // 渲染卡牌
+        function renderCards() {
             cardsContainer.innerHTML = '';
             
-            skillCards.forEach(card => {
-                const cardElement = document.createElement('div');
-                cardElement.className = `bg-gradient-to-br from-purple-800 to-indigo-900 rounded-lg overflow-hidden card-shadow card-hover ${hasVoted ? 'card-disabled' : ''}`;
-                cardElement.dataset.cardId = card.id;
-                
-                cardElement.innerHTML = `
-                    <div class="p-3 bg-purple-900/50 flex justify-between items-center">
-                        <span class="text-xs text-purple-200">${card.category}</span>
-                        <i class="fa ${card.icon} text-purple-300"></i>
-                    </div>
-                    <div class="p-4">
-                        <h3 class="font-bold text-center mb-3 text-gray-100">${card.name}</h3>
-                        <div class="flex justify-center mt-2">
-                            <div class="star-container flex">
-                                ${Array(5).fill(0).map((_, i) => `
-                                    <i class="fa fa-star text-gray-600 ${userStars[card.id] > i ? 'star-active' : ''}" data-star-index="${i + 1}"></i>
-                                `).join('')}
-                            </div>
+            abilities.forEach(ability => {
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-lg shadow-sm p-4 card-hover border border-gray-100 ${hasVoted ? 'opacity-70' : ''}`;
+                card.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full">
+                        <div class="w-12 h-12 rounded-full ${ability.color} flex items-center justify-center mb-3">
+                            <i class="fa ${ability.icon} text-xl"></i>
                         </div>
-                        <div class="mt-3 text-center">
-                            <span class="text-xs text-purple-300">已分配: </span>
-                            <span class="text-secondary font-bold" id="stars-count-${card.id}">${userStars[card.id]}</span>
+                        <h3 class="text-center font-medium text-sm mb-2">${ability.name}</h3>
+                        <div class="flex items-center mt-auto">
+                            <button class="vote-btn minus-btn p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors ${votes[ability.id] === 0 || hasVoted ? 'opacity-50 cursor-not-allowed' : ''}" data-id="${ability.id}">
+                                <i class="fa fa-minus text-gray-600"></i>
+                            </button>
+                            <span class="vote-count mx-2 font-bold ${votes[ability.id] > 0 ? 'text-primary' : ''}" data-id="${ability.id}">${votes[ability.id]}</span>
+                            <button class="vote-btn plus-btn p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors ${starsRemaining === 0 || hasVoted ? 'opacity-50 cursor-not-allowed' : ''}" data-id="${ability.id}">
+                                <i class="fa fa-plus text-gray-600"></i>
+                            </button>
                         </div>
                     </div>
                 `;
-                
-                // 未投票时添加点击事件
-                if (!hasVoted) {
-                    cardElement.addEventListener('click', () => handleCardClick(card.id));
-                }
-                
-                cardsContainer.appendChild(cardElement);
-            });
-        }
-        
-        // 处理卡牌点击
-        function handleCardClick(cardId) {
-            if (hasVoted) return; // 已投票则不响应
-            
-            const currentStars = userStars[cardId] || 0;
-            let newStars;
-            
-            // 点击逻辑：循环切换 0 → 1 → 2 → 3 → 4 → 5 → 0
-            if (currentStars < maxStarsPerCard) {
-                // 检查是否有足够的星星
-                if (totalStarsUsed < totalStarsAvailable) {
-                    newStars = currentStars + 1;
-                    totalStarsUsed++;
-                } else {
-                    // 星星已用完，循环回到0
-                    newStars = 0;
-                    totalStarsUsed -= currentStars;
-                }
-            } else {
-                // 已达到最大星星数，重置为0
-                newStars = 0;
-                totalStarsUsed -= currentStars;
-            }
-            
-            // 更新用户星星数据
-            userStars[cardId] = newStars;
-            
-            // 更新UI
-            updateCardStars(cardId);
-            updateStarsRemaining();
-            updateSubmitButtonState();
-        }
-        
-        // 更新卡牌星星显示
-        function updateCardStars(cardId) {
-            const starsCount = userStars[cardId];
-            const cardElement = cardsContainer.querySelector(`[data-card-id="${cardId}"]`);
-            
-            // 更新星星显示
-            cardElement.querySelectorAll('.star-container .fa-star').forEach((star, index) => {
-                if (index < starsCount) {
-                    star.classList.add('star-active');
-                } else {
-                    star.classList.remove('star-active');
-                }
+                cardsContainer.appendChild(card);
             });
             
-            // 更新数字显示
-            cardElement.querySelector(`#stars-count-${cardId}`).textContent = starsCount;
+            // 为投票按钮添加事件监听器
+            document.querySelectorAll('.plus-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (starsRemaining > 0 && !hasVoted) {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        addVote(id);
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.minus-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (!hasVoted) {
+                        const id = parseInt(e.currentTarget.dataset.id);
+                        removeVote(id);
+                    }
+                });
+            });
         }
-        
-        // 更新提交按钮状态
-        function updateSubmitButtonState() {
-            if (totalStarsUsed === totalStarsAvailable && !hasVoted) {
-                submitVoteBtn.disabled = false;
-                submitVoteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                submitVoteBtn.classList.add('animate-shine');
-            } else {
-                submitVoteBtn.disabled = true;
-                submitVoteBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                submitVoteBtn.classList.remove('animate-shine');
+
+        // 添加投票
+        function addVote(abilityId) {
+            if (starsRemaining > 0) {
+                votes[abilityId]++;
+                starsRemaining--;
+                updateVoteUI(abilityId);
             }
         }
-        
-        // 更新剩余星星显示
-        function updateStarsRemaining() {
-            const remaining = totalStarsAvailable - totalStarsUsed;
-            starsRemainingEl.textContent = remaining;
-            
-            // 添加动画效果
-            starsRemainingEl.classList.add('animate-pulse');
-            setTimeout(() => {
-                starsRemainingEl.classList.remove('animate-pulse');
-            }, 500);
+
+        // 减少投票
+        function removeVote(abilityId) {
+            if (votes[abilityId] > 0) {
+                votes[abilityId]--;
+                starsRemaining++;
+                updateVoteUI(abilityId);
+            }
         }
-        
+
+        // 更新投票UI
+        function updateVoteUI(abilityId) {
+            // 更新星星数量显示
+            starsRemainingEl.textContent = starsRemaining;
+            
+            // 更新卡牌上的投票数
+            const voteCountEl = document.querySelector(`.vote-count[data-id="${abilityId}"]`);
+            voteCountEl.textContent = votes[abilityId];
+            voteCountEl.classList.toggle('text-primary', votes[abilityId] > 0);
+            
+            // 更新按钮状态
+            const minusBtn = document.querySelector(`.minus-btn[data-id="${abilityId}"]`);
+            minusBtn.classList.toggle('opacity-50', votes[abilityId] === 0);
+            minusBtn.classList.toggle('cursor-not-allowed', votes[abilityId] === 0);
+            
+            // 更新所有加号按钮状态
+            document.querySelectorAll('.plus-btn').forEach(btn => {
+                btn.classList.toggle('opacity-50', starsRemaining === 0);
+                btn.classList.toggle('cursor-not-allowed', starsRemaining === 0);
+            });
+        }
+
         // 提交投票
-        function submitVote() {
-            if (totalStarsUsed !== totalStarsAvailable || hasVoted) return;
+        function submitVotes() {
+            if (starsRemaining === 0) {
+                // 创建投票记录
+                const UserVote = AV.Object.extend('UserVote');
+                const userVote = new UserVote();
+                
+                userVote.set('userId', userId);
+                userVote.set('votes', votes);
+                
+                userVote.save().then(() => {
+                    hasVoted = true;
+                    successMessage.classList.remove('hidden');
+                    
+                    // 记录已投票，避免重复投票
+                    localStorage.setItem('hasVoted', 'true');
+                }).catch(error => {
+                    console.error('提交投票失败:', error);
+                    alert('提交投票失败，请稍后再试');
+                });
+            } else {
+                alert('请分配完所有10颗星星再提交');
+            }
+        }
+
+        // 获取并监听投票数据
+        function fetchAndListenToVotes() {
+            const UserVote = AV.Object.extend('UserVote');
+            const query = new AV.Query(UserVote);
             
-            // 标记为已投票
-            hasVoted = true;
-            
-            // 保存用户的最终贡献
-            Object.keys(userStars).forEach(cardId => {
-                userContribution[cardId] = userStars[cardId];
+            // 初始获取所有投票数据
+            query.find().then(results => {
+                processVotesData(results);
             });
             
-            // 更新班级数据（添加当前用户的贡献）
-            Object.keys(userContribution).forEach(cardId => {
-                classData[cardId].totalStars += userContribution[cardId];
+            // 监听数据变化，实现实时更新
+            const liveQuery = query.subscribe();
+            liveQuery.on('update', (object) => {
+                query.find().then(results => {
+                    processVotesData(results);
+                });
             });
             
-            // 增加参与人数
-            participantsCount++;
-            participantsCountEl.textContent = participantsCount;
-            
-            // 更新UI状态
-            submitVoteBtn.disabled = true;
-            submitVoteBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            submitVoteBtn.classList.remove('animate-shine');
-            votingCompleteEl.classList.remove('hidden');
-            
-            // 禁用所有卡牌
-            document.querySelectorAll('#cards-container > div').forEach(card => {
-                card.classList.add('card-disabled');
+            liveQuery.on('create', (object) => {
+                query.find().then(results => {
+                    processVotesData(results);
+                });
             });
+        }
+
+        // 处理投票数据
+        function processVotesData(results) {
+            // 计算每个能力的总得票数
+            const abilityTotals = {};
+            abilities.forEach(ability => {
+                abilityTotals[ability.id] = 0;
+            });
+            
+            results.forEach(result => {
+                const votes = result.get('votes');
+                for (const [id, count] of Object.entries(votes)) {
+                    abilityTotals[id] += count;
+                }
+            });
+            
+            // 转换为排序后的数组
+            allVotesData = abilities.map(ability => {
+                return {
+                    ...ability,
+                    total: abilityTotals[ability.id] || 0
+                };
+            }).sort((a, b) => b.total - a.total);
             
             // 更新排行榜
-            updateRankings();
+            updateRanking();
         }
-        
+
         // 更新排行榜
-        function updateRankings() {
-            // 排序技能
-            const sortedSkills = Object.values(classData)
-                .sort((a, b) => b.totalStars - a.totalStars)
-                .slice(0, 10);
+        function updateRanking() {
+            rankingList.innerHTML = '';
             
-            // 更新排行榜列表
-            rankingsList.innerHTML = '';
-            
-            sortedSkills.forEach((skill, index) => {
-                const rankItem = document.createElement('div');
-                rankItem.className = 'rank-item flex items-center p-2 rounded-lg hover:bg-purple-800/30';
-                
-                // 为前三名添加特殊样式
-                let rankStyle = '';
-                if (index === 0) rankStyle = 'bg-yellow-500 text-yellow-800';
-                else if (index === 1) rankStyle = 'bg-gray-300 text-gray-800';
-                else if (index === 2) rankStyle = 'bg-orange-600 text-white';
-                else rankStyle = 'bg-gray-600 text-white';
-                
-                rankItem.innerHTML = `
-                    <div class="w-6 h-6 rounded-full ${rankStyle} flex items-center justify-center text-xs font-bold mr-3">
-                        ${index + 1}
-                    </div>
-                    <i class="fa ${skill.icon} text-purple-300 mr-3 w-5 text-center"></i>
-                    <span class="flex-1 text-sm truncate">${skill.name}</span>
-                    <div class="flex items-center">
-                        <i class="fa fa-star text-secondary mr-1"></i>
-                        <span class="font-bold">${skill.totalStars}</span>
-                    </div>
-                `;
-                
-                rankingsList.appendChild(rankItem);
+            allVotesData.forEach((ability, index) => {
+                if (ability.total > 0 || index < 10) { // 显示所有有投票的能力，至少显示前10名
+                    const rankItem = document.createElement('div');
+                    rankItem.className = `flex items-center p-3 rounded-lg ${index < 3 ? 'bg-gray-50' : 'hover:bg-gray-50'} transition-colors`;
+                    
+                    // 前三名显示奖牌
+                    let rankIcon = '';
+                    if (index === 0) {
+                        rankIcon = '<i class="fa fa-trophy text-yellow-500 mr-2"></i>';
+                    } else if (index === 1) {
+                        rankIcon = '<i class="fa fa-trophy text-gray-400 mr-2"></i>';
+                    } else if (index === 2) {
+                        rankIcon = '<i class="fa fa-trophy text-amber-700 mr-2"></i>';
+                    } else {
+                        rankIcon = `<span class="w-6 text-center mr-2 text-gray-500">${index + 1}</span>`;
+                    }
+                    
+                    rankItem.innerHTML = `
+                        <div class="mr-3">${rankIcon}</div>
+                        <div class="w-8 h-8 rounded-full ${ability.color} flex items-center justify-center flex-shrink-0">
+                            <i class="fa ${ability.icon}"></i>
+                        </div>
+                        <div class="ml-3 flex-grow">
+                            <div class="font-medium">${ability.name}</div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                <div class="bg-primary h-2 rounded-full" style="width: ${calculatePercentage(ability.total)}%"></div>
+                            </div>
+                        </div>
+                        <div class="ml-2 font-bold text-primary">${ability.total} <i class="fa fa-star text-star"></i></div>
+                    `;
+                    rankingList.appendChild(rankItem);
+                }
             });
             
-            // 更新排行榜图表
-            updateRankingsChart(sortedSkills.slice(0, 5));
+            // 更新图表
+            updateChart();
         }
-        
-        // 更新排行榜图表
-        function updateRankingsChart(topSkills) {
-            const ctx = document.getElementById('rankings-chart').getContext('2d');
+
+        // 计算百分比（用于进度条）
+        function calculatePercentage(value) {
+            if (allVotesData.length === 0) return 0;
+            const max = allVotesData[0].total;
+            return max > 0 ? Math.min(100, (value / max) * 100) : 0;
+        }
+
+        // 更新图表
+        function updateChart() {
+            // 只显示前5名的数据
+            const topAbilities = allVotesData.slice(0, 5);
             
-            const labels = topSkills.map(skill => skill.name);
-            const data = topSkills.map(skill => skill.totalStars);
-            const backgroundColors = [
-                'rgba(245, 158, 11, 0.8)', // 金色（第1名）
-                'rgba(209, 213, 219, 0.8)', // 银色（第2名）
-                'rgba(249, 115, 22, 0.8)', // 铜色（第3名）
-                'rgba(168, 85, 247, 0.8)', // 紫色
-                'rgba(34, 211, 238, 0.8)'  // 蓝色
-            ];
+            const ctx = document.getElementById('rankingChart').getContext('2d');
             
-            if (rankingsChart) {
-                rankingsChart.destroy();
+            // 销毁已存在的图表
+            if (window.rankingChartInstance) {
+                window.rankingChartInstance.destroy();
             }
             
-            // 如果还没有数据，显示提示信息
-            if (data.every(value => value === 0)) {
-                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                ctx.textAlign = 'center';
-                ctx.font = '14px Inter, sans-serif';
-                ctx.fillText('等待更多同学参与...', ctx.canvas.width / 2, ctx.canvas.height / 2);
-                return;
-            }
-            
-            rankingsChart = new Chart(ctx, {
+            // 创建新图表
+            window.rankingChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: topAbilities.map(a => a.name),
                     datasets: [{
-                        label: '星星总数',
-                        data: data,
-                        backgroundColor: backgroundColors,
-                        borderColor: backgroundColors.map(color => color.replace('0.8', '1')),
-                        borderWidth: 1,
+                        label: '星星数量',
+                        data: topAbilities.map(a => a.total),
+                        backgroundColor: topAbilities.map(a => {
+                            // 从颜色类中提取实际颜色值
+                            const colorMap = {
+                                'bg-green-100': 'rgba(110, 231, 183, 0.7)',
+                                'bg-purple-100': 'rgba(216, 180, 254, 0.7)',
+                                'bg-blue-100': 'rgba(191, 219, 254, 0.7)',
+                                'bg-amber-100': 'rgba(252, 231, 166, 0.7)',
+                                'bg-red-100': 'rgba(254, 202, 202, 0.7)',
+                                'bg-indigo-100': 'rgba(224, 231, 255, 0.7)',
+                                'bg-pink-100': 'rgba(251, 207, 232, 0.7)',
+                                'bg-rose-100': 'rgba(254, 215, 215, 0.7)',
+                                'bg-sky-100': 'rgba(186, 230, 253, 0.7)',
+                                'bg-emerald-100': 'rgba(167, 243, 208, 0.7)',
+                                'bg-orange-100': 'rgba(254, 226, 208, 0.7)',
+                                'bg-teal-100': 'rgba(175, 243, 230, 0.7)',
+                                'bg-lime-100': 'rgba(236, 253, 245, 0.7)',
+                                'bg-fuchsia-100': 'rgba(253, 224, 255, 0.7)',
+                                'bg-cyan-100': 'rgba(207, 250, 254, 0.7)',
+                                'bg-slate-100': 'rgba(226, 232, 240, 0.7)'
+                            };
+                            return colorMap[a.color] || 'rgba(191, 219, 254, 0.7)';
+                        }),
+                        borderWidth: 0,
                         borderRadius: 4
                     }]
                 },
                 options: {
-                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             display: false
                         }
                     },
                     scales: {
-                        x: {
+                        y: {
                             beginAtZero: true,
                             grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: 'rgba(255, 255, 255, 0.7)'
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
                             }
                         },
-                        y: {
+                        x: {
                             grid: {
                                 display: false
-                            },
-                            ticks: {
-                                color: 'rgba(255, 255, 255, 0.7)'
                             }
                         }
                     }
                 }
             });
         }
-        
-        // 初始化事件监听
-        function initEventListeners() {
-            submitVoteBtn.addEventListener('click', submitVote);
+
+        // 显示排行榜
+        function showRanking() {
+            rankingSection.classList.remove('hidden');
+            cardsContainer.classList.add('hidden');
         }
-        
-        // 初始化应用
-        function init() {
-            initClassData();
-            createSkillCards();
-            updateStarsRemaining();
-            updateRankings();
-            initEventListeners();
+
+        // 切换排行榜显示
+        function toggleRanking() {
+            rankingSection.classList.toggle('hidden');
+            cardsContainer.classList.toggle('hidden');
         }
-        
-        // 启动应用
+
+        // 切换视图（卡片/列表）
+        function toggleView() {
+            const isGrid = cardsContainer.classList.contains('grid-cols-2');
+            
+            if (isGrid) {
+                // 切换到列表视图
+                cardsContainer.classList.remove('grid-cols-2', 'sm:grid-cols-3', 'md:grid-cols-4', 'lg:grid-cols-5', 'xl:grid-cols-6');
+                cardsContainer.classList.add('grid-cols-1');
+                toggleViewBtn.innerHTML = '<i class="fa fa-list text-secondary"></i>';
+            } else {
+                // 切换到网格视图
+                cardsContainer.classList.add('grid-cols-2', 'sm:grid-cols-3', 'md:grid-cols-4', 'lg:grid-cols-5', 'xl:grid-cols-6');
+                cardsContainer.classList.remove('grid-cols-1');
+                toggleViewBtn.innerHTML = '<i class="fa fa-th-large text-secondary"></i>';
+            }
+        }
+
+        // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
