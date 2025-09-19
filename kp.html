@@ -71,6 +71,11 @@
                 backdrop-filter: blur(10px);
                 border: 1px solid rgba(255, 255, 255, 0.2);
             }
+            .card-disabled {
+                filter: grayscale(0.7);
+                opacity: 0.7;
+                pointer-events: none;
+            }
         }
     </style>
     
@@ -110,15 +115,15 @@
                 <i class="fa fa-users text-blue-300 text-2xl mr-3"></i>
                 <div>
                     <p class="text-sm text-purple-200">参与人数</p>
-                    <p id="participants-count" class="text-3xl font-bold text-blue-300">1</p>
+                    <p id="participants-count" class="text-3xl font-bold text-blue-300">0</p>
                 </div>
             </div>
             
             <div class="glass-effect rounded-xl p-4 w-full md:w-auto flex items-center">
-                <i class="fa fa-refresh text-green-300 text-2xl mr-3"></i>
-                <button id="reset-game" class="text-green-300 hover:text-green-200 transition-colors">
-                    <p class="text-sm text-purple-200">重置选择</p>
-                    <p class="font-bold">重新开始</p>
+                <i class="fa fa-check-circle text-green-300 text-2xl mr-3"></i>
+                <button id="submit-vote" class="text-green-300 hover:text-green-200 transition-colors opacity-50 cursor-not-allowed" disabled>
+                    <p class="text-sm text-purple-200">完成后点击</p>
+                    <p class="font-bold">提交投票</p>
                 </button>
             </div>
         </div>
@@ -134,6 +139,12 @@
                     <p class="text-sm text-purple-200 mb-4">
                         点击卡牌分配星星，每张卡牌最多可分配5颗星星，总共10颗星星可分配
                     </p>
+                    
+                    <!-- 投票完成提示（默认隐藏） -->
+                    <div id="voting-complete" class="hidden bg-green-500/20 border border-green-500/40 rounded-lg p-4 mb-4 text-center">
+                        <i class="fa fa-check-circle text-green-400 text-xl mr-2"></i>
+                        <span>你的投票已提交成功！查看右侧班级排行榜。</span>
+                    </div>
                     
                     <!-- 卡牌网格 -->
                     <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto pr-2">
@@ -172,14 +183,14 @@
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-purple-100">
                 <div>
-                    <p class="mb-2"><span class="text-yellow-300 font-semibold">1.</span> 每位同学有10颗星星可分配</p>
+                    <p class="mb-2"><span class="text-yellow-300 font-semibold">1.</span> 每位同学有10颗星星可分配，且只能投票一次</p>
                     <p class="mb-2"><span class="text-yellow-300 font-semibold">2.</span> 点击技能卡牌为其分配星星</p>
                     <p class="mb-2"><span class="text-yellow-300 font-semibold">3.</span> 每张卡牌最多可分配5颗星星</p>
                 </div>
                 <div>
                     <p class="mb-2"><span class="text-yellow-300 font-semibold">4.</span> 再次点击可减少分配的星星</p>
-                    <p class="mb-2"><span class="text-yellow-300 font-semibold">5.</span> 星星分配完毕后自动更新排行榜</p>
-                    <p><span class="text-yellow-300 font-semibold">6.</span> 排行榜实时显示班级最需要的技能</p>
+                    <p class="mb-2"><span class="text-yellow-300 font-semibold">5.</span> 星星分配完毕后点击"提交投票"</p>
+                    <p><span class="text-yellow-300 font-semibold">6.</span> 提交后不可修改，排行榜实时更新</p>
                 </div>
             </div>
         </div>
@@ -230,17 +241,20 @@
         let totalStarsUsed = 0;
         const maxStarsPerCard = 5;
         const totalStarsAvailable = 10;
+        let hasVoted = false; // 标记用户是否已投票
+        let userContribution = {}; // 记录用户的最终贡献
         
-        // 模拟班级数据（实际应用中应从服务器获取）
+        // 班级数据（实际应用中应从服务器获取）
         let classData = {};
-        let participantsCount = 1;
+        let participantsCount = 0;
         
         // DOM元素
         const cardsContainer = document.getElementById('cards-container');
         const rankingsList = document.getElementById('rankings-list');
         const starsRemainingEl = document.getElementById('stars-remaining');
         const participantsCountEl = document.getElementById('participants-count');
-        const resetGameBtn = document.getElementById('reset-game');
+        const submitVoteBtn = document.getElementById('submit-vote');
+        const votingCompleteEl = document.getElementById('voting-complete');
         let rankingsChart = null;
         
         // 初始化班级数据
@@ -251,6 +265,8 @@
                     totalStars: 0,
                     icon: card.icon
                 };
+                userStars[card.id] = 0;
+                userContribution[card.id] = 0;
             });
         }
         
@@ -259,13 +275,8 @@
             cardsContainer.innerHTML = '';
             
             skillCards.forEach(card => {
-                // 初始化用户星星数据
-                if (userStars[card.id] === undefined) {
-                    userStars[card.id] = 0;
-                }
-                
                 const cardElement = document.createElement('div');
-                cardElement.className = 'bg-gradient-to-br from-purple-800 to-indigo-900 rounded-lg overflow-hidden card-shadow card-hover';
+                cardElement.className = `bg-gradient-to-br from-purple-800 to-indigo-900 rounded-lg overflow-hidden card-shadow card-hover ${hasVoted ? 'card-disabled' : ''}`;
                 cardElement.dataset.cardId = card.id;
                 
                 cardElement.innerHTML = `
@@ -289,8 +300,10 @@
                     </div>
                 `;
                 
-                // 添加点击事件
-                cardElement.addEventListener('click', () => handleCardClick(card.id));
+                // 未投票时添加点击事件
+                if (!hasVoted) {
+                    cardElement.addEventListener('click', () => handleCardClick(card.id));
+                }
                 
                 cardsContainer.appendChild(cardElement);
             });
@@ -298,6 +311,8 @@
         
         // 处理卡牌点击
         function handleCardClick(cardId) {
+            if (hasVoted) return; // 已投票则不响应
+            
             const currentStars = userStars[cardId] || 0;
             let newStars;
             
@@ -321,13 +336,10 @@
             // 更新用户星星数据
             userStars[cardId] = newStars;
             
-            // 更新班级数据
-            updateClassData(cardId, newStars);
-            
             // 更新UI
             updateCardStars(cardId);
             updateStarsRemaining();
-            updateRankings();
+            updateSubmitButtonState();
         }
         
         // 更新卡牌星星显示
@@ -348,34 +360,17 @@
             cardElement.querySelector(`#stars-count-${cardId}`).textContent = starsCount;
         }
         
-        // 更新班级数据
-        function updateClassData(cardId, newStars) {
-            // 在实际应用中，这里应该发送数据到服务器
-            // 这里仅做本地模拟，随机增加一些其他用户的数据以模拟多人参与
-            
-            // 更新当前用户对该技能的贡献
-            const previousStars = classData[cardId].totalStars - getRandomContribution(cardId);
-            classData[cardId].totalStars = previousStars + newStars;
-            
-            // 随机更新其他用户的数据，模拟多人参与
-            if (Math.random() > 0.7) {
-                const randomCardId = Math.floor(Math.random() * skillCards.length) + 1;
-                if (randomCardId !== cardId) {
-                    classData[randomCardId].totalStars += Math.floor(Math.random() * 2);
-                }
+        // 更新提交按钮状态
+        function updateSubmitButtonState() {
+            if (totalStarsUsed === totalStarsAvailable && !hasVoted) {
+                submitVoteBtn.disabled = false;
+                submitVoteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                submitVoteBtn.classList.add('animate-shine');
+            } else {
+                submitVoteBtn.disabled = true;
+                submitVoteBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                submitVoteBtn.classList.remove('animate-shine');
             }
-            
-            // 随机增加参与人数
-            if (Math.random() > 0.85) {
-                participantsCount++;
-                participantsCountEl.textContent = participantsCount;
-            }
-        }
-        
-        // 获取随机贡献值（模拟其他用户的贡献）
-        function getRandomContribution(cardId) {
-            // 生成1-3之间的随机数，模拟其他用户的贡献
-            return Math.floor(Math.random() * 3) + 1;
         }
         
         // 更新剩余星星显示
@@ -388,6 +383,42 @@
             setTimeout(() => {
                 starsRemainingEl.classList.remove('animate-pulse');
             }, 500);
+        }
+        
+        // 提交投票
+        function submitVote() {
+            if (totalStarsUsed !== totalStarsAvailable || hasVoted) return;
+            
+            // 标记为已投票
+            hasVoted = true;
+            
+            // 保存用户的最终贡献
+            Object.keys(userStars).forEach(cardId => {
+                userContribution[cardId] = userStars[cardId];
+            });
+            
+            // 更新班级数据（添加当前用户的贡献）
+            Object.keys(userContribution).forEach(cardId => {
+                classData[cardId].totalStars += userContribution[cardId];
+            });
+            
+            // 增加参与人数
+            participantsCount++;
+            participantsCountEl.textContent = participantsCount;
+            
+            // 更新UI状态
+            submitVoteBtn.disabled = true;
+            submitVoteBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            submitVoteBtn.classList.remove('animate-shine');
+            votingCompleteEl.classList.remove('hidden');
+            
+            // 禁用所有卡牌
+            document.querySelectorAll('#cards-container > div').forEach(card => {
+                card.classList.add('card-disabled');
+            });
+            
+            // 更新排行榜
+            updateRankings();
         }
         
         // 更新排行榜
@@ -448,6 +479,16 @@
                 rankingsChart.destroy();
             }
             
+            // 如果还没有数据，显示提示信息
+            if (data.every(value => value === 0)) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.textAlign = 'center';
+                ctx.font = '14px Inter, sans-serif';
+                ctx.fillText('等待更多同学参与...', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                return;
+            }
+            
             rankingsChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -482,7 +523,7 @@
                             grid: {
                                 display: false
                             },
-                            tick: {
+                            ticks: {
                                 color: 'rgba(255, 255, 255, 0.7)'
                             }
                         }
@@ -491,35 +532,9 @@
             });
         }
         
-        // 重置游戏
-        function resetGame() {
-            // 重置用户星星数据
-            skillCards.forEach(card => {
-                userStars[card.id] = 0;
-            });
-            
-            totalStarsUsed = 0;
-            
-            // 更新UI
-            createSkillCards();
-            updateStarsRemaining();
-            updateRankings();
-            
-            // 添加重置动画
-            const allCards = document.querySelectorAll('#cards-container > div');
-            allCards.forEach((card, index) => {
-                setTimeout(() => {
-                    card.classList.add('scale-90', 'opacity-50');
-                    setTimeout(() => {
-                        card.classList.remove('scale-90', 'opacity-50');
-                    }, 200);
-                }, index * 50);
-            });
-        }
-        
         // 初始化事件监听
         function initEventListeners() {
-            resetGameBtn.addEventListener('click', resetGame);
+            submitVoteBtn.addEventListener('click', submitVote);
         }
         
         // 初始化应用
