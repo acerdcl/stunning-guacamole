@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>霍兰德职业兴趣测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        neutral: '#64748B',
+                        r: '#EF4444',    // 现实型 - 红色
+                        i: '#3B82F6',    // 研究型 - 蓝色
+                        a: '#EC4899',    // 艺术型 - 粉色
+                        s: '#10B981',    // 社会型 - 绿色
+                        e: '#F59E0B',    // 企业型 - 橙色
+                        c: '#6366F1',    // 常规型 - 靛蓝色
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .progress-bar {
+                transition: width 0.5s ease-in-out;
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- 标题区域 -->
+        <header class="text-center mb-12">
+            <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold text-gray-800 mb-4">霍兰德职业兴趣测试</h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+                本测试将帮助你发现自己的职业兴趣倾向，为职业规划提供参考。请根据自己的真实情况选择答案。
+            </p>
+        </header>
+        
+        <!-- 测试容器 -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <!-- 开始页面 -->
+            <div id="start-screen" class="p-8">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">测试说明</h2>
+                    <ul class="list-disc pl-6 space-y-2 text-gray-600">
+                        <li>本测试包含60道题目，每道题有三个选项，请选择最适合你的选项。</li>
+                        <li>答案没有对错之分，请根据你的真实喜好和倾向进行选择。</li>
+                        <li>完成测试后，系统将为你生成职业兴趣分析报告。</li>
+                    </ul>
+                </div>
+                
+                <button id="start-btn" class="bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1">
+                    开始测试 <i class="fa fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+            
+            <!-- 测试页面 -->
+            <div id="test-screen" class="p-8 hidden">
+                <!-- 进度条 -->
+                <div class="mb-8">
+                    <div class="flex justify-between text-sm text-gray-500 mb-2">
+                        <span>进度</span>
+                        <span id="progress-text">1/60</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="progress-bar h-full bg-primary rounded-full" style="width: 1.67%"></div>
+                    </div>
+                </div>
+                
+                <!-- 题目区域 -->
+                <div class="mb-8">
+                    <h3 id="question-number" class="text-lg font-semibold mb-4 text-gray-800">第1题</h3>
+                    <p id="question-text" class="text-xl mb-6 text-gray-700">当你有空闲时间，你更愿意做哪件事？</p>
+                    
+                    <div class="space-y-4" id="options-container">
+                        <!-- 选项将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 导航按钮 -->
+                <div class="flex justify-between">
+                    <button id="prev-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa fa-arrow-left mr-2"></i> 上一题
+                    </button>
+                    <button id="next-btn" class="bg-primary hover:bg-primary/90 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300">
+                        下一题 <i class="fa fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 结果页面 -->
+            <div id="result-screen" class="p-8 hidden">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">你的职业兴趣分析</h2>
+                
+                <!-- 得分图表 -->
+                <div class="mb-10">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">兴趣类型得分</h3>
+                    <div class="h-64">
+                        <canvas id="result-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 主要兴趣类型 -->
+                <div class="mb-10">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">你的主要兴趣类型</h3>
+                    <div id="top-interest" class="bg-blue-50 border-l-4 border-primary p-4 rounded-r-lg">
+                        <!-- 将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 职业建议 -->
+                <div class="mb-10">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">适合你的职业方向</h3>
+                    <div id="career-suggestions" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- 将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 重新测试按钮 -->
+                <div class="text-center">
+                    <button id="restart-btn" class="bg-secondary hover:bg-secondary/90 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg">
+                        重新测试 <i class="fa fa-refresh ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 页脚 -->
+        <footer class="mt-12 text-center text-gray-500 text-sm">
+            <p>霍兰德职业兴趣测试基于约翰·霍兰德(John Holland)的职业兴趣理论</p>
+            <p class="mt-2">本测试结果仅供参考，不构成职业选择的唯一依据</p>
+            <p class="mt-2">Copyright © 2025 by 电商杜老师</p>
+        </footer>
+    </div>
+
+    <script>
+        // 霍兰德六种类型的定义
+        const hollandTypes = {
+            r: { 
+                name: "现实型", 
+                description: "偏好与物体、工具打交道，喜欢户外活动或操作机器，适合需要体力、手工技能的职业。",
+                careers: ["机械工程师", "电工", "农民", "建筑工人", "飞行员", "消防员", "厨师"]
+            },
+            i: { 
+                name: "研究型", 
+                description: "喜欢探索自然规律，追求科学真理，擅长逻辑分析和抽象思维，适合科学研究类职业。",
+                careers: ["科学家", "研究员", "医生", "数学家", "化学家", "生物学家", "程序员"]
+            },
+            a: { 
+                name: "艺术型", 
+                description: "富有创造力和想象力，喜欢艺术形式的表达，追求美感和情感体验，适合艺术创作类职业。",
+                careers: ["画家", "音乐家", "作家", "设计师", "演员", "摄影师", "诗人"]
+            },
+            s: { 
+                name: "社会型", 
+                description: "乐于与人交往，关心社会问题，善于理解和帮助他人，适合教育、医疗、社会工作等职业。",
+                careers: ["教师", "护士", "心理咨询师", "社会工作者", "医生", "公关人员", "培训师"]
+            },
+            e: { 
+                name: "企业型", 
+                description: "具有领导才能和说服力，追求权力和成就，适合管理、销售、政治等需要组织和影响他人的职业。",
+                careers: ["企业家", "经理", "销售", "政治家", "律师", "公关经理", "市场总监"]
+            },
+            c: { 
+                name: "常规型", 
+                description: "注重细节和规则，喜欢有条理的工作，擅长数据处理和文书工作，适合行政、财务等职业。",
+                careers: ["会计师", "秘书", "图书管理员", "银行职员", "数据录入员", "行政助理", "档案管理员"]
+            }
+        };
+
+        // 测试题目
+        const questions = [
+            {
+                text: "当你有空闲时间，你更愿意做哪件事？",
+                options: [
+                    { text: "修理家里的电器或家具", type: "r" },
+                    { text: "阅读科普书籍或文章", type: "i" },
+                    { text: "画画、唱歌或创作一些艺术品", type: "a" }
+                ]
+            },
+            {
+                text: "如果你要参加一个社区活动，你会选择哪种角色？",
+                options: [
+                    { text: "组织活动的流程和安排", type: "e" },
+                    { text: "帮助协调参与者之间的关系", type: "s" },
+                    { text: "负责活动的记录和财务工作", type: "c" }
+                ]
+            },
+            {
+                text: "你更喜欢哪种类型的课程或培训？",
+                options: [
+                    { text: "实验课或手工制作课", type: "r" },
+                    { text: "理论课或研讨课", type: "i" },
+                    { text: "音乐课或绘画课", type: "a" }
+                ]
+            },
+            {
+                text: "当你解决问题时，你更倾向于：",
+                options: [
+                    { text: "通过与人讨论找到解决方案", type: "s" },
+                    { text: "制定计划并组织实施", type: "e" },
+                    { text: "按照既定流程和规则处理", type: "c" }
+                ]
+            },
+            {
+                text: "你理想的工作环境是：",
+                options: [
+                    { text: "工厂、实验室或户外场所", type: "r" },
+                    { text: "研究机构或图书馆", type: "i" },
+                    { text: "工作室、剧院或艺术空间", type: "a" }
+                ]
+            },
+            {
+                text: "在团队合作中，你更擅长：",
+                options: [
+                    { text: "协调人际关系，促进团队和谐", type: "s" },
+                    { text: "制定目标，带领团队前进", type: "e" },
+                    { text: "处理细节，确保工作准确无误", type: "c" }
+                ]
+            },
+            {
+                text: "你更喜欢阅读哪种类型的书籍？",
+                options: [
+                    { text: "技术手册或DIY指南", type: "r" },
+                    { text: "科学著作或学术论文", type: "i" },
+                    { text: "小说、诗歌或艺术评论", type: "a" }
+                ]
+            },
+            {
+                text: "当你需要完成一项任务时，你会：",
+                options: [
+                    { text: "优先考虑如何帮助他人一起完成", type: "s" },
+                    { text: "设定明确目标并努力实现", type: "e" },
+                    { text: "制定详细计划并严格执行", type: "c" }
+                ]
+            },
+            {
+                text: "你更享受哪种活动带来的成就感？",
+                options: [
+                    { text: "成功修理了一个复杂的机械", type: "r" },
+                    { text: "发现了一个科学规律或解决了难题", type: "i" },
+                    { text: "完成了一件艺术品或创作", type: "a" }
+                ]
+            },
+            {
+                text: "在社交场合中，你通常是：",
+                options: [
+                    { text: "主动关心他人，提供帮助", type: "s" },
+                    { text: "成为焦点，引导话题", type: "e" },
+                    { text: "默默观察，做好记录", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意学习哪种技能？",
+                options: [
+                    { text: "驾驶、修理或制作物品", type: "r" },
+                    { text: "数据分析、逻辑推理或实验设计", type: "i" },
+                    { text: "绘画、音乐或写作", type: "a" }
+                ]
+            },
+            {
+                text: "对于团队中的冲突，你会：",
+                options: [
+                    { text: "调解双方，寻求和谐解决方案", type: "s" },
+                    { text: "果断决策，推动团队前进", type: "e" },
+                    { text: "参考规则，按规定处理", type: "c" }
+                ]
+            },
+            {
+                text: "你更喜欢哪种类型的电影？",
+                options: [
+                    { text: "动作片或纪录片", type: "r" },
+                    { text: "科幻片或悬疑片", type: "i" },
+                    { text: "文艺片或音乐剧", type: "a" }
+                ]
+            },
+            {
+                text: "在规划未来时，你更注重：",
+                options: [
+                    { text: "能否帮助他人和社会", type: "s" },
+                    { text: "能否获得成功和影响力", type: "e" },
+                    { text: "能否保持稳定和安全", type: "c" }
+                ]
+            },
+            {
+                text: "你更擅长处理哪种类型的问题？",
+                options: [
+                    { text: "需要动手操作的实际问题", type: "r" },
+                    { text: "需要分析思考的理论问题", type: "i" },
+                    { text: "需要创意表达的艺术问题", type: "a" }
+                ]
+            },
+            {
+                text: "你更倾向于哪种工作方式？",
+                options: [
+                    { text: "与他人合作完成", type: "s" },
+                    { text: "领导团队完成", type: "e" },
+                    { text: "独立按照流程完成", type: "c" }
+                ]
+            },
+            {
+                text: "你在选择礼物时，更倾向于：",
+                options: [
+                    { text: "实用的工具或物品", type: "r" },
+                    { text: "知识性的书籍或课程", type: "i" },
+                    { text: "艺术品或手工制品", type: "a" }
+                ]
+            },
+            {
+                text: "在解决一个复杂问题时，你会：",
+                options: [
+                    { text: "先咨询他人的意见和经验", type: "s" },
+                    { text: "制定策略并组织资源实施", type: "e" },
+                    { text: "收集数据并分析，按步骤处理", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意参与哪种志愿者活动？",
+                options: [
+                    { text: "修建房屋或维护公园", type: "r" },
+                    { text: "科学普及或环保研究", type: "i" },
+                    { text: "艺术表演或文化活动", type: "a" }
+                ]
+            },
+            {
+                text: "当你需要做决策时，你更依赖：",
+                options: [
+                    { text: "他人的感受和需求", type: "s" },
+                    { text: "自己的判断和直觉", type: "e" },
+                    { text: "已有的规则和数据", type: "c" }
+                ]
+            },
+            // 更多题目...
+            {
+                text: "你更喜欢哪种类型的游戏？",
+                options: [
+                    { text: "需要动手操作的游戏", type: "r" },
+                    { text: "需要策略思考的游戏", type: "i" },
+                    { text: "需要创意表达的游戏", type: "a" }
+                ]
+            },
+            {
+                text: "在团队项目中，你更关注：",
+                options: [
+                    { text: "团队成员的感受和合作", type: "s" },
+                    { text: "项目的目标和成果", type: "e" },
+                    { text: "任务的细节和准确性", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意学习哪种语言？",
+                options: [
+                    { text: "计算机编程语言", type: "r" },
+                    { text: "科学或学术用语", type: "i" },
+                    { text: "文学或诗歌语言", type: "a" }
+                ]
+            },
+            {
+                text: "你在处理冲突时，更倾向于：",
+                options: [
+                    { text: "寻求双方都满意的解决方案", type: "s" },
+                    { text: "坚持自己的观点并说服他人", type: "e" },
+                    { text: "参考规则，按规定处理", type: "c" }
+                ]
+            },
+            {
+                text: "你更喜欢哪种类型的旅行？",
+                options: [
+                    { text: "探险或户外活动", type: "r" },
+                    { text: "参观博物馆或历史遗迹", type: "i" },
+                    { text: "体验当地文化和艺术", type: "a" }
+                ]
+            },
+            {
+                text: "在工作中，你更看重：",
+                options: [
+                    { text: "与同事的良好关系", type: "s" },
+                    { text: "晋升机会和成就感", type: "e" },
+                    { text: "工作的稳定性和规律性", type: "c" }
+                ]
+            },
+            {
+                text: "你更擅长哪种类型的任务？",
+                options: [
+                    { text: "需要体力或手工技能的任务", type: "r" },
+                    { text: "需要分析或研究的任务", type: "i" },
+                    { text: "需要创意或艺术表达的任务", type: "a" }
+                ]
+            },
+            {
+                text: "在团队中，你更希望扮演的角色是：",
+                options: [
+                    { text: "支持者和协调者", type: "s" },
+                    { text: "领导者和决策者", type: "e" },
+                    { text: "执行者和记录者", type: "c" }
+                ]
+            },
+            {
+                text: "你更喜欢哪种类型的聚会？",
+                options: [
+                    { text: "户外活动或运动会", type: "r" },
+                    { text: "讲座或讨论会", type: "i" },
+                    { text: "音乐会或艺术展览", type: "a" }
+                ]
+            },
+            {
+                text: "当你需要完成一项任务时，你会：",
+                options: [
+                    { text: "先考虑如何与他人合作完成", type: "s" },
+                    { text: "设定明确目标并努力实现", type: "e" },
+                    { text: "制定详细计划并严格执行", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意研究哪种问题？",
+                options: [
+                    { text: "机器如何工作", type: "r" },
+                    { text: "自然现象的规律", type: "i" },
+                    { text: "艺术作品的内涵", type: "a" }
+                ]
+            },
+            {
+                text: "在解决问题时，你更相信：",
+                options: [
+                    { text: "团队的力量", type: "s" },
+                    { text: "自己的判断", type: "e" },
+                    { text: "已有的经验和数据", type: "c" }
+                ]
+            },
+            {
+                text: "你更喜欢哪种类型的音乐？",
+                options: [
+                    { text: "节奏感强的音乐", type: "r" },
+                    { text: "复杂多变的音乐", type: "i" },
+                    { text: "富有情感的音乐", type: "a" }
+                ]
+            },
+            {
+                text: "在工作中，你更擅长：",
+                options: [
+                    { text: "与他人沟通协调", type: "s" },
+                    { text: "制定策略和计划", type: "e" },
+                    { text: "处理细节和数据", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意参加哪种类型的俱乐部？",
+                options: [
+                    { text: "运动俱乐部或手工俱乐部", type: "r" },
+                    { text: "科学俱乐部或读书俱乐部", type: "i" },
+                    { text: "戏剧俱乐部或美术俱乐部", type: "a" }
+                ]
+            },
+            {
+                text: "当你遇到困难时，你会：",
+                options: [
+                    { text: "向他人寻求帮助", type: "s" },
+                    { text: "独立克服困难", type: "e" },
+                    { text: "寻找已有的解决方案", type: "c" }
+                ]
+            },
+            {
+                text: "你更擅长记住哪种信息？",
+                options: [
+                    { text: "如何操作或制作某物", type: "r" },
+                    { text: "理论知识或概念", type: "i" },
+                    { text: "艺术作品或创意想法", type: "a" }
+                ]
+            },
+            {
+                text: "在团队决策中，你更倾向于：",
+                options: [
+                    { text: "考虑所有人的意见", type: "s" },
+                    { text: "快速做出决策并行动", type: "e" },
+                    { text: "基于数据和规则做出决策", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意观看哪种类型的电视节目？",
+                options: [
+                    { text: "真人秀或户外探险", type: "r" },
+                    { text: "纪录片或科教节目", type: "i" },
+                    { text: "电视剧或艺术表演", type: "a" }
+                ]
+            },
+            {
+                text: "在工作中，你更希望得到哪种反馈？",
+                options: [
+                    { text: "他人的认可和感谢", type: "s" },
+                    { text: "成就和进步的肯定", type: "e" },
+                    { text: "工作准确性的评价", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意从事哪种类型的兼职工作？",
+                options: [
+                    { text: "修理、搬运或体力劳动", type: "r" },
+                    { text: "辅导、研究或数据分析", type: "i" },
+                    { text: "表演、设计或写作", type: "a" }
+                ]
+            },
+            {
+                text: "在团队中，你更关注：",
+                options: [
+                    { text: "成员之间的关系", type: "s" },
+                    { text: "团队的目标和成果", type: "e" },
+                    { text: "工作的效率和准确性", type: "c" }
+                ]
+            },
+            {
+                text: "你更喜欢哪种类型的天气？",
+                options: [
+                    { text: "晴朗的天气，适合户外活动", type: "r" },
+                    { text: "雨天，适合室内思考", type: "i" },
+                    { text: "多变的天气，带来不同的灵感", type: "a" }
+                ]
+            },
+            {
+                text: "在解决问题时，你更倾向于：",
+                options: [
+                    { text: "与人合作寻找解决方案", type: "s" },
+                    { text: "采取主动，尝试不同方法", type: "e" },
+                    { text: "遵循既定流程和方法", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意学习哪种技能？",
+                options: [
+                    { text: "修理汽车或家电", type: "r" },
+                    { text: "编程或数据分析", type: "i" },
+                    { text: "摄影或绘画", type: "a" }
+                ]
+            },
+            {
+                text: "在工作中，你更看重哪种价值？",
+                options: [
+                    { text: "帮助他人，服务社会", type: "s" },
+                    { text: "实现目标，获得成功", type: "e" },
+                    { text: "准确无误，有条不紊", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意参加哪种类型的会议？",
+                options: [
+                    { text: "动手实践的工作坊", type: "r" },
+                    { text: "学术研讨或专题讲座", type: "i" },
+                    { text: "创意分享或头脑风暴", type: "a" }
+                ]
+            },
+            {
+                text: "当你需要完成一个项目时，你会：",
+                options: [
+                    { text: "先与团队成员建立良好关系", type: "s" },
+                    { text: "设定明确目标并制定计划", type: "e" },
+                    { text: "详细规划每个步骤并执行", type: "c" }
+                ]
+            },
+            {
+                text: "你更擅长哪种类型的思维？",
+                options: [
+                    { text: "实际应用思维", type: "r" },
+                    { text: "逻辑分析思维", type: "i" },
+                    { text: "形象创造思维", type: "a" }
+                ]
+            },
+            {
+                text: "在团队中，你更愿意：",
+                options: [
+                    { text: "帮助有需要的成员", type: "s" },
+                    { text: "提出新的想法和方向", type: "e" },
+                    { text: "确保所有细节都正确无误", type: "c" }
+                ]
+            },
+            {
+                text: "你更喜欢哪种类型的食物？",
+                options: [
+                    { text: "简单实在的家常菜", type: "r" },
+                    { text: "有特色的地方美食", type: "i" },
+                    { text: "精致美观的创意料理", type: "a" }
+                ]
+            },
+            {
+                text: "在工作中，你更擅长处理：",
+                options: [
+                    { text: "人际关系问题", type: "s" },
+                    { text: "战略规划问题", type: "e" },
+                    { text: "日常管理问题", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意去哪种地方度假？",
+                options: [
+                    { text: "自然景观或户外营地", type: "r" },
+                    { text: "历史名城或科学馆", type: "i" },
+                    { text: "艺术之都或文化中心", type: "a" }
+                ]
+            },
+            {
+                text: "在解决冲突时，你更倾向于：",
+                options: [
+                    { text: "寻求双方都能接受的方案", type: "s" },
+                    { text: "坚持自己的立场并说服对方", type: "e" },
+                    { text: "参考规则，按规定处理", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意研究哪种课题？",
+                options: [
+                    { text: "机械原理或工程技术", type: "r" },
+                    { text: "自然科学或社会科学", type: "i" },
+                    { text: "文学艺术或文化现象", type: "a" }
+                ]
+            },
+            {
+                text: "在团队中，你更希望得到哪种认可？",
+                options: [
+                    { text: "他人的信任和依赖", type: "s" },
+                    { text: "领导的赏识和提拔", type: "e" },
+                    { text: "工作的准确性和可靠性", type: "c" }
+                ]
+            },
+            {
+                text: "你更喜欢哪种类型的宠物？",
+                options: [
+                    { text: "狗或其他活泼的宠物", type: "r" },
+                    { text: "鱼或其他需要观察的宠物", type: "i" },
+                    { text: "猫或其他有个性的宠物", type: "a" }
+                ]
+            },
+            {
+                text: "在工作中，你更倾向于：",
+                options: [
+                    { text: "与人合作完成任务", type: "s" },
+                    { text: "独立决策并承担责任", type: "e" },
+                    { text: "按照指示完成任务", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意参加哪种类型的比赛？",
+                options: [
+                    { text: "体育比赛或手工比赛", type: "r" },
+                    { text: "知识竞赛或辩论赛", type: "i" },
+                    { text: "才艺比赛或创意比赛", type: "a" }
+                ]
+            },
+            {
+                text: "在团队中，你更关注：",
+                options: [
+                    { text: "成员的感受和需求", type: "s" },
+                    { text: "团队的整体表现", type: "e" },
+                    { text: "任务的完成质量", type: "c" }
+                ]
+            },
+            {
+                text: "你更愿意学习哪种语言？",
+                options: [
+                    { text: "实用的商务语言", type: "r" },
+                    { text: "古老的或复杂的语言", type: "i" },
+                    { text: "富有文学性的语言", type: "a" }
+                ]
+            },
+            {
+                text: "在工作中，你更擅长：",
+                options: [
+                    { text: "与不同的人沟通", type: "s" },
+                    { text: "发现新的机会", type: "e" },
+                    { text: "管理时间和资源", type: "c" }
+                ]
+            }
+        ];
+
+        // 全局变量
+        let currentQuestionIndex = 0;
+        const answers = {};
+        const scores = { r: 0, i: 0, a: 0, s: 0, e: 0, c: 0 };
+
+        // DOM 元素
+        const startScreen = document.getElementById('start-screen');
+        const testScreen = document.getElementById('test-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const startBtn = document.getElementById('start-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const questionNumber = document.getElementById('question-number');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        // 初始化事件监听
+        function initEventListeners() {
+            startBtn.addEventListener('click', startTest);
+            prevBtn.addEventListener('click', goToPrevQuestion);
+            nextBtn.addEventListener('click', goToNextQuestion);
+            restartBtn.addEventListener('click', restartTest);
+        }
+
+        // 开始测试
+        function startTest() {
+            startScreen.classList.add('hidden');
+            testScreen.classList.remove('hidden');
+            renderQuestion(currentQuestionIndex);
+        }
+
+        // 渲染题目
+        function renderQuestion(index) {
+            const question = questions[index];
+            
+            // 更新题目信息
+            questionNumber.textContent = `第${index + 1}题`;
+            questionText.textContent = question.text;
+            
+            // 清空选项容器
+            optionsContainer.innerHTML = '';
+            
+            // 添加选项
+            question.options.forEach((option, optIndex) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option card-hover';
+                
+                const radioId = `q${index}_opt${optIndex}`;
+                
+                optionDiv.innerHTML = `
+                    <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${answers[index] === optIndex ? 'border-primary bg-blue-50' : 'border-gray-200'}">
+                        <input type="radio" name="q${index}" id="${radioId}" value="${optIndex}" class="w-5 h-5 text-primary focus:ring-primary" ${answers[index] === optIndex ? 'checked' : ''}>
+                        <span class="ml-3 text-gray-700">${option.text}</span>
+                    </label>
+                `;
+                
+                optionsContainer.appendChild(optionDiv);
+                
+                // 添加选项点击事件
+                const radio = document.getElementById(radioId);
+                radio.addEventListener('change', () => {
+                    answers[index] = optIndex;
+                    // 更新选项样式
+                    document.querySelectorAll(`input[name="q${index}"]`).forEach(input => {
+                        const label = input.parentElement;
+                        if (input.checked) {
+                            label.classList.remove('border-gray-200');
+                            label.classList.add('border-primary', 'bg-blue-50');
+                        } else {
+                            label.classList.remove('border-primary', 'bg-blue-50');
+                            label.classList.add('border-gray-200');
+                        }
+                    });
+                });
+            });
+            
+            // 更新进度
+            updateProgress();
+            
+            // 更新按钮状态
+            updateButtonStates();
+        }
+
+        // 更新进度
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${currentQuestionIndex + 1}/${questions.length}`;
+        }
+
+        // 更新按钮状态
+        function updateButtonStates() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = '查看结果';
+                nextBtn.innerHTML = '查看结果 <i class="fa fa-check ml-2"></i>';
+            } else {
+                nextBtn.textContent = '下一题';
+                nextBtn.innerHTML = '下一题 <i class="fa fa-arrow-right ml-2"></i>';
+            }
+        }
+
+        // 上一题
+        function goToPrevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion(currentQuestionIndex);
+            }
+        }
+
+        // 下一题
+        function goToNextQuestion() {
+            // 检查是否已选择答案
+            if (answers[currentQuestionIndex] === undefined && currentQuestionIndex !== questions.length - 1) {
+                alert('请选择一个答案后再继续');
+                return;
+            }
+            
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion(currentQuestionIndex);
+            } else {
+                // 计算结果并显示
+                calculateResults();
+                showResults();
+            }
+        }
+
+        // 计算结果
+        function calculateResults() {
+            // 重置分数
+            for (const type in scores) {
+                scores[type] = 0;
+            }
+            
+            // 计算每个类型的得分
+            for (let i = 0; i < questions.length; i++) {
+                const selectedOptionIndex = answers[i];
+                if (selectedOptionIndex !== undefined) {
+                    const selectedType = questions[i].options[selectedOptionIndex].type;
+                    scores[selectedType]++;
+                }
+            }
+        }
+
+        // 显示结果
+        function showResults() {
+            testScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            
+            // 绘制图表
+            drawChart();
+            
+            // 显示主要兴趣类型
+            showTopInterest();
+            
+            // 显示职业建议
+            showCareerSuggestions();
+        }
+
+        // 绘制结果图表
+        function drawChart() {
+            const ctx = document.getElementById('result-chart').getContext('2d');
+            
+            // 准备图表数据
+            const labels = [];
+            const data = [];
+            const backgroundColors = [];
+            
+            for (const type in scores) {
+                labels.push(hollandTypes[type].name);
+                data.push(scores[type]);
+                backgroundColors.push(`rgba(var(--${type}-rgb), 0.7)`);
+            }
+            
+            // 创建图表
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '兴趣得分',
+                        data: data,
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.7)',    // 现实型 - 红色
+                            'rgba(59, 130, 246, 0.7)',   // 研究型 - 蓝色
+                            'rgba(236, 72, 153, 0.7)',   // 艺术型 - 粉色
+                            'rgba(16, 185, 129, 0.7)',   // 社会型 - 绿色
+                            'rgba(245, 158, 11, 0.7)',   // 企业型 - 橙色
+                            'rgba(99, 102, 241, 0.7)'    // 常规型 - 靛蓝色
+                        ],
+                        borderColor: [
+                            'rgb(239, 68, 68)',
+                            'rgb(59, 130, 246)',
+                            'rgb(236, 72, 153)',
+                            'rgb(16, 185, 129)',
+                            'rgb(245, 158, 11)',
+                            'rgb(99, 102, 241)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 20,
+                            ticks: {
+                                stepSize: 5
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // 显示主要兴趣类型
+        function showTopInterest() {
+            // 找到得分最高的类型
+            let topType = 'r';
+            for (const type in scores) {
+                if (scores[type] > scores[topType]) {
+                    topType = type;
+                }
+            }
+            
+            const topInterestDiv = document.getElementById('top-interest');
+            topInterestDiv.className = `bg-${topType}/10 border-l-4 border-${topType} p-4 rounded-r-lg`;
+            topInterestDiv.innerHTML = `
+                <h4 class="text-lg font-semibold mb-2 text-${topType}">${hollandTypes[topType].name}</h4>
+                <p class="text-gray-700">${hollandTypes[topType].description}</p>
+            `;
+        }
+
+        // 显示职业建议
+        function showCareerSuggestions() {
+            // 按得分排序兴趣类型
+            const sortedTypes = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
+            
+            const suggestionsContainer = document.getElementById('career-suggestions');
+            suggestionsContainer.innerHTML = '';
+            
+            // 显示前三种兴趣类型的职业建议
+            for (let i = 0; i < 3; i++) {
+                const type = sortedTypes[i];
+                const careerType = hollandTypes[type];
+                
+                const careerCard = document.createElement('div');
+                careerCard.className = `bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow`;
+                careerCard.innerHTML = `
+                    <h4 class="font-semibold mb-2 text-${type}">${careerType.name}职业方向</h4>
+                    <ul class="list-disc pl-5 text-gray-600 space-y-1">
+                        ${careerType.careers.map(career => `<li>${career}</li>`).join('')}
+                    </ul>
+                `;
+                
+                suggestionsContainer.appendChild(careerCard);
+            }
+        }
+
+        // 重新测试
+        function restartTest() {
+            currentQuestionIndex = 0;
+            for (const key in answers) {
+                delete answers[key];
+            }
+            resultScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        }
+
+        // 初始化应用
+        function init() {
+            initEventListeners();
+        }
+
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
