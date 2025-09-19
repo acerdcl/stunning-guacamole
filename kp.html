@@ -77,6 +77,14 @@
 
     <!-- 主要内容区 -->
     <main class="container mx-auto px-4 py-6">
+        <!-- 错误提示区域 -->
+        <section id="errorMessage" class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-8 hidden">
+            <div class="flex items-center">
+                <i class="fa fa-exclamation-circle mr-2"></i>
+                <p id="errorText">加载过程中出现错误，请刷新页面重试</p>
+            </div>
+        </section>
+
         <!-- 介绍区域 -->
         <section id="intro" class="bg-white rounded-xl shadow-sm p-6 mb-8 slide-in">
             <h2 class="text-xl font-bold mb-3 text-secondary">🌟 游戏规则</h2>
@@ -166,7 +174,15 @@
         // 初始化LeanCloud - 请替换为你自己的App ID和App Key
         const APP_ID = 'uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz';
         const APP_KEY = 'JEsdiH1q5v1NzqyLCLqJVWvt';
-        AV.init({ appId: APP_ID, appKey: APP_KEY });
+        
+        // 添加错误处理的初始化
+        try {
+            AV.init({ appId: APP_ID, appKey: APP_KEY });
+            console.log('LeanCloud初始化成功');
+        } catch (error) {
+            console.error('LeanCloud初始化失败:', error);
+            showError('服务器连接失败，请检查LeanCloud配置');
+        }
 
         // 30种电商通用能力卡牌数据
         const abilities = [
@@ -222,6 +238,16 @@
         const showRankBtn = document.getElementById('showRankBtn');
         const introSection = document.getElementById('intro');
         const toggleViewBtn = document.getElementById('toggleView');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+
+        // 显示错误信息
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+            // 即使有错误，也允许用户使用界面（但可能无法保存）
+            submitVotesBtn.disabled = false;
+        }
 
         // 初始化页面
         function init() {
@@ -266,18 +292,29 @@
             }
             
             // 检查该用户是否已投票
-            const UserVote = AV.Object.extend('UserVote');
-            const query = new AV.Query(UserVote);
-            query.equalTo('userId', userId);
-            query.find().then(results => {
-                if (results.length > 0) {
-                    hasVoted = true;
-                    showVotedView();
-                } else {
-                    hasVoted = false;
+            try {
+                const UserVote = AV.Object.extend('UserVote');
+                const query = new AV.Query(UserVote);
+                query.equalTo('userId', userId);
+                query.find().then(results => {
+                    if (results.length > 0) {
+                        hasVoted = true;
+                        showVotedView();
+                    } else {
+                        hasVoted = false;
+                        submitVotesBtn.disabled = false;
+                    }
+                }).catch(error => {
+                    console.error('查询用户投票状态失败:', error);
+                    showError('无法验证投票状态，请稍后重试');
+                    // 失败时仍然允许用户尝试投票
                     submitVotesBtn.disabled = false;
-                }
-            });
+                });
+            } catch (error) {
+                console.error('检查用户投票状态时出错:', error);
+                showError('系统错误，请刷新页面重试');
+                submitVotesBtn.disabled = false;
+            }
         }
 
         // 显示已投票视图
@@ -372,28 +409,38 @@
                 btn.classList.toggle('opacity-50', starsRemaining === 0);
                 btn.classList.toggle('cursor-not-allowed', starsRemaining === 0);
             });
+            
+            // 当星星分配完毕，确保提交按钮可用
+            if (starsRemaining === 0) {
+                submitVotesBtn.disabled = false;
+            }
         }
 
         // 提交投票
         function submitVotes() {
             if (starsRemaining === 0) {
-                // 创建投票记录
-                const UserVote = AV.Object.extend('UserVote');
-                const userVote = new UserVote();
-                
-                userVote.set('userId', userId);
-                userVote.set('votes', votes);
-                
-                userVote.save().then(() => {
-                    hasVoted = true;
-                    successMessage.classList.remove('hidden');
+                try {
+                    // 创建投票记录
+                    const UserVote = AV.Object.extend('UserVote');
+                    const userVote = new UserVote();
                     
-                    // 记录已投票，避免重复投票
-                    localStorage.setItem('hasVoted', 'true');
-                }).catch(error => {
-                    console.error('提交投票失败:', error);
-                    alert('提交投票失败，请稍后再试');
-                });
+                    userVote.set('userId', userId);
+                    userVote.set('votes', votes);
+                    
+                    userVote.save().then(() => {
+                        hasVoted = true;
+                        successMessage.classList.remove('hidden');
+                        
+                        // 记录已投票，避免重复投票
+                        localStorage.setItem('hasVoted', 'true');
+                    }).catch(error => {
+                        console.error('提交投票失败:', error);
+                        alert('提交投票失败: ' + (error.message || '请稍后再试'));
+                    });
+                } catch (error) {
+                    console.error('提交投票时出错:', error);
+                    alert('系统错误，无法提交投票，请稍后重试');
+                }
             } else {
                 alert('请分配完所有10颗星星再提交');
             }
@@ -401,27 +448,39 @@
 
         // 获取并监听投票数据
         function fetchAndListenToVotes() {
-            const UserVote = AV.Object.extend('UserVote');
-            const query = new AV.Query(UserVote);
-            
-            // 初始获取所有投票数据
-            query.find().then(results => {
-                processVotesData(results);
-            });
-            
-            // 监听数据变化，实现实时更新
-            const liveQuery = query.subscribe();
-            liveQuery.on('update', (object) => {
+            try {
+                const UserVote = AV.Object.extend('UserVote');
+                const query = new AV.Query(UserVote);
+                
+                // 初始获取所有投票数据
                 query.find().then(results => {
                     processVotesData(results);
+                }).catch(error => {
+                    console.error('获取投票数据失败:', error);
+                    showError('无法加载排行榜数据');
                 });
-            });
-            
-            liveQuery.on('create', (object) => {
-                query.find().then(results => {
-                    processVotesData(results);
+                
+                // 监听数据变化，实现实时更新
+                const liveQuery = query.subscribe();
+                liveQuery.on('update', (object) => {
+                    query.find().then(results => {
+                        processVotesData(results);
+                    });
                 });
-            });
+                
+                liveQuery.on('create', (object) => {
+                    query.find().then(results => {
+                        processVotesData(results);
+                    });
+                });
+                
+                liveQuery.on('error', (error) => {
+                    console.error('实时更新出错:', error);
+                });
+            } catch (error) {
+                console.error('获取投票数据时出错:', error);
+                showError('无法连接到服务器获取排行榜');
+            }
         }
 
         // 处理投票数据
