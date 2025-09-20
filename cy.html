@@ -119,6 +119,7 @@
           </form>
           
           <div id="feedback-message" class="mt-4 hidden"></div>
+          <div id="debug-info" class="mt-2 text-xs text-gray-500 hidden"></div>
         </div>
         
         <!-- 统计信息 -->
@@ -161,6 +162,26 @@
       serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com"
     });
     
+    // 检查LeanCloud初始化状态
+    function checkLeanCloudInit() {
+      const debugInfo = document.getElementById('debug-info');
+      try {
+        if (AV.applicationId && AV.applicationId === "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz") {
+          debugInfo.textContent = "LeanCloud初始化成功";
+          debugInfo.classList.remove('hidden', 'text-red-500');
+          debugInfo.classList.add('text-green-500');
+        } else {
+          debugInfo.textContent = "LeanCloud初始化失败：AppID不正确";
+          debugInfo.classList.remove('hidden', 'text-green-500');
+          debugInfo.classList.add('text-red-500');
+        }
+      } catch (e) {
+        debugInfo.textContent = `LeanCloud初始化错误：${e.message}`;
+        debugInfo.classList.remove('hidden', 'text-green-500');
+        debugInfo.classList.add('text-red-500');
+      }
+    }
+    
     // 获取数据存储类
     const CareerIdealWord = AV.Object.extend('CareerIdealWord');
     
@@ -176,6 +197,7 @@
     const participantCount = document.getElementById('participant-count');
     const wordCount = document.getElementById('word-count');
     const popularIdeal = document.getElementById('popular-ideal');
+    const debugInfo = document.getElementById('debug-info');
     
     // 全局变量
     let allWords = [];
@@ -234,7 +256,18 @@
         // 创建新记录
         const newWord = new CareerIdealWord();
         newWord.set('word', word.trim());
-        await newWord.save();
+        
+        // 显示调试信息
+        debugInfo.textContent = `准备提交: ${word.trim()}`;
+        debugInfo.classList.remove('hidden');
+        
+        // 保存到LeanCloud
+        const result = await newWord.save();
+        
+        // 提交成功，显示对象ID
+        debugInfo.textContent = `提交成功! 对象ID: ${result.id}`;
+        debugInfo.classList.remove('text-red-500');
+        debugInfo.classList.add('text-green-500');
         
         // 标记用户已提交
         localStorage.setItem('careerIdealSubmitted', 'true');
@@ -249,9 +282,21 @@
         submitBtn.classList.remove('bg-primary', 'hover:bg-primary/90', 'hover:scale-[1.02]', 'active:scale-[0.98]');
         submitBtn.innerHTML = '<i class="fa fa-check mr-2"></i> 已提交';
         
+        // 手动触发一次数据更新
+        getAllWords();
+        
       } catch (error) {
         console.error('提交失败:', error);
-        showFeedback('提交失败，请稍后再试', 'error');
+        // 显示详细错误信息
+        let errorMsg = '提交失败: ';
+        if (error.message) errorMsg += error.message;
+        if (error.code) errorMsg += ` (错误代码: ${error.code})`;
+        
+        showFeedback(errorMsg, 'error');
+        debugInfo.textContent = errorMsg;
+        debugInfo.classList.remove('hidden', 'text-green-500');
+        debugInfo.classList.add('text-red-500');
+        
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fa fa-paper-plane mr-2"></i> 提交';
       }
@@ -263,6 +308,11 @@
         const query = new AV.Query(CareerIdealWord);
         query.descending('createdAt'); // 按时间倒序
         const results = await query.find();
+        
+        // 显示获取到的数据量
+        debugInfo.textContent = `成功获取 ${results.length} 条数据`;
+        debugInfo.classList.remove('hidden', 'text-red-500');
+        debugInfo.classList.add('text-green-500');
         
         // 处理结果
         allWords = results.map(item => item.get('word'));
@@ -282,7 +332,15 @@
         return allWords;
       } catch (error) {
         console.error('获取数据失败:', error);
-        loadingIndicator.innerHTML = '<p class="text-red-600">加载失败，请刷新页面重试</p>';
+        let errorMsg = '获取数据失败: ';
+        if (error.message) errorMsg += error.message;
+        if (error.code) errorMsg += ` (错误代码: ${error.code})`;
+        
+        loadingIndicator.innerHTML = `<p class="text-red-600">${errorMsg}</p>`;
+        debugInfo.textContent = errorMsg;
+        debugInfo.classList.remove('hidden', 'text-green-500');
+        debugInfo.classList.add('text-red-500');
+        
         return [];
       }
     }
@@ -437,26 +495,41 @@
     
     // 设置实时更新监听
     function setupRealtimeListener() {
-      const query = new AV.Query(CareerIdealWord);
-      const realtimeQuery = AV.Realtime.createQuery(query);
-      
-      // 监听新增数据
-      realtimeQuery.subscribe().then(() => {
-        realtimeQuery.on('create', (object) => {
-          const newWord = object.get('word');
-          allWords.unshift(newWord); // 添加到数组开头
-          calculateWordFrequencies();
-          updateStatistics();
-          generateWordCloud();
-          
-          // 显示新弹幕
-          createDanmaku(newWord);
+      try {
+        const query = new AV.Query(CareerIdealWord);
+        const realtimeQuery = AV.Realtime.createQuery(query);
+        
+        // 监听新增数据
+        realtimeQuery.subscribe().then(() => {
+          debugInfo.textContent = "实时监听已启动";
+          realtimeQuery.on('create', (object) => {
+            const newWord = object.get('word');
+            allWords.unshift(newWord); // 添加到数组开头
+            calculateWordFrequencies();
+            updateStatistics();
+            generateWordCloud();
+            
+            // 显示新弹幕
+            createDanmaku(newWord);
+          });
+        }).catch(error => {
+          console.error('实时监听设置失败:', error);
+          debugInfo.textContent = `实时监听失败: ${error.message}`;
         });
-      });
+      } catch (error) {
+        console.error('设置实时监听时出错:', error);
+        debugInfo.textContent = `设置实时监听错误: ${error.message}`;
+      }
     }
     
     // 初始化
     function init() {
+      // 显示调试信息区域
+      debugInfo.classList.remove('hidden');
+      
+      // 检查LeanCloud初始化状态
+      checkLeanCloudInit();
+      
       // 检查用户提交状态
       checkUserSubmissionStatus();
       
