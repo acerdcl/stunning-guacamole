@@ -10,8 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
     <!-- 引入LeanCloud SDK -->
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-min.js"></script>
-    <!-- 引入LiveQuery扩展 -->
-    <script src="https://cdn.jsdelivr.net/npm/leancloud-live-query@3.1.0/dist/av-live-query.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -124,7 +122,7 @@
             <h2 class="text-lg md:text-xl font-semibold mb-4 text-dark flex items-center">
                 <i class="fa fa-pencil text-secondary mr-2"></i>分享你的职业理想
             </h2>
-            <p class="text-gray-600 text-sm mb-4">请输入一个词来代表你的职业理想，例如"自由"、"高薪"、"创新"、"稳定"、"成长"、"挑战"、"平衡"等</p>
+            <p class="text-gray-600 text-sm mb-4">请输入一个词来代表你的职业理想，例如"自由"、"创新"等</p>
             <form id="理想表单" class="space-y-4">
                 <div>
                     <input type="text" id="理想输入" 
@@ -146,9 +144,9 @@
             </h3>
             <ul class="text-gray-600 text-sm space-y-1 list-disc pl-5">
                 <li>每个用户只能提交一次职业理想</li>
-                <li>提交后会实时更新统计图表并显示在弹幕中</li>
+                <li>提交后会更新统计图表并显示在弹幕中</li>
                 <li>柱形图高度代表词语出现的频率</li>
-                <li>所有设备会实时同步更新结果</li>
+                <li>系统会定期同步更新所有设备的数据</li>
             </ul>
         </section>
     </main>
@@ -159,7 +157,7 @@
     <!-- 页脚 -->
     <footer class="bg-dark text-white/70 text-sm py-4 mt-auto">
         <div class="container mx-auto px-4 text-center">
-            <p>Copyright © 2025 by 电商杜老师</p>
+            <p>职业理想热门词统计系统 &copy; 2023</p>
         </div>
     </footer>
 
@@ -194,7 +192,6 @@
         let 已提交 = localStorage.getItem('careerIdealSubmitted') === 'true';
         let 词语数据 = {};
         let 所有词语 = [];
-        let 实时查询实例 = null;
         
         // 显示错误信息
         function 显示错误信息(消息) {
@@ -355,7 +352,7 @@
             生成柱形图(词语数据);
         }
         
-        // 定时刷新数据（替代LiveQuery的方案）
+        // 定时刷新数据
         function 定时刷新数据() {
             query.find().then(results => {
                 const 新词语数据 = {};
@@ -454,37 +451,10 @@
             });
         });
         
-        // 尝试初始化LiveQuery
-        function 初始化LiveQuery() {
-            try {
-                // 检查LiveQuery是否可用
-                if (typeof AV.LiveQuery === 'undefined') {
-                    throw new Error('LiveQuery未加载');
-                }
-                
-                const 实时查询 = new AV.Query(CareerIdealWord);
-                实时查询实例 = AV.LiveQuery.subscribe(实时查询);
-                
-                实时查询实例.on('create', (object) => {
-                    const 新词语 = object.get('word');
-                    if (新词语) {
-                        更新词语数据(新词语);
-                    }
-                });
-                
-                console.log('LiveQuery初始化成功');
-            } catch (error) {
-                console.error('LiveQuery初始化失败:', error);
-                显示错误信息('实时更新功能不可用，将使用定时刷新模式。请在LeanCloud控制台启用LiveQuery以获得最佳体验。');
-                // 退回到定时刷新模式
-                定时刷新数据();
-            }
-        }
-        
         // 初始化系统
         function 初始化() {
             获取所有数据();
-            初始化LiveQuery();
+            定时刷新数据(); // 直接使用定时刷新
             随机展示弹幕();
             
             // 窗口 resize 时重绘图表
@@ -500,4 +470,3 @@
     </script>
 </body>
 </html>
-
