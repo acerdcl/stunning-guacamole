@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>职业理想词云系统</title>
+    <title>职业理想热门词统计</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 引入Chart.js用于生成柱形图 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
     <!-- 引入LeanCloud SDK -->
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-min.js"></script>
     <!-- 引入LiveQuery扩展 -->
     <script src="https://cdn.jsdelivr.net/npm/leancloud-live-query@3.1.0/dist/av-live-query.min.js"></script>
-    <!-- 引入WordCloud库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.0.1/wordcloud2.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -61,7 +61,7 @@
                 from { transform: translateX(100vw); }
                 to { transform: translateX(-100%); }
             }
-            .wordcloud-container {
+            .chart-container {
                 position: relative;
                 width: 100%;
                 height: 100%;
@@ -91,8 +91,8 @@
     <header class="bg-white/80 backdrop-blur-md shadow-sm fixed top-0 left-0 right-0 z-40 transition-all duration-300">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-2">
-                <i class="fa fa-cloud text-primary text-2xl"></i>
-                <h1 class="text-xl md:text-2xl font-bold text-dark">职业理想词云</h1>
+                <i class="fa fa-bar-chart text-primary text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold text-dark">职业理想热门词</h1>
             </div>
             <div class="text-sm text-gray-600" id="参与人数">
                 <i class="fa fa-users mr-1"></i>
@@ -103,17 +103,17 @@
 
     <!-- 主要内容区 -->
     <main class="container mx-auto px-4 pt-20 pb-16">
-        <!-- 词云展示区 -->
+        <!-- 柱形图展示区 -->
         <section class="mt-6 mb-8 rounded-xl bg-white shadow-lg p-4 md:p-6 relative overflow-hidden">
             <h2 class="text-lg md:text-xl font-semibold mb-4 text-dark flex items-center">
-                <i class="fa fa-comment-o text-accent mr-2"></i>班级职业理想词云
+                <i class="fa fa-list text-accent mr-2"></i>班级职业理想热门词统计
             </h2>
-            <div class="wordcloud-container border rounded-lg bg-gray-50" id="词云容器">
-                <canvas id="词云画布" class="w-full h-full"></canvas>
-                <div id="词云加载状态" class="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+            <div class="chart-container border rounded-lg bg-gray-50" id="图表容器">
+                <canvas id="统计图表" class="w-full h-full"></canvas>
+                <div id="图表加载状态" class="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
                     <div class="text-center">
                         <i class="fa fa-circle-o-notch fa-spin text-primary text-3xl mb-2"></i>
-                        <p class="text-gray-600">加载词云数据中...</p>
+                        <p class="text-gray-600">加载统计数据中...</p>
                     </div>
                 </div>
             </div>
@@ -146,8 +146,8 @@
             </h3>
             <ul class="text-gray-600 text-sm space-y-1 list-disc pl-5">
                 <li>每个用户只能提交一次职业理想</li>
-                <li>提交后会实时更新词云并显示在弹幕中</li>
-                <li>词语出现频率越高，在词云中显示越大</li>
+                <li>提交后会实时更新统计图表并显示在弹幕中</li>
+                <li>柱形图高度代表词语出现的频率</li>
                 <li>所有设备会实时同步更新结果</li>
             </ul>
         </section>
@@ -159,7 +159,7 @@
     <!-- 页脚 -->
     <footer class="bg-dark text-white/70 text-sm py-4 mt-auto">
         <div class="container mx-auto px-4 text-center">
-            <p>职业理想词云系统 &copy; 2023</p>
+            <p>职业理想热门词统计系统 &copy; 2023</p>
         </div>
     </footer>
 
@@ -180,12 +180,15 @@
         const 理想输入 = document.getElementById('理想输入');
         const 提交按钮 = document.getElementById('提交按钮');
         const 提交状态 = document.getElementById('提交状态');
-        const 词云容器 = document.getElementById('词云容器');
-        const 词云画布 = document.getElementById('词云画布');
-        const 词云加载状态 = document.getElementById('词云加载状态');
+        const 图表容器 = document.getElementById('图表容器');
+        const 统计图表 = document.getElementById('统计图表');
+        const 图表加载状态 = document.getElementById('图表加载状态');
         const 弹幕容器 = document.getElementById('弹幕容器');
         const 参与人数显示 = document.querySelector('#参与人数 span');
         const 错误提示 = document.getElementById('错误提示');
+        
+        // 图表实例
+        let 图表实例 = null;
         
         // 检查用户是否已提交过
         let 已提交 = localStorage.getItem('careerIdealSubmitted') === 'true';
@@ -253,76 +256,87 @@
             setTimeout(随机展示弹幕, 3000 + Math.random() * 5000);
         }
         
-        // 检查WordCloud是否加载
-        function 检查WordCloud加载() {
-            return new Promise((resolve, reject) => {
-                // 检查是否已加载
-                if (typeof WordCloud !== 'undefined') {
-                    resolve();
-                    return;
-                }
+        // 生成柱形图
+        function 生成柱形图(数据) {
+            // 准备图表数据：按出现次数排序，只显示前10个热门词
+            const 排序后的词语 = Object.entries(数据)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
                 
-                // 最多等待5秒
-                let 等待次数 = 0;
-                const 检查间隔 = setInterval(() => {
-                    等待次数++;
-                    if (typeof WordCloud !== 'undefined') {
-                        clearInterval(检查间隔);
-                        resolve();
-                    } else if (等待次数 >= 10) { // 5秒后超时
-                        clearInterval(检查间隔);
-                        reject(new Error('WordCloud库加载超时'));
+            const 词语列表 = 排序后的词语.map(item => item[0]);
+            const 次数列表 = 排序后的词语.map(item => item[1]);
+            const 背景颜色 = 词语列表.map(() => 生成随机颜色().replace('rgb', 'rgba').replace(')', ', 0.7)'));
+            const 边框颜色 = 词语列表.map(() => 生成随机颜色());
+            
+            // 如果已有图表实例，先销毁
+            if (图表实例) {
+                图表实例.destroy();
+            }
+            
+            // 设置画布尺寸
+            function 设置画布尺寸() {
+                const { width, height } = 图表容器.getBoundingClientRect();
+                统计图表.width = width;
+                统计图表.height = height;
+            }
+            
+            设置画布尺寸();
+            window.addEventListener('resize', 设置画布尺寸);
+            
+            // 创建新图表
+            图表实例 = new Chart(统计图表, {
+                type: 'bar',
+                data: {
+                    labels: 词语列表,
+                    datasets: [{
+                        label: '出现次数',
+                        data: 次数列表,
+                        backgroundColor: 背景颜色,
+                        borderColor: 边框颜色,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0 // 确保Y轴只显示整数
+                            },
+                            title: {
+                                display: true,
+                                text: '出现次数'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '职业理想词汇'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `出现次数: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
                     }
-                }, 500);
-            });
-        }
-        
-        // 生成词云
-        function 生成词云(数据) {
-            检查WordCloud加载().then(() => {
-                // 准备词云数据格式: [["词", 出现次数], ...]
-                const 词云数据 = Object.entries(数据).map(([word, count]) => [word, count]);
-                
-                // 清空画布
-                const 上下文 = 词云画布.getContext('2d');
-                上下文.clearRect(0, 0, 词云画布.width, 词云画布.height);
-                
-                // 设置画布尺寸以匹配容器
-                function 设置画布尺寸() {
-                    const { width, height } = 词云容器.getBoundingClientRect();
-                    词云画布.width = width;
-                    词云画布.height = height;
                 }
-                
-                设置画布尺寸();
-                window.addEventListener('resize', 设置画布尺寸);
-                
-                // 生成词云
-                try {
-                    WordCloud(词云画布, {
-                        list: 词云数据,
-                        sizeRange: [16, 80],
-                        color: () => 生成随机颜色(),
-                        rotateRatio: 0.5,
-                        backgroundColor: 'transparent',
-                        fontFamily: 'Inter, sans-serif',
-                        fontWeight: 'bold',
-                        minSize: 10,
-                        gridSize: 8,
-                        drawOutOfBound: false,
-                        shuffle: true
-                    });
-                    
-                    词云加载状态.classList.add('hidden');
-                } catch (error) {
-                    console.error('生成词云失败:', error);
-                    词云加载状态.innerHTML = `<p class="text-red-500">生成词云失败: ${error.message}</p>`;
-                }
-            }).catch(error => {
-                console.error('WordCloud库未加载:', error);
-                词云加载状态.innerHTML = '<p class="text-red-500">词云加载失败，请刷新页面重试</p>';
-                显示错误信息('词云功能加载失败，请稍后重试');
             });
+            
+            图表加载状态.classList.add('hidden');
         }
         
         // 更新词语数据
@@ -337,8 +351,8 @@
             const 参与人数 = Object.values(词语数据).reduce((total, count) => total + count, 0);
             参与人数显示.textContent = `参与人数: ${参与人数}`;
             
-            // 生成词云
-            生成词云(词语数据);
+            // 生成柱形图
+            生成柱形图(词语数据);
         }
         
         // 定时刷新数据（替代LiveQuery的方案）
@@ -362,7 +376,7 @@
                 if (新数据量 > 旧数据量) {
                     词语数据 = 新词语数据;
                     所有词语 = 新所有词语;
-                    生成词云(词语数据);
+                    生成柱形图(词语数据);
                 }
             }).catch(error => {
                 console.error('刷新数据失败:', error);
@@ -374,7 +388,7 @@
         
         // 从LeanCloud获取所有数据
         function 获取所有数据() {
-            词云加载状态.innerHTML = '<i class="fa fa-circle-o-notch fa-spin text-primary text-3xl mb-2"></i><p class="text-gray-600">加载词云数据中...</p>';
+            图表加载状态.innerHTML = '<i class="fa fa-circle-o-notch fa-spin text-primary text-3xl mb-2"></i><p class="text-gray-600">加载统计数据中...</p>';
             
             query.find().then(results => {
                 词语数据 = {};
@@ -391,7 +405,7 @@
                 更新词语数据();
             }).catch(error => {
                 console.error('获取数据失败:', error);
-                词云加载状态.innerHTML = `<p class="text-red-500">获取数据失败: ${error.message}</p>`;
+                图表加载状态.innerHTML = `<p class="text-red-500">获取数据失败: ${error.message}</p>`;
                 显示错误信息('获取数据失败，请检查网络连接');
             });
         }
@@ -473,10 +487,10 @@
             初始化LiveQuery();
             随机展示弹幕();
             
-            // 窗口 resize 时重绘词云
+            // 窗口 resize 时重绘图表
             window.addEventListener('resize', () => {
                 if (Object.keys(词语数据).length > 0) {
-                    生成词云(词语数据);
+                    生成柱形图(词语数据);
                 }
             });
         }
