@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>职业理想词云</title>
+    <title>职业理想词云系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
     <!-- 引入LeanCloud SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
-    <!-- 引入词云库 - 使用可靠CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.1/wordcloud2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-min.js"></script>
+    <!-- 引入wordcloud库用于生成词云 -->
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.7/src/wordcloud2.min.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -18,8 +20,8 @@
                         primary: '#3B82F6',
                         secondary: '#10B981',
                         accent: '#8B5CF6',
-                        dark: '#1F2937',
-                        light: '#F3F4F6'
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
                     },
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -28,6 +30,7 @@
             }
         }
     </script>
+    
     <style type="text/tailwindcss">
         @layer utilities {
             .content-auto {
@@ -36,50 +39,47 @@
             .text-shadow {
                 text-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
-            .animate-float {
-                animation: float 6s ease-in-out infinite;
+            .弹幕容器 {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 50;
+                overflow: hidden;
             }
-            .backdrop-blur {
-                backdrop-filter: blur(8px);
+            .弹幕 {
+                position: absolute;
+                white-space: nowrap;
+                animation: 弹幕动画 8s linear forwards;
+                opacity: 0.85;
+                text-shadow: 0 1px 2px rgba(0,0,0,0.3);
             }
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
-
-        .danmaku {
-            position: absolute;
-            white-space: nowrap;
-            z-index: 10;
-            pointer-events: none;
-            animation-timing-function: linear;
-        }
-
-        /* 确保Canvas容器有明确尺寸 */
-        #wordcloudCanvasContainer {
-            width: 100%;
-            height: 400px;
-            position: relative;
-        }
-        #wordcloudCanvas {
-            width: 100%;
-            height: 100%;
+            @keyframes 弹幕动画 {
+                from { transform: translateX(100vw); }
+                to { transform: translateX(-100%); }
+            }
+            .wordcloud-container {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                min-height: 400px;
+            }
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen font-sans">
+<body class="bg-gradient-to-br from-light to-blue-50 min-h-screen">
     <!-- 顶部导航 -->
-    <header class="bg-white/80 backdrop-blur shadow-sm fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+    <header class="bg-white/80 backdrop-blur-md shadow-sm fixed top-0 left-0 right-0 z-40 transition-all duration-300">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <i class="fa fa-cloud text-primary text-2xl"></i>
                 <h1 class="text-xl md:text-2xl font-bold text-dark">职业理想词云</h1>
             </div>
-            <div class="text-sm text-gray-600" id="countDisplay">
-                已有 <span id="wordCount">0</span> 个职业理想
+            <div class="text-sm text-gray-600" id="参与人数">
+                <i class="fa fa-users mr-1"></i>
+                <span>参与人数: 0</span>
             </div>
         </div>
     </header>
@@ -87,64 +87,61 @@
     <!-- 主要内容区 -->
     <main class="container mx-auto px-4 pt-20 pb-16">
         <!-- 词云展示区 -->
-        <div class="relative bg-white rounded-xl shadow-md p-4 md:p-6 mb-8 overflow-hidden">
-            <h2 class="text-center text-lg md:text-xl font-semibold mb-4 text-dark">班级职业理想词云</h2>
-            <div id="wordcloudCanvasContainer" class="relative">
-                <canvas id="wordcloudCanvas"></canvas>
-                <div id="wordcloudLoading" class="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
+        <section class="mt-6 mb-8 rounded-xl bg-white shadow-lg p-4 md:p-6 relative overflow-hidden">
+            <h2 class="text-lg md:text-xl font-semibold mb-4 text-dark flex items-center">
+                <i class="fa fa-comment-o text-accent mr-2"></i>班级职业理想词云
+            </h2>
+            <div class="wordcloud-container border rounded-lg bg-gray-50" id="词云容器">
+                <canvas id="词云画布" class="w-full h-full"></canvas>
+                <div id="词云加载状态" class="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
                     <div class="text-center">
                         <i class="fa fa-circle-o-notch fa-spin text-primary text-3xl mb-2"></i>
                         <p class="text-gray-600">加载词云数据中...</p>
                     </div>
                 </div>
-                <div id="wordcloudError" class="absolute inset-0 flex items-center justify-center bg-white/70 z-10 hidden">
-                    <div class="text-center">
-                        <i class="fa fa-exclamation-triangle text-yellow-500 text-3xl mb-2"></i>
-                        <p class="text-gray-600" id="errorMessage">获取数据失败</p>
-                    </div>
+            </div>
+        </section>
+
+        <!-- 输入区 -->
+        <section class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6 mb-8 transform transition-all hover:shadow-xl">
+            <h2 class="text-lg md:text-xl font-semibold mb-4 text-dark flex items-center">
+                <i class="fa fa-pencil text-secondary mr-2"></i>分享你的职业理想
+            </h2>
+            <p class="text-gray-600 text-sm mb-4">请输入一个词来代表你的职业理想，例如"自由"、"创新"等</p>
+            <form id="理想表单" class="space-y-4">
+                <div>
+                    <input type="text" id="理想输入" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none"
+                        placeholder="输入你的职业理想..." maxlength="10" required>
                 </div>
-            </div>
-        </div>
-
-        <!-- 弹幕显示区 -->
-        <div class="relative bg-dark rounded-xl shadow-md overflow-hidden mb-8">
-            <div class="absolute top-0 left-0 right-0 bg-black/30 text-white p-2 text-center text-sm z-20">
-                实时职业理想弹幕
-            </div>
-            <div id="danmakuContainer" class="w-full h-64 md:h-80 relative overflow-hidden">
-                <!-- 弹幕会动态添加到这里 -->
-            </div>
-        </div>
-
-        <!-- 输入区域 -->
-        <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-            <h2 class="text-center text-lg md:text-xl font-semibold mb-4 text-dark">分享你的职业理想</h2>
-            <form id="wordForm" class="flex flex-col md:flex-row gap-3">
-                <input 
-                    type="text" 
-                    id="wordInput" 
-                    placeholder="输入一个词描述你的职业理想，如：自由、创新、稳定..." 
-                    class="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                    maxlength="10"
-                    required
-                >
-                <button 
-                    type="submit" 
-                    id="submitBtn"
-                    class="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg font-medium transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-                >
-                    <i class="fa fa-paper-plane"></i>
-                    <span>提交</span>
+                <button type="submit" id="提交按钮" 
+                    class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center">
+                    <i class="fa fa-paper-plane mr-2"></i>提交
                 </button>
+                <p id="提交状态" class="text-center text-sm hidden"></p>
             </form>
-            <p id="message" class="mt-3 text-center text-sm hidden"></p>
-            <p class="mt-2 text-center text-xs text-gray-500">每个设备只能提交一次，请认真思考后输入</p>
-        </div>
+        </section>
+
+        <!-- 说明区 -->
+        <section class="bg-white/70 backdrop-blur-sm rounded-xl p-4 md:p-6 shadow">
+            <h3 class="font-semibold text-dark mb-2 flex items-center">
+                <i class="fa fa-info-circle text-accent mr-2"></i>系统说明
+            </h3>
+            <ul class="text-gray-600 text-sm space-y-1 list-disc pl-5">
+                <li>每个用户只能提交一次职业理想</li>
+                <li>提交后会实时更新词云并显示在弹幕中</li>
+                <li>词语出现频率越高，在词云中显示越大</li>
+                <li>所有设备会实时同步更新结果</li>
+            </ul>
+        </section>
     </main>
 
+    <!-- 弹幕容器 -->
+    <div class="弹幕容器" id="弹幕容器"></div>
+
     <!-- 页脚 -->
-    <footer class="bg-dark text-white/80 py-4">
-        <div class="container mx-auto px-4 text-center text-sm">
+    <footer class="bg-dark text-white/70 text-sm py-4 mt-auto">
+        <div class="container mx-auto px-4 text-center">
             <p>职业理想词云系统 &copy; 2023</p>
         </div>
     </footer>
@@ -157,404 +154,236 @@
             serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com"
         });
 
-        // 获取类
+        // 获取CareerIdealWord类
         const CareerIdealWord = AV.Object.extend('CareerIdealWord');
         const query = new AV.Query(CareerIdealWord);
-
+        
         // DOM元素
-        const wordForm = document.getElementById('wordForm');
-        const wordInput = document.getElementById('wordInput');
-        const message = document.getElementById('message');
-        const submitBtn = document.getElementById('submitBtn');
-        const wordCount = document.getElementById('wordCount');
-        const danmakuContainer = document.getElementById('danmakuContainer');
-        const wordcloudCanvas = document.getElementById('wordcloudCanvas');
-        const wordcloudLoading = document.getElementById('wordcloudLoading');
-        const wordcloudError = document.getElementById('wordcloudError');
-        const errorMessage = document.getElementById('errorMessage');
-
-        // 存储所有词语
-        let allWords = [];
-        let wordFrequency = {};
-        let hasSubmitted = localStorage.getItem('hasSubmitted') === 'true';
-        let wordcloudLoaded = false; // 词云库加载状态
-        let wordcloudQueue = false; // 是否有等待处理的词云生成任务
-
-        // 检查词云库是否加载
-        function checkWordcloudLibrary() {
-            return new Promise((resolve, reject) => {
-                // 如果已经加载完成
-                if (window.WordCloud) {
-                    console.log('词云库已加载（直接检测到）');
-                    wordcloudLoaded = true;
-                    return resolve(true);
-                }
-                
-                // 检查次数限制，避免无限循环
-                let checkCount = 0;
-                const maxChecks = 30; // 最多检查30次，约30秒
-                console.log('开始检查词云库加载状态...');
-                
-                // 定期检查
-                const checkInterval = setInterval(() => {
-                    checkCount++;
-                    
-                    if (window.WordCloud) {
-                        clearInterval(checkInterval);
-                        wordcloudLoaded = true;
-                        console.log('词云库已加载（定时检查通过）');
-                        resolve(true);
-                    } else if (checkCount >= maxChecks) {
-                        clearInterval(checkInterval);
-                        console.error('词云库加载超时');
-                        reject(new Error('词云库加载超时'));
-                    } else {
-                        console.log(`词云库检查中... (第${checkCount}次)`);
-                    }
-                }, 1000); // 每秒检查一次
-            });
+        const 理想表单 = document.getElementById('理想表单');
+        const 理想输入 = document.getElementById('理想输入');
+        const 提交按钮 = document.getElementById('提交按钮');
+        const 提交状态 = document.getElementById('提交状态');
+        const 词云容器 = document.getElementById('词云容器');
+        const 词云画布 = document.getElementById('词云画布');
+        const 词云加载状态 = document.getElementById('词云加载状态');
+        const 弹幕容器 = document.getElementById('弹幕容器');
+        const 参与人数显示 = document.querySelector('#参与人数 span');
+        
+        // 检查用户是否已提交过
+        let 已提交 = localStorage.getItem('careerIdealSubmitted') === 'true';
+        let 词语数据 = {};
+        let 所有词语 = [];
+        
+        // 初始化页面状态
+        if (已提交) {
+            理想输入.disabled = true;
+            提交按钮.disabled = true;
+            提交按钮.classList.add('bg-gray-400', 'hover:bg-gray-400');
+            提交按钮.classList.remove('bg-primary', 'hover:bg-primary/90');
+            提交状态.textContent = '你已提交过职业理想，感谢参与！';
+            提交状态.classList.remove('hidden', 'text-red-500');
+            提交状态.classList.add('text-green-500');
         }
-
-        // 检查是否已提交
-        if (hasSubmitted) {
-            wordInput.disabled = true;
-            submitBtn.disabled = true;
-            submitBtn.classList.add('bg-gray-400', 'hover:bg-gray-400', 'cursor-not-allowed');
-            showMessage('你已提交过职业理想，感谢参与！', 'blue');
-        }
-
+        
         // 生成随机颜色
-        function getRandomColor() {
+        function 生成随机颜色() {
             const colors = [
-                '#3B82F6', '#10B981', '#8B5CF6', '#EF4444', '#F59E0B', 
-                '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#84CC16'
+                '#3B82F6', '#10B981', '#8B5CF6', '#EF4444', '#F59E0B',
+                '#EC4899', '#14B8A6', '#6366F1', '#F97316', '#84CC16'
             ];
             return colors[Math.floor(Math.random() * colors.length)];
         }
-
+        
         // 添加弹幕
-        function addDanmaku(text, isNew = false) {
-            const danmaku = document.createElement('div');
-            danmaku.className = 'danmaku';
-            danmaku.textContent = text;
+        function 添加弹幕(文本) {
+            const 弹幕 = document.createElement('div');
+            弹幕.className = '弹幕';
+            弹幕.textContent = 文本;
             
             // 随机样式
-            const size = Math.floor(Math.random() * 4) + 14; // 14-17px
-            const color = getRandomColor();
-            const top = Math.floor(Math.random() * (danmakuContainer.clientHeight - 40));
+            弹幕.style.color = 生成随机颜色();
+            弹幕.style.fontSize = `${14 + Math.random() * 16}px`;
+            弹幕.style.top = `${Math.random() * 80 + 10}%`;
+            弹幕.style.animationDuration = `${6 + Math.random() * 8}s`;
             
-            danmaku.style.fontSize = `${size}px`;
-            danmaku.style.color = color;
-            danmaku.style.top = `${top}px`;
-            danmaku.style.right = `-${danmaku.offsetWidth}px`;
+            弹幕容器.appendChild(弹幕);
             
-            // 添加到容器
-            danmakuContainer.appendChild(danmaku);
-            
-            // 计算动画时间 (速度)
-            const duration = Math.floor(Math.random() * 8) + 8; // 8-16秒
-            
-            // 动画
+            // 动画结束后移除
             setTimeout(() => {
-                danmaku.style.transition = `transform ${duration}s linear`;
-                danmaku.style.transform = `translateX(-${danmakuContainer.clientWidth + danmaku.offsetWidth}px)`;
-                
-                // 动画结束后移除
-                setTimeout(() => {
-                    if (danmaku.parentNode) {
-                        danmaku.parentNode.removeChild(danmaku);
-                    }
-                }, duration * 1000);
-            }, 10);
-            
-            // 新提交的弹幕添加特殊标记
-            if (isNew) {
-                danmaku.classList.add('font-bold');
-                danmaku.style.textShadow = '0 0 5px rgba(255,255,255,0.8)';
+                弹幕.remove();
+            }, 15000);
+        }
+        
+        // 随机展示已有弹幕
+        function 随机展示弹幕() {
+            if (所有词语.length > 0) {
+                const 随机索引 = Math.floor(Math.random() * 所有词语.length);
+                添加弹幕(所有词语[随机索引]);
             }
+            setTimeout(随机展示弹幕, 3000 + Math.random() * 5000);
         }
-
-        // 定期随机展示已有弹幕
-        function startRandomDanmaku() {
-            setInterval(() => {
-                if (allWords.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * allWords.length);
-                    addDanmaku(allWords[randomIndex]);
-                }
-            }, 3000);
-        }
-
+        
         // 生成词云
-        async function generateWordCloud() {
-            // 如果已经有排队的任务，直接返回
-            if (wordcloudQueue) return;
+        function 生成词云(数据) {
+            if (typeof WordCloud === 'undefined') {
+                console.error('WordCloud库未加载');
+                词云加载状态.innerHTML = '<p class="text-red-500">词云加载失败，请刷新页面重试</p>';
+                return;
+            }
             
-            wordcloudQueue = true;
+            // 准备词云数据格式: [{text: "词", weight: 出现次数}, ...]
+            const 词云数据 = Object.entries(数据).map(([word, count]) => ({
+                text: word,
+                weight: count
+            }));
             
+            // 清空画布
+            const 上下文 = 词云画布.getContext('2d');
+            上下文.clearRect(0, 0, 词云画布.width, 词云画布.height);
+            
+            // 设置画布尺寸以匹配容器
+            function 设置画布尺寸() {
+                const { width, height } = 词云容器.getBoundingClientRect();
+                词云画布.width = width;
+                词云画布.height = height;
+            }
+            
+            设置画布尺寸();
+            window.addEventListener('resize', 设置画布尺寸);
+            
+            // 生成词云
             try {
-                // 确保词云库已加载
-                await checkWordcloudLibrary();
-                
-                // 准备词云数据 - 只使用学生输入的词语
-                const wordList = Object.entries(wordFrequency).map(([word, count]) => {
-                    // 根据出现次数调整权重
-                    const weight = Math.min(10, Math.max(1, count));
-                    return [word, weight];
-                });
-                
-                console.log('准备生成词云，数据：', wordList);
-                
-                if (wordList.length === 0) {
-                    console.log('词云数据为空');
-                    showWordcloudError('暂无数据，请等待其他同学提交');
-                    return;
-                }
-                
-                // 清除现有词云
-                if (wordcloudCanvas.wordcloud) {
-                    wordcloudCanvas.wordcloud.destroy();
-                }
-                
-                // 配置词云
-                const options = {
-                    canvas: wordcloudCanvas, // 明确指定Canvas元素
-                    list: wordList,
-                    color: function() {
-                        return getRandomColor();
-                    },
+                WordCloud(词云画布, {
+                    list: 词云数据,
+                    sizeRange: [16, 80],
+                    color: () => 生成随机颜色(),
+                    rotateRatio: 0.5,
                     backgroundColor: 'transparent',
-                    minSize: 12,
-                    maxSize: 80,
-                    rotateRatio: 0.5, // 50%的词语会旋转
-                    shape: 'circle',
                     fontFamily: 'Inter, sans-serif',
                     fontWeight: 'bold',
+                    minSize: 10,
                     gridSize: 8,
-                    shuffle: true,
-                    hover: function(item, dimension, event) {
-                        // 鼠标悬停效果
-                        event.target.style.textShadow = '0 0 8px rgba(255,255,255,0.8)';
-                    },
-                    outOfBound: function() {
-                        return false;
-                    }
-                };
+                    drawOutOfBound: false,
+                    shuffle: true
+                });
                 
-                console.log('开始生成词云，配置：', options);
-                
-                // 生成词云
-                WordCloud(wordcloudCanvas, options);
-                wordcloudLoading.classList.add('hidden');
-                wordcloudError.classList.add('hidden');
-                console.log('词云生成成功');
+                词云加载状态.classList.add('hidden');
             } catch (error) {
-                console.error('词云生成错误:', error);
-                showWordcloudError('获取数据失败: ' + error.message);
-                
-                // 如果是库未加载的错误，尝试重新加载
-                if (error.message.includes('词云库')) {
-                    loadWordcloudLibrary();
-                }
-            } finally {
-                wordcloudQueue = false;
+                console.error('生成词云失败:', error);
+                词云加载状态.innerHTML = `<p class="text-red-500">生成词云失败: ${error.message}</p>`;
             }
         }
-
-        // 尝试重新加载词云库
-        function loadWordcloudLibrary() {
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.1/wordcloud2.min.js';
-            script.onload = function() {
-                wordcloudLoaded = true;
-                console.log('词云库重新加载成功');
-                // 重新生成词云
-                if (Object.keys(wordFrequency).length > 0) {
-                    generateWordCloud();
-                }
-            };
-            script.onerror = function() {
-                console.error('词云库重新加载失败');
-                showWordcloudError('词云库加载失败，请刷新页面重试');
-            };
-            document.head.appendChild(script);
-        }
-
-        // 显示词云错误
-        function showWordcloudError(text) {
-            wordcloudLoading.classList.add('hidden');
-            wordcloudError.classList.remove('hidden');
-            errorMessage.textContent = text;
-            console.error('词云错误提示：', text);
-        }
-
-        // 显示消息
-        function showMessage(text, type = 'default') {
-            message.textContent = text;
-            message.classList.remove('hidden', 'text-green-600', 'text-red-600', 'text-blue-600');
-            
-            switch(type) {
-                case 'success':
-                    message.classList.add('text-green-600');
-                    break;
-                case 'error':
-                    message.classList.add('text-red-600');
-                    break;
-                case 'blue':
-                    message.classList.add('text-blue-600');
-                    break;
-                default:
-                    break;
+        
+        // 更新词语数据
+        function 更新词语数据(新词语) {
+            if (新词语) {
+                词语数据[新词语] = (词语数据[新词语] || 0) + 1;
+                所有词语.push(新词语);
+                添加弹幕(新词语);
             }
             
-            setTimeout(() => {
-                message.classList.add('hidden');
-            }, 3000);
-        }
-
-        // 更新词语频率
-        function updateWordFrequency(words) {
-            const frequency = {};
+            // 更新参与人数
+            const 参与人数 = Object.values(词语数据).reduce((total, count) => total + count, 0);
+            参与人数显示.textContent = `参与人数: ${参与人数}`;
             
-            words.forEach(word => {
-                const trimmedWord = word.trim();
-                if (trimmedWord) {
-                    frequency[trimmedWord] = (frequency[trimmedWord] || 0) + 1;
-                }
-            });
-            
-            wordFrequency = frequency;
-            wordCount.textContent = words.length;
-            console.log('词语频率更新：', wordFrequency);
+            // 生成词云
+            生成词云(词语数据);
         }
-
-        // 加载所有词语
-        function loadAllWords() {
+        
+        // 从LeanCloud获取所有数据
+        function 获取所有数据() {
+            词云加载状态.innerHTML = '<i class="fa fa-circle-o-notch fa-spin text-primary text-3xl mb-2"></i><p class="text-gray-600">加载词云数据中...</p>';
+            
             query.find().then(results => {
-                console.log('从LeanCloud获取到数据：', results);
-                const words = results.map(result => {
-                    const word = result.get('word') || '';
-                    console.log('获取到的词语：', word);
-                    return word;
-                }).filter(Boolean);
-                allWords = words;
-                updateWordFrequency(words);
-                generateWordCloud(); // 生成词云
+                词语数据 = {};
+                所有词语 = [];
                 
-                // 显示一些历史弹幕
-                if (words.length > 0) {
-                    const displayCount = Math.min(5, words.length);
-                    for (let i = 0; i < displayCount; i++) {
-                        const randomIndex = Math.floor(Math.random() * words.length);
-                        setTimeout(() => {
-                            addDanmaku(words[randomIndex]);
-                        }, i * 1000);
+                results.forEach(result => {
+                    const 词语 = result.get('word');
+                    if (词语) {
+                        词语数据[词语] = (词语数据[词语] || 0) + 1;
+                        所有词语.push(词语);
                     }
-                }
-            }).catch(error => {
-                console.error('加载数据错误:', error);
-                showWordcloudError('获取数据失败: ' + error.message);
-            });
-        }
-
-        // 提交词语
-        function submitWord(word) {
-            const newWord = new CareerIdealWord();
-            newWord.set('word', word);
-            
-            return newWord.save().then(() => {
-                // 标记为已提交
-                localStorage.setItem('hasSubmitted', 'true');
-                hasSubmitted = true;
+                });
                 
-                // 禁用输入
-                wordInput.disabled = true;
-                submitBtn.disabled = true;
-                submitBtn.classList.add('bg-gray-400', 'hover:bg-gray-400', 'cursor-not-allowed');
-                
-                return true;
+                更新词语数据();
             }).catch(error => {
-                console.error('提交错误:', error);
-                throw new Error(error.message || '提交失败，请稍后再试');
+                console.error('获取数据失败:', error);
+                词云加载状态.innerHTML = `<p class="text-red-500">获取数据失败: ${error.message}</p>`;
             });
         }
-
-        // 设置实时更新
-        function setupRealtimeUpdates() {
-            const query = new AV.Query(CareerIdealWord);
-            const liveQuery = query.subscribe();
-            
-            liveQuery.on('create', (object) => {
-                const newWord = object.get('word') || '';
-                if (newWord.trim()) {
-                    allWords.push(newWord);
-                    updateWordFrequency(allWords);
-                    generateWordCloud(); // 实时更新词云
-                    addDanmaku(newWord, true); // 新提交的弹幕
-                    console.log('实时更新：新增词语', newWord);
-                }
-            });
-        }
-
-        // 表单提交事件
-        wordForm.addEventListener('submit', async (e) => {
+        
+        // 提交新的职业理想
+        理想表单.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const word = wordInput.value.trim();
+            if (已提交) return;
             
-            if (!word) {
-                showMessage('请输入你的职业理想', 'error');
-                return;
-            }
+            const 词语 = 理想输入.value.trim();
+            if (!词语) return;
             
-            if (word.length > 10) {
-                showMessage('请输入不超过10个字符的词语', 'error');
-                return;
-            }
+            提交按钮.disabled = true;
+            提交按钮.innerHTML = '<i class="fa fa-circle-o-notch fa-spin mr-2"></i>提交中...';
             
-            try {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i><span>提交中...</span>';
+            // 保存到LeanCloud
+            const 新词语 = new CareerIdealWord();
+            新词语.set('word', 词语);
+            
+            新词语.save().then(() => {
+                // 标记为已提交
+                已提交 = true;
+                localStorage.setItem('careerIdealSubmitted', 'true');
                 
-                await submitWord(word);
-                showMessage('提交成功！感谢你的分享', 'success');
-                wordInput.value = '';
+                提交状态.textContent = '提交成功！感谢你的参与！';
+                提交状态.classList.remove('hidden', 'text-red-500');
+                提交状态.classList.add('text-green-500');
                 
-                // 立即显示自己的弹幕
-                addDanmaku(word, true);
+                理想输入.disabled = true;
+                提交按钮.innerHTML = '<i class="fa fa-check mr-2"></i>已提交';
+                提交按钮.classList.add('bg-gray-400', 'hover:bg-gray-400');
+                提交按钮.classList.remove('bg-primary', 'hover:bg-primary/90');
                 
-            } catch (error) {
-                showMessage(error.message, 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fa fa-paper-plane"></i><span>提交</span>';
-            }
-        });
-
-        // 页面加载完成后初始化
-        window.addEventListener('DOMContentLoaded', () => {
-            console.log('页面加载完成，开始初始化...');
-            // 先检查词云库
-            checkWordcloudLibrary().catch(error => {
-                console.error('词云库检查失败:', error);
-                showWordcloudError('词云库加载失败，正在尝试重新加载...');
-                loadWordcloudLibrary(); // 尝试重新加载
+                // 不需要手动更新数据，因为实时监听会处理
+            }).catch(error => {
+                console.error('提交失败:', error);
+                提交状态.textContent = `提交失败: ${error.message}`;
+                提交状态.classList.remove('hidden', 'text-green-500');
+                提交状态.classList.add('text-red-500');
+                
+                提交按钮.disabled = false;
+                提交按钮.innerHTML = '<i class="fa fa-paper-plane mr-2"></i>提交';
             });
+        });
+        
+        // 实时监听数据变化
+        function 监听数据变化() {
+            const 实时查询 = new AV.Query(CareerIdealWord);
+            const 实时查询实例 = 实时查询.subscribe();
             
-            // 加载已有数据
-            loadAllWords();
-            
-            // 启动随机弹幕
-            startRandomDanmaku();
-            
-            // 设置实时更新
-            setupRealtimeUpdates();
-            
-            // 窗口大小变化时重新生成词云
-            window.addEventListener('resize', () => {
-                if (Object.keys(wordFrequency).length > 0) {
-                    generateWordCloud();
+            实时查询实例.on('create', (object) => {
+                const 新词语 = object.get('word');
+                if (新词语) {
+                    更新词语数据(新词语);
                 }
             });
-        });
+        }
+        
+        // 初始化
+        function 初始化() {
+            获取所有数据();
+            监听数据变化();
+            随机展示弹幕();
+            
+            // 处理窗口大小变化时重新生成词云
+            window.addEventListener('resize', () => {
+                if (Object.keys(词语数据).length > 0) {
+                    生成词云(词语数据);
+                }
+            });
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', 初始化);
     </script>
 </body>
 </html>
