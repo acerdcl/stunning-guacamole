@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <!-- 引入LeanCloud SDK -->
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
-    <!-- 引入词云库 - 使用更可靠的CDN -->
+    <!-- 引入词云库 - 使用可靠CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.1/wordcloud2.min.js"></script>
     <script>
         tailwind.config = {
@@ -57,6 +57,17 @@
             pointer-events: none;
             animation-timing-function: linear;
         }
+
+        /* 确保Canvas容器有明确尺寸 */
+        #wordcloudCanvasContainer {
+            width: 100%;
+            height: 400px;
+            position: relative;
+        }
+        #wordcloudCanvas {
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen font-sans">
@@ -78,8 +89,8 @@
         <!-- 词云展示区 -->
         <div class="relative bg-white rounded-xl shadow-md p-4 md:p-6 mb-8 overflow-hidden">
             <h2 class="text-center text-lg md:text-xl font-semibold mb-4 text-dark">班级职业理想词云</h2>
-            <div class="relative w-full" style="height: 400px;">
-                <canvas id="wordcloudCanvas" class="w-full h-full"></canvas>
+            <div id="wordcloudCanvasContainer" class="relative">
+                <canvas id="wordcloudCanvas"></canvas>
                 <div id="wordcloudLoading" class="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
                     <div class="text-center">
                         <i class="fa fa-circle-o-notch fa-spin text-primary text-3xl mb-2"></i>
@@ -174,6 +185,7 @@
             return new Promise((resolve, reject) => {
                 // 如果已经加载完成
                 if (window.WordCloud) {
+                    console.log('词云库已加载（直接检测到）');
                     wordcloudLoaded = true;
                     return resolve(true);
                 }
@@ -181,6 +193,7 @@
                 // 检查次数限制，避免无限循环
                 let checkCount = 0;
                 const maxChecks = 30; // 最多检查30次，约30秒
+                console.log('开始检查词云库加载状态...');
                 
                 // 定期检查
                 const checkInterval = setInterval(() => {
@@ -189,10 +202,14 @@
                     if (window.WordCloud) {
                         clearInterval(checkInterval);
                         wordcloudLoaded = true;
+                        console.log('词云库已加载（定时检查通过）');
                         resolve(true);
                     } else if (checkCount >= maxChecks) {
                         clearInterval(checkInterval);
+                        console.error('词云库加载超时');
                         reject(new Error('词云库加载超时'));
+                    } else {
+                        console.log(`词云库检查中... (第${checkCount}次)`);
                     }
                 }, 1000); // 每秒检查一次
             });
@@ -285,7 +302,10 @@
                     return [word, weight];
                 });
                 
+                console.log('准备生成词云，数据：', wordList);
+                
                 if (wordList.length === 0) {
+                    console.log('词云数据为空');
                     showWordcloudError('暂无数据，请等待其他同学提交');
                     return;
                 }
@@ -297,6 +317,7 @@
                 
                 // 配置词云
                 const options = {
+                    canvas: wordcloudCanvas, // 明确指定Canvas元素
                     list: wordList,
                     color: function() {
                         return getRandomColor();
@@ -319,10 +340,13 @@
                     }
                 };
                 
+                console.log('开始生成词云，配置：', options);
+                
                 // 生成词云
                 WordCloud(wordcloudCanvas, options);
                 wordcloudLoading.classList.add('hidden');
                 wordcloudError.classList.add('hidden');
+                console.log('词云生成成功');
             } catch (error) {
                 console.error('词云生成错误:', error);
                 showWordcloudError('获取数据失败: ' + error.message);
@@ -342,6 +366,7 @@
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.1/wordcloud2.min.js';
             script.onload = function() {
                 wordcloudLoaded = true;
+                console.log('词云库重新加载成功');
                 // 重新生成词云
                 if (Object.keys(wordFrequency).length > 0) {
                     generateWordCloud();
@@ -359,6 +384,7 @@
             wordcloudLoading.classList.add('hidden');
             wordcloudError.classList.remove('hidden');
             errorMessage.textContent = text;
+            console.error('词云错误提示：', text);
         }
 
         // 显示消息
@@ -398,12 +424,18 @@
             
             wordFrequency = frequency;
             wordCount.textContent = words.length;
+            console.log('词语频率更新：', wordFrequency);
         }
 
         // 加载所有词语
         function loadAllWords() {
             query.find().then(results => {
-                const words = results.map(result => result.get('word') || '').filter(Boolean);
+                console.log('从LeanCloud获取到数据：', results);
+                const words = results.map(result => {
+                    const word = result.get('word') || '';
+                    console.log('获取到的词语：', word);
+                    return word;
+                }).filter(Boolean);
                 allWords = words;
                 updateWordFrequency(words);
                 generateWordCloud(); // 生成词云
@@ -458,6 +490,7 @@
                     updateWordFrequency(allWords);
                     generateWordCloud(); // 实时更新词云
                     addDanmaku(newWord, true); // 新提交的弹幕
+                    console.log('实时更新：新增词语', newWord);
                 }
             });
         }
@@ -498,6 +531,7 @@
 
         // 页面加载完成后初始化
         window.addEventListener('DOMContentLoaded', () => {
+            console.log('页面加载完成，开始初始化...');
             // 先检查词云库
             checkWordcloudLibrary().catch(error => {
                 console.error('词云库检查失败:', error);
