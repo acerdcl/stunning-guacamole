@@ -68,6 +68,18 @@
                     height: 300px;
                 }
             }
+            .debug-info {
+                position: fixed;
+                bottom: 10px;
+                left: 10px;
+                background: rgba(0,0,0,0.7);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-size: 12px;
+                z-index: 100;
+                max-width: 300px;
+            }
         }
     </style>
 </head>
@@ -140,13 +152,34 @@
     <!-- 弹幕容器 -->
     <div class="弹幕容器" id="弹幕容器"></div>
 
+    <!-- 调试信息 (生产环境可隐藏) -->
+    <div class="debug-info hidden" id="调试信息">
+        状态: 初始化中...
+    </div>
+
     <script>
-        // 初始化LeanCloud
+        // 初始化LeanCloud - 关键修复：确保服务器地址正确
         AV.init({
             appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
             appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
-            serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com"
+            serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com" // 根据AppID确认的正确服务器地址
         });
+        
+        // 验证LeanCloud初始化状态
+        function 验证LeanCloud初始化() {
+            try {
+                if (AV.applicationId && AV.applicationKey) {
+                    显示调试信息(`LeanCloud初始化成功: ${AV.applicationId}`);
+                    return true;
+                } else {
+                    显示调试信息("LeanCloud初始化失败: 缺少AppID或AppKey");
+                    return false;
+                }
+            } catch (e) {
+                显示调试信息(`LeanCloud初始化错误: ${e.message}`);
+                return false;
+            }
+        }
         
         // 获取CareerIdealWord类
         const CareerIdealWord = AV.Object.extend('CareerIdealWord');
@@ -160,11 +193,20 @@
         const 词云容器 = document.querySelector('.词云容器');
         const 词云加载中 = document.getElementById('词云加载中');
         const 弹幕容器 = document.getElementById('弹幕容器');
+        const 调试信息 = document.getElementById('调试信息');
         
         // 存储所有词语数据和已提交状态
         let 所有词语 = {};
         let 已提交 = false;
         let 词语列表 = [];
+        let 实时订阅 = null;
+        
+        // 显示调试信息
+        function 显示调试信息(消息) {
+            调试信息.textContent = `状态: ${消息}`;
+            调试信息.classList.remove('hidden');
+            console.log('[调试]', 消息);
+        }
         
         // 检查用户是否已提交过
         function 检查是否已提交() {
@@ -176,6 +218,7 @@
                 提交按钮.classList.add('bg-gray-400', 'cursor-not-allowed');
                 提交按钮.classList.remove('bg-primary', 'hover:bg-primary/90', 'hover:scale-105', 'active:scale-95');
                 显示提示('你已经提交过职业理想啦！', 'info');
+                显示调试信息('用户已提交过职业理想');
             }
         }
         
@@ -198,7 +241,7 @@
             }, 3000);
         }
         
-        // 提交职业理想
+        // 提交职业理想 - 修复数据提交逻辑
         function 提交职业理想() {
             const 词语 = 理想输入.value.trim();
             
@@ -212,23 +255,45 @@
                 return;
             }
             
+            if (!验证LeanCloud初始化()) {
+                显示提示('系统初始化失败，请刷新页面重试', 'error');
+                return;
+            }
+            
             // 创建新的记录
             const 新词语 = new CareerIdealWord();
             新词语.set('word', 词语);
             
             提交按钮.disabled = true;
             提交按钮.innerHTML = '<i class="fa fa-spinner fa-spin"></i><span>提交中...</span>';
+            显示调试信息(`准备提交词语: ${词语}`);
             
-            新词语.save().then(() => {
+            新词语.save().then((savedObject) => {
+                显示调试信息(`提交成功，对象ID: ${savedObject.id}`);
                 显示提示('提交成功！感谢你的分享', 'success');
                 理想输入.value = '';
                 localStorage.setItem('已提交职业理想', 'true');
                 检查是否已提交();
                 
+                // 立即刷新数据
+                获取所有词语();
                 // 显示刚提交的词语作为弹幕
                 显示弹幕(词语);
+                
+                提交按钮.disabled = false;
+                提交按钮.innerHTML = '<i class="fa fa-paper-plane"></i><span>提交理想</span>';
             }).catch(error => {
-                显示提示('提交失败，请稍后再试: ' + error.message, 'error');
+                显示调试信息(`提交失败: ${error.message}, 错误代码: ${error.code}`);
+                let 错误消息 = '提交失败，请稍后再试';
+                
+                // 根据错误代码提供更具体的信息
+                if (error.code === 401) {
+                    错误消息 += '，可能是权限设置问题';
+                } else if (error.code === 100) {
+                    错误消息 += '，网络连接可能有问题';
+                }
+                
+                显示提示(`${错误消息}: ${error.message}`, 'error');
                 提交按钮.disabled = false;
                 提交按钮.innerHTML = '<i class="fa fa-paper-plane"></i><span>提交理想</span>';
             });
@@ -236,7 +301,10 @@
         
         // 获取所有词语并更新词云
         function 获取所有词语() {
+            显示调试信息('开始获取所有词语数据');
+            
             query.find().then(results => {
+                显示调试信息(`成功获取 ${results.length} 条词语数据`);
                 所有词语 = {};
                 词语列表 = [];
                 
@@ -249,7 +317,7 @@
                 更新词云();
                 词云加载中.classList.add('hidden');
             }).catch(error => {
-                console.error('获取数据失败:', error);
+                显示调试信息(`获取数据失败: ${error.message}`);
                 显示提示('获取数据失败，请刷新页面重试', 'error');
                 词云加载中.classList.add('hidden');
             });
@@ -259,12 +327,17 @@
         function 更新词云() {
             // 准备词云数据格式: [[词, 权重], [词, 权重], ...]
             const 词云数据 = Object.entries(所有词语).map(([词, 次数]) => [词, 次数]);
+            显示调试信息(`更新词云，共 ${词云数据.length} 个不同词语`);
             
             if (词云数据.length === 0) {
                 // 如果没有数据，显示提示
                 const 容器 = 词云容器;
+                // 清除可能存在的旧提示
+                const 旧提示 = 容器.querySelector('.empty提示');
+                if (旧提示) 旧提示.remove();
+                
                 const 提示 = document.createElement('div');
-                提示.className = 'absolute inset-0 flex items-center justify-center text-gray-400';
+                提示.className = 'empty提示 absolute inset-0 flex items-center justify-center text-gray-400';
                 提示.textContent = '还没有职业理想被提交，快来成为第一个吧！';
                 容器.appendChild(提示);
                 
@@ -274,6 +347,10 @@
                 
                 return;
             }
+            
+            // 清除可能存在的空提示
+            const 空提示 = 词云容器.querySelector('.empty提示');
+            if (空提示) 空提示.remove();
             
             // 清除旧的词云
             词云画布.width = 词云容器.clientWidth;
@@ -305,7 +382,7 @@
         function 显示弹幕(文本) {
             const 弹幕 = document.createElement('div');
             弹幕.className = '弹幕元素';
-            弹幕.textContent = 文本;
+            弹幕.textContent = text;
             
             // 随机样式
             const 字体大小 = Math.floor(Math.random() * 10) + 14; // 14-23px
@@ -335,7 +412,10 @@
         
         // 定期随机显示已有弹幕
         function 定期显示弹幕() {
-            if (词语列表.length === 0) return;
+            if (词语列表.length === 0) {
+                setTimeout(定期显示弹幕, 3000);
+                return;
+            }
             
             const 随机索引 = Math.floor(Math.random() * 词语列表.length);
             显示弹幕(词语列表[随机索引]);
@@ -347,22 +427,46 @@
         
         // 设置实时更新
         function 设置实时更新() {
+            if (!验证LeanCloud初始化()) return;
+            
+            // 先取消可能存在的旧订阅
+            if (实时订阅) {
+                实时订阅.unsubscribe();
+            }
+            
             // 监听数据变化
             const 实时查询 = new AV.Query(CareerIdealWord);
-            const 实时更新 = AV.Object.extend('CareerIdealWord');
             
             // 监听新增数据
             实时查询.subscribe().then(subscription => {
+                实时订阅 = subscription;
+                显示调试信息('实时更新已连接');
+                
                 subscription.on('create', object => {
                     const 新词 = object.get('word');
+                    显示调试信息(`收到新词语: ${新词}`);
                     获取所有词语(); // 更新词云
                     显示弹幕(新词); // 显示新弹幕
                 });
+                
+                subscription.on('error', error => {
+                    显示调试信息(`实时更新错误: ${error.message}`);
+                    显示提示('实时连接出现问题，将尝试重新连接', 'error');
+                    // 尝试重新连接
+                    setTimeout(设置实时更新, 5000);
+                });
+            }).catch(error => {
+                显示调试信息(`实时订阅失败: ${error.message}`);
+                显示提示('无法建立实时连接，将尝试重新连接', 'error');
+                // 尝试重新连接
+                setTimeout(设置实时更新, 5000);
             });
         }
         
         // 页面加载完成后初始化
         window.addEventListener('DOMContentLoaded', () => {
+            显示调试信息('页面加载完成，开始初始化');
+            验证LeanCloud初始化();
             检查是否已提交();
             获取所有词语();
             设置实时更新();
