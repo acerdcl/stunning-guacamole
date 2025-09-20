@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>职业能力倾向测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#DC2626',
+                        accent: '#F59E0B',
+                        success: '#10B981',
+                        neutral: '#F3F4F6',
+                        dark: '#1F2937'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+            .progress-animation {
+                transition: width 1s ease-in-out;
+            }
+            .fade-in {
+                animation: fadeIn 0.5s ease-in-out;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-dark">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-md sticky top-0 z-50 transition-all duration-300" id="header">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-[clamp(1.25rem,3vw,1.75rem)] font-bold text-primary">
+                <i class="fa fa-cogs mr-2"></i>职业能力倾向测试
+            </h1>
+            <div class="hidden md:flex items-center space-x-4">
+                <span class="text-sm text-gray-600" id="progress-text">0/45题</span>
+                <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary rounded-full progress-animation" id="progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 介绍部分 -->
+        <section id="intro" class="max-w-3xl mx-auto bg-white rounded-xl p-6 md:p-8 shadow-lg mb-8 transform transition-all duration-500">
+            <h2 class="text-2xl md:text-3xl font-bold text-center mb-4 text-dark">职业能力倾向测试</h2>
+            <p class="text-gray-700 mb-6">
+                本测验为自评量表，包含9种职业能力倾向评估。每种能力都通过若干实用性题目进行测试，
+                帮助你了解自己在不同职业能力上的倾向，从而找到最适合自己的职业发展方向。
+            </p>
+            <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                <p class="text-sm text-blue-800 mb-2"><i class="fa fa-info-circle mr-1"></i> 评分说明：</p>
+                <p class="text-sm text-gray-700">请根据自己的实际情况，对每个描述进行评价，从"强"到"弱"分为5个等级。</p>
+            </div>
+            <div class="flex flex-wrap gap-2 mb-6 justify-center">
+                <div class="px-3 py-1 bg-success/20 text-success rounded-full text-sm"><span class="font-semibold">1:</span> 强</div>
+                <div class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"><span class="font-semibold">2:</span> 较强</div>
+                <div class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm"><span class="font-semibold">3:</span> 一般</div>
+                <div class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm"><span class="font-semibold">4:</span> 较弱</div>
+                <div class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm"><span class="font-semibold">5:</span> 弱</div>
+            </div>
+            <button id="start-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/50">
+                开始测试 <i class="fa fa-arrow-right ml-2"></i>
+            </button>
+        </section>
+
+        <!-- 测试部分 -->
+        <section id="test" class="max-w-3xl mx-auto hidden">
+            <!-- 移动端进度条 -->
+            <div class="md:hidden mb-4">
+                <div class="flex justify-between text-sm mb-1">
+                    <span id="mobile-progress-text">0/45题</span>
+                    <span id="current-question-number">第1题</span>
+                </div>
+                <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary rounded-full progress-animation" id="mobile-progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- 维度指示器 -->
+            <div class="flex overflow-x-auto pb-2 mb-6 hide-scrollbar">
+                <div class="flex space-x-2 mx-auto">
+                    <span class="whitespace-nowrap px-3 py-1 rounded-full text-xs bg-primary/10 text-primary" id="indicator-G">一般学习能力</span>
+                    <span class="whitespace-nowrap px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-500" id="indicator-V">言语能力</span>
+                    <span class="whitespace-nowrap px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-500" id="indicator-N">算术能力</span>
+                    <span class="whitespace-nowrap px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-500" id="indicator-S">空间判断</span>
+                    <span class="whitespace-nowrap px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-500" id="indicator-P">形态知觉</span>
+                    <span class="whitespace-nowrap px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-500" id="indicator-Q">书写知觉</span>
+                    <span class="whitespace-nowrap px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-500" id="indicator-K">眼手协调</span>
+                    <span class="whitespace-nowrap px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-500" id="indicator-F">手指灵巧</span>
+                    <span class="whitespace-nowrap px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-500" id="indicator-M">手腕灵巧</span>
+                </div>
+            </div>
+
+            <!-- 维度标题 -->
+            <div class="mb-4 text-center">
+                <h3 class="text-xl font-semibold text-primary" id="dimension-title">一般学习能力倾向(G)</h3>
+                <p class="text-gray-500 text-sm" id="dimension-desc">评估你的总体学习和理解能力</p>
+            </div>
+
+            <!-- 题目卡片 -->
+            <div class="bg-white rounded-xl p-6 md:p-8 shadow-lg mb-6 fade-in" id="question-card">
+                <h4 class="text-lg md:text-xl font-medium mb-6" id="question-text">加载中...</h4>
+                <div class="grid grid-cols-5 gap-2" id="options-container">
+                    <!-- 选项将通过JS动态生成 -->
+                </div>
+            </div>
+
+            <!-- 导航按钮 -->
+            <div class="flex justify-between">
+                <button id="prev-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fa fa-arrow-left mr-2"></i> 上一题
+                </button>
+                <button id="next-btn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300">
+                    下一题 <i class="fa fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- 结果部分 -->
+        <section id="results" class="max-w-4xl mx-auto hidden">
+            <div class="bg-white rounded-xl p-6 md:p-8 shadow-lg mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold text-center mb-6 text-dark">你的职业能力倾向测试结果</h2>
+                
+                <!-- 能力雷达图 -->
+                <div class="mb-10">
+                    <h3 class="text-xl font-semibold mb-4 text-center">能力倾向雷达图</h3>
+                    <div class="h-80 md:h-96">
+                        <canvas id="aptitude-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 优势能力 -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 text-success flex items-center">
+                        <i class="fa fa-trophy mr-2"></i> 优势能力
+                    </h3>
+                    <div class="grid md:grid-cols-3 gap-4" id="strengths-container">
+                        <!-- 优势能力将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 待提升能力 -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 text-accent flex items-center">
+                        <i class="fa fa-line-chart mr-2"></i> 待提升能力
+                    </h3>
+                    <div class="grid md:grid-cols-3 gap-4" id="weaknesses-container">
+                        <!-- 待提升能力将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 详细能力得分 -->
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fa fa-list-alt mr-2"></i> 详细能力得分
+                    </h3>
+                    <div class="space-y-4" id="detailed-results">
+                        <!-- 详细结果将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <button id="restart-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <i class="fa fa-refresh mr-2"></i> 重新测试
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center text-sm text-gray-400">
+            <p>职业能力倾向测试 &copy; 2023</p>
+            <p class="mt-1">本测试结果仅供参考，不构成职业选择的唯一依据</p>
+        </div>
+    </footer>
+
+    <script>
+        // 9种职业能力倾向及其题目
+        const dimensions = [
+            {
+                id: 'G',
+                name: '一般学习能力倾向',
+                description: '评估你的总体学习能力、理解能力和记忆能力',
+                questions: [
+                    '快而容易地学习新的内容',
+                    '快而正确地解决数学题目',
+                    '学习成绩所处的水平',
+                    '对课文的理解、分析、综合能力',
+                    '对所学知识的记忆能力'
+                ]
+            },
+            {
+                id: 'V',
+                name: '言语能力倾向',
+                description: '评估你的语言表达、理解和文字运用能力',
+                questions: [
+                    '表达自己的观点的能力',
+                    '阅读速度和理解能力',
+                    '掌握词汇量的程度',
+                    '语文成绩',
+                    '文学创作能力'
+                ]
+            },
+            {
+                id: 'N',
+                name: '算术能力倾向',
+                description: '评估你的数学计算和问题解决能力',
+                questions: [
+                    '进行精确计算的能力',
+                    '笔算能力',
+                    '口算能力',
+                    '解决数学应用题的能力',
+                    '数学成绩'
+                ]
+            },
+            {
+                id: 'S',
+                name: '空间判断能力倾向',
+                description: '评估你的空间想象和空间关系判断能力',
+                questions: [
+                    '解决立体几何方面的习题',
+                    '看几何图形的立体感',
+                    '想象盒子展开后的平面图',
+                    '想象三维物体',
+                    '画出平面图'
+                ]
+            },
+            {
+                id: 'P',
+                name: '形态知觉能力倾向',
+                description: '评估你对物体细节和形态的观察能力',
+                questions: [
+                    '发现细微的错误',
+                    '识别物体的细节部分',
+                    '注意物体的形状差异',
+                    '观察物体的图案是否正确',
+                    '对物体的细微描述'
+                ]
+            },
+            {
+                id: 'Q',
+                name: '书写知觉能力倾向',
+                description: '评估你的文字识别和书写能力',
+                questions: [
+                    '快速查找编码卡片的能力',
+                    '发现错别字的能力',
+                    '设计精美的能力',
+                    '记录姓名、日期等数据的能力',
+                    '自我控制能力（如较长时间写字）'
+                ]
+            },
+            {
+                id: 'K',
+                name: '眼手运动协调能力倾向',
+                description: '评估你的眼手配合和动作协调能力',
+                questions: [
+                    '玩电子游戏的能力',
+                    '打乒乓球、排球等球类活动的能力',
+                    '打球的瞄准能力',
+                    '打字能力',
+                    '计算机操作能力'
+                ]
+            },
+            {
+                id: 'F',
+                name: '手指灵巧度',
+                description: '评估你的手指精细动作和操作能力',
+                questions: [
+                    '灵活地使用很小的工具',
+                    '穿针引线、编织等使用手指的能力',
+                    '制作小手工品的能力',
+                    '使用计算器的灵活程度',
+                    '弹奏乐器的能力'
+                ]
+            },
+            {
+                id: 'M',
+                name: '手腕灵巧度',
+                description: '评估你的手腕活动和操作能力',
+                questions: [
+                    '用手把东西分类的能力',
+                    '推拉东西时的灵活度',
+                    '快速削苹果的能力',
+                    '灵活地使用手工工具的能力',
+                    '在绘画、雕刻等工作中手腕的灵活性'
+                ]
+            }
+        ];
+
+        // 页面元素
+        const introSection = document.getElementById('intro');
+        const testSection = document.getElementById('test');
+        const resultsSection = document.getElementById('results');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const progressBar = document.getElementById('progress-bar');
+        const mobileProgressBar = document.getElementById('mobile-progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const mobileProgressText = document.getElementById('mobile-progress-text');
+        const currentQuestionNumber = document.getElementById('current-question-number');
+        const dimensionTitle = document.getElementById('dimension-title');
+        const dimensionDesc = document.getElementById('dimension-desc');
+        const strengthsContainer = document.getElementById('strengths-container');
+        const weaknessesContainer = document.getElementById('weaknesses-container');
+        const detailedResults = document.getElementById('detailed-results');
+        const header = document.getElementById('header');
+        const aptitudeChart = document.getElementById('aptitude-chart');
+
+        // 测试状态
+        let currentDimensionIndex = 0;
+        let currentQuestionIndex = 0;
+        const answers = {}; // 存储答案，格式: { dimensionId: [answers] }
+        let totalQuestions = 0;
+        let answeredQuestions = 0;
+
+        // 初始化答案对象
+        dimensions.forEach(dimension => {
+            answers[dimension.id] = new Array(dimension.questions.length).fill(null);
+            totalQuestions += dimension.questions.length;
+        });
+
+        // 开始测试
+        startBtn.addEventListener('click', () => {
+            introSection.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                introSection.classList.add('hidden');
+                testSection.classList.remove('hidden');
+                setTimeout(() => {
+                    testSection.classList.add('opacity-100');
+                }, 50);
+            }, 300);
+            renderCurrentQuestion();
+            updateProgress();
+        });
+
+        // 重新测试
+        restartBtn.addEventListener('click', () => {
+            currentDimensionIndex = 0;
+            currentQuestionIndex = 0;
+            answeredQuestions = 0;
+            
+            // 重置答案
+            dimensions.forEach(dimension => {
+                answers[dimension.id].fill(null);
+            });
+            
+            resultsSection.classList.add('opacity-0');
+            setTimeout(() => {
+                resultsSection.classList.add('hidden');
+                testSection.classList.remove('hidden');
+                renderCurrentQuestion();
+                updateProgress();
+                updateDimensionIndicators();
+            }, 300);
+        });
+
+        // 上一题
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+            } else if (currentDimensionIndex > 0) {
+                currentDimensionIndex--;
+                const prevDimension = dimensions[currentDimensionIndex];
+                currentQuestionIndex = prevDimension.questions.length - 1;
+            }
+            
+            renderCurrentQuestion();
+            updateNavigationButtons();
+            updateProgress();
+            updateDimensionIndicators();
+            scrollToTop();
+        });
+
+        // 下一题/提交
+        nextBtn.addEventListener('click', () => {
+            const currentDimension = dimensions[currentDimensionIndex];
+            
+            // 检查是否已回答当前问题
+            if (answers[currentDimension.id][currentQuestionIndex] === null) {
+                shakeElement(questionText);
+                return;
+            }
+            
+            // 检查是否是当前维度的最后一题
+            if (currentQuestionIndex < currentDimension.questions.length - 1) {
+                currentQuestionIndex++;
+            } else {
+                // 检查是否是最后一个维度
+                if (currentDimensionIndex < dimensions.length - 1) {
+                    currentDimensionIndex++;
+                    currentQuestionIndex = 0;
+                } else {
+                    // 所有问题都已回答，计算结果
+                    calculateResults();
+                    testSection.classList.add('opacity-0');
+                    setTimeout(() => {
+                        testSection.classList.add('hidden');
+                        resultsSection.classList.remove('hidden');
+                        setTimeout(() => {
+                            resultsSection.classList.add('opacity-100');
+                        }, 50);
+                    }, 300);
+                    return;
+                }
+            }
+            
+            renderCurrentQuestion();
+            updateNavigationButtons();
+            updateProgress();
+            updateDimensionIndicators();
+            scrollToTop();
+        });
+
+        // 渲染当前问题
+        function renderCurrentQuestion() {
+            const dimension = dimensions[currentDimensionIndex];
+            const question = dimension.questions[currentQuestionIndex];
+            
+            // 更新维度标题和描述
+            dimensionTitle.textContent = `${dimension.name}(${dimension.id})`;
+            dimensionDesc.textContent = dimension.description;
+            
+            // 更新问题文本
+            questionText.textContent = `${currentQuestionIndex + 1}. ${question}`;
+            
+            // 清空选项容器
+            optionsContainer.innerHTML = '';
+            
+            // 创建选项（1-5分，1为最强，5为最弱）
+            const options = [1, 2, 3, 4, 5];
+            const optionLabels = ['强', '较强', '一般', '较弱', '弱'];
+            const optionColors = [
+                'bg-success/20 text-success hover:bg-success/30',
+                'bg-blue-100 text-blue-800 hover:bg-blue-200',
+                'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
+                'bg-orange-100 text-orange-800 hover:bg-orange-200',
+                'bg-red-100 text-red-800 hover:bg-red-200'
+            ];
+            
+            options.forEach((option, i) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = `p-3 rounded-lg cursor-pointer transition-all duration-200 text-center ${optionColors[i]} ${answers[dimension.id][currentQuestionIndex] === option ? 'ring-2 ring-offset-2 ring-primary' : ''}`;
+                optionDiv.innerHTML = `<span class="font-medium">${option}</span><br><span class="text-xs mt-1 block">${optionLabels[i]}</span>`;
+                
+                optionDiv.addEventListener('click', () => {
+                    const previousAnswer = answers[dimension.id][currentQuestionIndex];
+                    answers[dimension.id][currentQuestionIndex] = option;
+                    
+                    // 更新已回答问题数量
+                    if (previousAnswer === null) {
+                        answeredQuestions++;
+                        updateProgress();
+                    }
+                    
+                    // 更新选项样式
+                    document.querySelectorAll('#options-container > div').forEach(el => {
+                        el.classList.remove('ring-2', 'ring-offset-2', 'ring-primary');
+                    });
+                    optionDiv.classList.add('ring-2', 'ring-offset-2', 'ring-primary');
+                });
+                
+                optionsContainer.appendChild(optionDiv);
+            });
+            
+            // 添加淡入动画
+            const questionCard = document.getElementById('question-card');
+            questionCard.classList.remove('fade-in');
+            setTimeout(() => {
+                questionCard.classList.add('fade-in');
+            }, 50);
+        }
+
+        // 更新导航按钮状态
+        function updateNavigationButtons() {
+            // 更新上一题按钮状态
+            const isFirstQuestion = currentDimensionIndex === 0 && currentQuestionIndex === 0;
+            prevBtn.disabled = isFirstQuestion;
+            
+            // 更新下一题按钮状态和文本
+            const currentDimension = dimensions[currentDimensionIndex];
+            const isLastQuestionOfDimension = currentQuestionIndex === currentDimension.questions.length - 1;
+            const isLastDimension = currentDimensionIndex === dimensions.length - 1;
+            
+            if (isLastDimension && isLastQuestionOfDimension) {
+                nextBtn.innerHTML = '查看结果 <i class="fa fa-check ml-2"></i>';
+                nextBtn.classList.add('bg-success', 'hover:bg-success/90');
+                nextBtn.classList.remove('bg-primary', 'hover:bg-primary/90');
+            } else {
+                nextBtn.innerHTML = isLastQuestionOfDimension ? 
+                    '下一维度 <i class="fa fa-arrow-right ml-2"></i>' : 
+                    '下一题 <i class="fa fa-arrow-right ml-2"></i>';
+                nextBtn.classList.remove('bg-success', 'hover:bg-success/90');
+                nextBtn.classList.add('bg-primary', 'hover:bg-primary/90');
+            }
+        }
+
+        // 更新进度
+        function updateProgress() {
+            const progress = (answeredQuestions / totalQuestions) * 100;
+            progressBar.style.width = `${progress}%`;
+            mobileProgressBar.style.width = `${progress}%`;
+            
+            // 计算当前是第几题
+            let questionNumber = 0;
+            for (let i = 0; i < currentDimensionIndex; i++) {
+                questionNumber += dimensions[i].questions.length;
+            }
+            questionNumber += currentQuestionIndex + 1;
+            
+            progressText.textContent = `${answeredQuestions}/${totalQuestions}题`;
+            mobileProgressText.textContent = `${answeredQuestions}/${totalQuestions}题`;
+            currentQuestionNumber.textContent = `第${questionNumber}题`;
+            
+            // 滚动时改变导航栏样式
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('py-2', 'shadow-lg');
+                    header.classList.remove('py-4', 'shadow-md');
+                } else {
+                    header.classList.add('py-4', 'shadow-md');
+                    header.classList.remove('py-2', 'shadow-lg');
+                }
+            });
+        }
+
+        // 更新维度指示器
+        function updateDimensionIndicators() {
+            // 重置所有指示器
+            dimensions.forEach(dimension => {
+                const indicator = document.getElementById(`indicator-${dimension.id}`);
+                indicator.classList.remove('bg-primary/10', 'text-primary');
+                indicator.classList.add('bg-gray-100', 'text-gray-500');
+            });
+            
+            // 高亮当前维度
+            const currentDimension = dimensions[currentDimensionIndex];
+            const currentIndicator = document.getElementById(`indicator-${currentDimension.id}`);
+            currentIndicator.classList.remove('bg-gray-100', 'text-gray-500');
+            currentIndicator.classList.add('bg-primary/10', 'text-primary');
+        }
+
+        // 计算结果
+        function calculateResults() {
+            // 计算每个维度的总分和平均分
+            const dimensionScores = dimensions.map(dimension => {
+                const scores = answers[dimension.id];
+                const totalScore = scores.reduce((sum, score) => sum + score, 0);
+                const avgScore = totalScore / scores.length;
+                
+                // 确定等级（1-5分，1为最好，5为最差）
+                let level, levelText, levelColor;
+                if (avgScore <= 1.5) {
+                    level = '优秀';
+                    levelText = '你的这项能力非常突出，是你的优势所在';
+                    levelColor = 'text-success';
+                } else if (avgScore <= 2.5) {
+                    level = '良好';
+                    levelText = '你的这项能力较好，能够很好地应对相关任务';
+                    levelColor = 'text-blue-600';
+                } else if (avgScore <= 3.5) {
+                    level = '一般';
+                    levelText = '你的这项能力处于平均水平，有提升空间';
+                    levelColor = 'text-yellow-600';
+                } else if (avgScore <= 4.5) {
+                    level = '较弱';
+                    levelText = '你的这项能力相对较弱，需要加强锻炼';
+                    levelColor = 'text-orange-600';
+                } else {
+                    level = '薄弱';
+                    levelText = '你的这项能力比较薄弱，可能需要针对性训练';
+                    levelColor = 'text-red-600';
+                }
+                
+                return {
+                    ...dimension,
+                    totalScore,
+                    avgScore,
+                    level,
+                    levelText,
+                    levelColor
+                };
+            });
+            
+            // 按平均分排序（从低到高，因为低分表示能力强）
+            const sortedScores = [...dimensionScores].sort((a, b) => a.avgScore - b.avgScore);
+            
+            // 显示结果
+            displayResults(dimensionScores, sortedScores);
+        }
+
+        // 显示结果
+        function displayResults(allScores, sortedScores) {
+            // 清空容器
+            strengthsContainer.innerHTML = '';
+            weaknessesContainer.innerHTML = '';
+            detailedResults.innerHTML = '';
+            
+            // 显示优势能力（前3名）
+            for (let i = 0; i < 3; i++) {
+                const score = sortedScores[i];
+                const strengthCard = createAbilityCard(score, true);
+                strengthsContainer.appendChild(strengthCard);
+            }
+            
+            // 显示待提升能力（后3名）
+            const weaknesses = [...sortedScores].reverse().slice(0, 3);
+            for (let i = 0; i < 3; i++) {
+                const score = weaknesses[i];
+                const weaknessCard = createAbilityCard(score, false);
+                weaknessesContainer.appendChild(weaknessCard);
+            }
+            
+            // 显示所有能力得分
+            allScores.forEach(score => {
+                const scoreBar = createScoreBar(score);
+                detailedResults.appendChild(scoreBar);
+            });
+            
+            // 创建雷达图
+            createRadarChart(allScores);
+        }
+
+        // 创建能力卡片
+        function createAbilityCard(score, isStrength) {
+            const card = document.createElement('div');
+            card.className = `bg-white rounded-lg p-5 shadow-md border-t-4 ${isStrength ? 'border-success' : 'border-accent'} card-hover`;
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <h4 class="font-bold text-lg">${score.name}</h4>
+                    <span class="bg-${isStrength ? 'success' : 'accent'}/10 ${score.levelColor} px-3 py-1 rounded-full text-sm font-medium">${score.level}</span>
+                </div>
+                <p class="text-gray-600 text-sm mb-3">${score.description}</p>
+                <p class="text-xs ${score.levelColor}">${score.levelText}</p>
+            `;
+            
+            return card;
+        }
+
+        // 创建得分条
+        function createScoreBar(score) {
+            // 转换分数为0-100的百分比（1分对应80%，5分对应20%）
+            const percentage = 100 - ((score.avgScore - 1) * 15);
+            
+            const barContainer = document.createElement('div');
+            barContainer.className = 'mb-4';
+            
+            barContainer.innerHTML = `
+                <div class="flex justify-between mb-1">
+                    <span class="font-medium">${score.name}(${score.id})</span>
+                    <span class="text-sm ${score.levelColor}">${score.avgScore.toFixed(1)}分 · ${score.level}</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div class="${score.level === '优秀' ? 'bg-success' : 
+                                 score.level === '良好' ? 'bg-blue-600' : 
+                                 score.level === '一般' ? 'bg-yellow-600' : 
+                                 score.level === '较弱' ? 'bg-orange-600' : 'bg-red-600'} 
+                              h-full rounded-full progress-animation" 
+                         style="width: ${percentage}%"></div>
+                </div>
+            `;
+            
+            return barContainer;
+        }
+
+        // 创建雷达图
+        function createRadarChart(scores) {
+            // 准备数据（转换为1-5分的反向分，使高分在图表中显示在外围）
+            const labels = scores.map(score => score.name);
+            const data = scores.map(score => 6 - score.avgScore); // 反转分数，使1分（强）变为5，5分（弱）变为1
+            const backgroundColors = scores.map(score => {
+                switch(score.level) {
+                    case '优秀': return 'rgba(16, 185, 129, 0.2)';
+                    case '良好': return 'rgba(59, 130, 246, 0.2)';
+                    case '一般': return 'rgba(245, 158, 11, 0.2)';
+                    case '较弱': return 'rgba(249, 115, 22, 0.2)';
+                    case '薄弱': return 'rgba(220, 38, 38, 0.2)';
+                }
+            });
+            const borderColors = scores.map(score => {
+                switch(score.level) {
+                    case '优秀': return 'rgb(16, 185, 129)';
+                    case '良好': return 'rgb(59, 130, 246)';
+                    case '一般': return 'rgb(245, 158, 11)';
+                    case '较弱': return 'rgb(249, 115, 22)';
+                    case '薄弱': return 'rgb(220, 38, 38)';
+                }
+            });
+
+            new Chart(aptitudeChart, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '能力倾向',
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 2,
+                        pointBackgroundColor: borderColors,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 1,
+                            suggestedMax: 5,
+                            ticks: {
+                                stepSize: 1,
+                                backdropColor: 'transparent'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const index = context.dataIndex;
+                                    const originalScore = 6 - context.raw; // 转换回原始分数
+                                    return `${scores[index].name}: ${originalScore.toFixed(1)}分 (${scores[index].level})`;
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        line: {
+                            tension: 0.2
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // 辅助函数：滚动到顶部
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // 辅助函数：抖动元素（用于提示未选择答案）
+        function shakeElement(element) {
+            element.classList.add('animate-shake');
+            setTimeout(() => {
+                element.classList.remove('animate-shake');
+            }, 500);
+        }
+
+        // 添加抖动动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+            .animate-shake {
+                animation: shake 0.5s ease-in-out;
+            }
+            #test, #results {
+                opacity: 0;
+                transition: opacity 0.3s ease-in-out;
+            }
+            #test.opacity-100, #results.opacity-100 {
+                opacity: 1;
+            }
+            .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+            .hide-scrollbar {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
