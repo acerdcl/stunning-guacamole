@@ -6,11 +6,10 @@
     <title>职业理想词云系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-    <!-- 引入LeanCloud SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-min.js"></script>
-    <!-- 引入wordcloud库用于生成词云 -->
-    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.7/src/wordcloud2.min.js"></script>
+    <!-- 引入包含LiveQuery的LeanCloud SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-live-query.min.js"></script>
+    <!-- 引入稳定的WordCloud2库 -->
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud2@1.1.0/src/wordcloud2.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -147,7 +146,7 @@
     </footer>
 
     <script>
-        // 初始化LeanCloud
+        // 初始化LeanCloud（包含LiveQuery支持）
         AV.init({
             appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
             appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
@@ -225,6 +224,7 @@
         
         // 生成词云
         function 生成词云(数据) {
+            // 检查WordCloud是否加载
             if (typeof WordCloud === 'undefined') {
                 console.error('WordCloud库未加载');
                 词云加载状态.innerHTML = '<p class="text-red-500">词云加载失败，请刷新页面重试</p>';
@@ -279,7 +279,7 @@
             if (新词语) {
                 词语数据[新词语] = (词语数据[新词语] || 0) + 1;
                 所有词语.push(新词语);
-                添加弹幕(新词语);
+                添加弹幕(新词语); // 提交后立即显示为弹幕
             }
             
             // 更新参与人数
@@ -343,7 +343,7 @@
                 提交按钮.classList.add('bg-gray-400', 'hover:bg-gray-400');
                 提交按钮.classList.remove('bg-primary', 'hover:bg-primary/90');
                 
-                // 不需要手动更新数据，因为实时监听会处理
+                // 实时监听会自动更新，无需手动调用更新
             }).catch(error => {
                 console.error('提交失败:', error);
                 提交状态.textContent = `提交失败: ${error.message}`;
@@ -355,7 +355,7 @@
             });
         });
         
-        // 实时监听数据变化
+        // 实时监听数据变化（LiveQuery）
         function 监听数据变化() {
             const 实时查询 = new AV.Query(CareerIdealWord);
             const 实时查询实例 = 实时查询.subscribe();
@@ -368,13 +368,13 @@
             });
         }
         
-        // 初始化
+        // 初始化系统
         function 初始化() {
             获取所有数据();
             监听数据变化();
-            随机展示弹幕();
+            随机展示弹幕(); // 启动弹幕随机展示
             
-            // 处理窗口大小变化时重新生成词云
+            // 窗口 resize 时重绘词云
             window.addEventListener('resize', () => {
                 if (Object.keys(词语数据).length > 0) {
                     生成词云(词语数据);
