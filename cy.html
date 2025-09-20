@@ -6,10 +6,12 @@
     <title>职业理想词云系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <!-- 引入包含LiveQuery的LeanCloud SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-live-query.min.js"></script>
-    <!-- 引入稳定的WordCloud2库 -->
-    <script src="https://cdn.jsdelivr.net/npm/wordcloud2@1.1.0/src/wordcloud2.min.js"></script>
+    <!-- 引入LeanCloud SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-min.js"></script>
+    <!-- 引入LiveQuery扩展 -->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-live-query@3.1.0/dist/av-live-query.min.js"></script>
+    <!-- 引入WordCloud库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.0.1/wordcloud2.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -65,10 +67,26 @@
                 height: 100%;
                 min-height: 400px;
             }
+            .error-notice {
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: #EF4444;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 5px;
+                z-index: 100;
+                max-width: 90%;
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body class="bg-gradient-to-br from-light to-blue-50 min-h-screen">
+    <!-- 错误提示（默认隐藏） -->
+    <div id="错误提示" class="error-notice hidden"></div>
+
     <!-- 顶部导航 -->
     <header class="bg-white/80 backdrop-blur-md shadow-sm fixed top-0 left-0 right-0 z-40 transition-all duration-300">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -146,7 +164,7 @@
     </footer>
 
     <script>
-        // 初始化LeanCloud（包含LiveQuery支持）
+        // 初始化LeanCloud
         AV.init({
             appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
             appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
@@ -167,11 +185,24 @@
         const 词云加载状态 = document.getElementById('词云加载状态');
         const 弹幕容器 = document.getElementById('弹幕容器');
         const 参与人数显示 = document.querySelector('#参与人数 span');
+        const 错误提示 = document.getElementById('错误提示');
         
         // 检查用户是否已提交过
         let 已提交 = localStorage.getItem('careerIdealSubmitted') === 'true';
         let 词语数据 = {};
         let 所有词语 = [];
+        let 实时查询实例 = null;
+        
+        // 显示错误信息
+        function 显示错误信息(消息) {
+            错误提示.textContent = 消息;
+            错误提示.classList.remove('hidden');
+            
+            // 5秒后自动隐藏
+            setTimeout(() => {
+                错误提示.classList.add('hidden');
+            }, 5000);
+        }
         
         // 初始化页面状态
         if (已提交) {
@@ -222,56 +253,76 @@
             setTimeout(随机展示弹幕, 3000 + Math.random() * 5000);
         }
         
+        // 检查WordCloud是否加载
+        function 检查WordCloud加载() {
+            return new Promise((resolve, reject) => {
+                // 检查是否已加载
+                if (typeof WordCloud !== 'undefined') {
+                    resolve();
+                    return;
+                }
+                
+                // 最多等待5秒
+                let 等待次数 = 0;
+                const 检查间隔 = setInterval(() => {
+                    等待次数++;
+                    if (typeof WordCloud !== 'undefined') {
+                        clearInterval(检查间隔);
+                        resolve();
+                    } else if (等待次数 >= 10) { // 5秒后超时
+                        clearInterval(检查间隔);
+                        reject(new Error('WordCloud库加载超时'));
+                    }
+                }, 500);
+            });
+        }
+        
         // 生成词云
         function 生成词云(数据) {
-            // 检查WordCloud是否加载
-            if (typeof WordCloud === 'undefined') {
-                console.error('WordCloud库未加载');
-                词云加载状态.innerHTML = '<p class="text-red-500">词云加载失败，请刷新页面重试</p>';
-                return;
-            }
-            
-            // 准备词云数据格式: [{text: "词", weight: 出现次数}, ...]
-            const 词云数据 = Object.entries(数据).map(([word, count]) => ({
-                text: word,
-                weight: count
-            }));
-            
-            // 清空画布
-            const 上下文 = 词云画布.getContext('2d');
-            上下文.clearRect(0, 0, 词云画布.width, 词云画布.height);
-            
-            // 设置画布尺寸以匹配容器
-            function 设置画布尺寸() {
-                const { width, height } = 词云容器.getBoundingClientRect();
-                词云画布.width = width;
-                词云画布.height = height;
-            }
-            
-            设置画布尺寸();
-            window.addEventListener('resize', 设置画布尺寸);
-            
-            // 生成词云
-            try {
-                WordCloud(词云画布, {
-                    list: 词云数据,
-                    sizeRange: [16, 80],
-                    color: () => 生成随机颜色(),
-                    rotateRatio: 0.5,
-                    backgroundColor: 'transparent',
-                    fontFamily: 'Inter, sans-serif',
-                    fontWeight: 'bold',
-                    minSize: 10,
-                    gridSize: 8,
-                    drawOutOfBound: false,
-                    shuffle: true
-                });
+            检查WordCloud加载().then(() => {
+                // 准备词云数据格式: [["词", 出现次数], ...]
+                const 词云数据 = Object.entries(数据).map(([word, count]) => [word, count]);
                 
-                词云加载状态.classList.add('hidden');
-            } catch (error) {
-                console.error('生成词云失败:', error);
-                词云加载状态.innerHTML = `<p class="text-red-500">生成词云失败: ${error.message}</p>`;
-            }
+                // 清空画布
+                const 上下文 = 词云画布.getContext('2d');
+                上下文.clearRect(0, 0, 词云画布.width, 词云画布.height);
+                
+                // 设置画布尺寸以匹配容器
+                function 设置画布尺寸() {
+                    const { width, height } = 词云容器.getBoundingClientRect();
+                    词云画布.width = width;
+                    词云画布.height = height;
+                }
+                
+                设置画布尺寸();
+                window.addEventListener('resize', 设置画布尺寸);
+                
+                // 生成词云
+                try {
+                    WordCloud(词云画布, {
+                        list: 词云数据,
+                        sizeRange: [16, 80],
+                        color: () => 生成随机颜色(),
+                        rotateRatio: 0.5,
+                        backgroundColor: 'transparent',
+                        fontFamily: 'Inter, sans-serif',
+                        fontWeight: 'bold',
+                        minSize: 10,
+                        gridSize: 8,
+                        drawOutOfBound: false,
+                        shuffle: true
+                    });
+                    
+                    词云加载状态.classList.add('hidden');
+                } catch (error) {
+                    console.error('生成词云失败:', error);
+                    词云加载状态.innerHTML = `<p class="text-red-500">生成词云失败: ${error.message}</p>`;
+                }
+            }).catch(error => {
+                console.error('WordCloud库未加载:', error);
+                词云加载状态.innerHTML = '<p class="text-red-500">词云加载失败，请刷新页面重试</p>';
+                显示错误信息('词云功能加载失败，请稍后重试');
+            });
         }
         
         // 更新词语数据
@@ -279,7 +330,7 @@
             if (新词语) {
                 词语数据[新词语] = (词语数据[新词语] || 0) + 1;
                 所有词语.push(新词语);
-                添加弹幕(新词语); // 提交后立即显示为弹幕
+                添加弹幕(新词语);
             }
             
             // 更新参与人数
@@ -288,6 +339,37 @@
             
             // 生成词云
             生成词云(词语数据);
+        }
+        
+        // 定时刷新数据（替代LiveQuery的方案）
+        function 定时刷新数据() {
+            query.find().then(results => {
+                const 新词语数据 = {};
+                const 新所有词语 = [];
+                
+                results.forEach(result => {
+                    const 词语 = result.get('word');
+                    if (词语) {
+                        新词语数据[词语] = (新词语数据[词语] || 0) + 1;
+                        新所有词语.push(词语);
+                    }
+                });
+                
+                // 检查是否有新数据
+                const 旧数据量 = Object.values(词语数据).reduce((total, count) => total + count, 0);
+                const 新数据量 = Object.values(新词语数据).reduce((total, count) => total + count, 0);
+                
+                if (新数据量 > 旧数据量) {
+                    词语数据 = 新词语数据;
+                    所有词语 = 新所有词语;
+                    生成词云(词语数据);
+                }
+            }).catch(error => {
+                console.error('刷新数据失败:', error);
+            });
+            
+            // 每10秒刷新一次
+            setTimeout(定时刷新数据, 10000);
         }
         
         // 从LeanCloud获取所有数据
@@ -310,6 +392,7 @@
             }).catch(error => {
                 console.error('获取数据失败:', error);
                 词云加载状态.innerHTML = `<p class="text-red-500">获取数据失败: ${error.message}</p>`;
+                显示错误信息('获取数据失败，请检查网络连接');
             });
         }
         
@@ -343,7 +426,8 @@
                 提交按钮.classList.add('bg-gray-400', 'hover:bg-gray-400');
                 提交按钮.classList.remove('bg-primary', 'hover:bg-primary/90');
                 
-                // 实时监听会自动更新，无需手动调用更新
+                // 立即刷新数据
+                获取所有数据();
             }).catch(error => {
                 console.error('提交失败:', error);
                 提交状态.textContent = `提交失败: ${error.message}`;
@@ -352,27 +436,42 @@
                 
                 提交按钮.disabled = false;
                 提交按钮.innerHTML = '<i class="fa fa-paper-plane mr-2"></i>提交';
+                显示错误信息('提交失败: ' + error.message);
             });
         });
         
-        // 实时监听数据变化（LiveQuery）
-        function 监听数据变化() {
-            const 实时查询 = new AV.Query(CareerIdealWord);
-            const 实时查询实例 = 实时查询.subscribe();
-            
-            实时查询实例.on('create', (object) => {
-                const 新词语 = object.get('word');
-                if (新词语) {
-                    更新词语数据(新词语);
+        // 尝试初始化LiveQuery
+        function 初始化LiveQuery() {
+            try {
+                // 检查LiveQuery是否可用
+                if (typeof AV.LiveQuery === 'undefined') {
+                    throw new Error('LiveQuery未加载');
                 }
-            });
+                
+                const 实时查询 = new AV.Query(CareerIdealWord);
+                实时查询实例 = AV.LiveQuery.subscribe(实时查询);
+                
+                实时查询实例.on('create', (object) => {
+                    const 新词语 = object.get('word');
+                    if (新词语) {
+                        更新词语数据(新词语);
+                    }
+                });
+                
+                console.log('LiveQuery初始化成功');
+            } catch (error) {
+                console.error('LiveQuery初始化失败:', error);
+                显示错误信息('实时更新功能不可用，将使用定时刷新模式。请在LeanCloud控制台启用LiveQuery以获得最佳体验。');
+                // 退回到定时刷新模式
+                定时刷新数据();
+            }
         }
         
         // 初始化系统
         function 初始化() {
             获取所有数据();
-            监听数据变化();
-            随机展示弹幕(); // 启动弹幕随机展示
+            初始化LiveQuery();
+            随机展示弹幕();
             
             // 窗口 resize 时重绘词云
             window.addEventListener('resize', () => {
