@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>职业价值观测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#F97316',
+                        neutral: '#F3F4F6',
+                        dark: '#1F2937'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-transform-opacity {
+                transition-property: transform, opacity;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .progress-bar {
+                transition: width 0.5s ease-in-out;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-dark">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-md sticky top-0 z-50 transition-all duration-300" id="header">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-[clamp(1.25rem,3vw,1.75rem)] font-bold text-primary">
+                <i class="fa fa-balance-scale mr-2"></i>职业价值观测试
+            </h1>
+            <div class="hidden md:flex items-center space-x-4">
+                <span class="text-sm text-gray-600" id="progress-text">0/52题</span>
+                <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary rounded-full progress-bar" id="progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 介绍部分 -->
+        <section id="intro" class="max-w-3xl mx-auto bg-white rounded-xl p-6 md:p-8 shadow-lg mb-8 transform transition-all duration-500">
+            <h2 class="text-2xl md:text-3xl font-bold text-center mb-4 text-dark">认识自我</h2>
+            <p class="text-gray-700 mb-6">
+                下面有52道题目，分别代表13项工作价值观。每个题目都有5个备选答案，请根据自己的实际情况或想法，选择最符合你的选项。通过测试，你可以大致了解自己的职业价值观念倾向。
+            </p>
+            <div class="flex flex-wrap gap-3 mb-6">
+                <div class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"><span class="font-semibold">A:</span> 非常重要</div>
+                <div class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"><span class="font-semibold">B:</span> 比较重要</div>
+                <div class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm"><span class="font-semibold">C:</span> 一般</div>
+                <div class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm"><span class="font-semibold">D:</span> 较不重要</div>
+                <div class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm"><span class="font-semibold">E:</span> 很不重要</div>
+            </div>
+            <button id="start-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/50">
+                开始测试 <i class="fa fa-arrow-right ml-2"></i>
+            </button>
+        </section>
+
+        <!-- 测试部分 -->
+        <section id="test" class="max-w-3xl mx-auto hidden">
+            <!-- 移动端进度条 -->
+            <div class="md:hidden mb-4">
+                <div class="flex justify-between text-sm mb-1">
+                    <span id="mobile-progress-text">0/52题</span>
+                    <span id="current-question-number">第1题</span>
+                </div>
+                <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-full bg-primary rounded-full progress-bar" id="mobile-progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- 题目卡片 -->
+            <div class="bg-white rounded-xl p-6 md:p-8 shadow-lg mb-6 transform transition-all duration-500 card-shadow" id="question-card">
+                <h3 class="text-xl md:text-2xl font-semibold mb-6" id="question-text">加载中...</h3>
+                <div class="space-y-3" id="options-container">
+                    <!-- 选项将通过JS动态生成 -->
+                </div>
+            </div>
+
+            <!-- 导航按钮 -->
+            <div class="flex justify-between">
+                <button id="prev-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fa fa-arrow-left mr-2"></i> 上一题
+                </button>
+                <button id="next-btn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300">
+                    下一题 <i class="fa fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- 结果部分 -->
+        <section id="results" class="max-w-4xl mx-auto hidden">
+            <div class="bg-white rounded-xl p-6 md:p-8 shadow-lg mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold text-center mb-6 text-dark">你的职业价值观测试结果</h2>
+                
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 text-primary">得分最高的3项价值观</h3>
+                    <div class="grid md:grid-cols-3 gap-4" id="top-values">
+                        <!-- 结果将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 text-secondary">得分最低的3项价值观</h3>
+                    <div class="grid md:grid-cols-3 gap-4" id="bottom-values">
+                        <!-- 结果将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold mb-4">各项价值观详细得分</h3>
+                    <div class="space-y-4" id="all-values">
+                        <!-- 详细结果将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <button id="restart-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <i class="fa fa-refresh mr-2"></i> 重新测试
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-6">
+        <div class="container mx-auto px-4 text-center text-sm text-gray-400">
+            <p>Copyright © 2025 by 电商杜老师</p>
+            <p class="mt-1">本测试仅供参考，不构成职业选择的唯一依据</p>
+        </div>
+    </footer>
+
+    <script>
+        // 52道题目
+        const questions = [
+            "你的工作必须经常解决新的问题。",
+            "你的工作能为社会福利带来看得见的效果。",
+            "你的工作奖金很高。",
+            "你的工作内容经常变换。",
+            "你能在你的工作范围内自由发挥。",
+            "你的工作能使你的同学、朋友非常羡慕你。",
+            "你的工作具有艺术性。",
+            "你的工作能使人感觉到你是团体中的一分子。",
+            "不论你怎么干，总能和大多数人一样晋级和涨工资。",
+            "你的工作使你有可能经常变换工作地点、场所或方式。",
+            "在工作中你能接触到不同的人。",
+            "你的工作上下班时间比较随便、自由。",
+            "你的工作使你不断获得成功的感觉。",
+            "你的工作赋予你高于别人的权力。",
+            "你在工作中能试行一些自己的新想法。",
+            "你在工作中不会因为身体或能力等因素，被人瞧不起。",
+            "你能从工作的成果中知道自己做得不错。",
+            "你的工作经常要外出参加各种集会和活动。",
+            "只要你干上这份工作，就不再被调到其他意想不到的单位和工种上去。",
+            "你的工作能使世界更美丽。",
+            "在工作中，不会有人经常来打扰你。",
+            "只要努力，你的工资会高于其他同龄人，晋升或涨工资的可能性比做其他工作大得多。",
+            "你的工作是一项对智力的挑战。",
+            "你的工作要求你把一些事务管理得井井有条。",
+            "你的工作单位有舒适的休息室、更衣室、浴室及其他设备。",
+            "你的工作有可能结识各行各业的知名人物。",
+            "在你的工作中，能和同事建立良好的关系。",
+            "在别人眼中，你的工作很重要。",
+            "在工作中你经常接触到新鲜的事物。",
+            "你的工作使你能常常帮助别人。",
+            "你在单位中有可能经常变换工作。",
+            "你的作风使你被别人尊重。",
+            "同事和领导人品较好，相处比较随便。",
+            "你的工作会使许多人认识你。",
+            "你的工作场所很好，比如有适度的灯光，安静、清洁的工作环境，甚至恒温等优越的条件。",
+            "在工作中，你为他人服务，使他人感到很满意，你自己也很高兴。",
+            "你的工作需要计划和组织别人的工作。",
+            "你的工作需要敏锐的思考。",
+            "你的工作可以使你获得较多的额外收入，比如常发实物、常能购买有折扣的商品、常发商品的提货券、有机会购买进口货等。",
+            "在工作中你是不受别人差遣的。",
+            "你的工作结果应该是一种艺术而不是一般的产品。",
+            "在工作中你不必担心会因为领导不满意你所做的事情，而受到训斥或经济惩罚。",
+            "你可以看见你努力工作的成果。",
+            "你的工作常常要求你提出许多新的想法。",
+            "由于你的工作，经常有许多人来感谢你。",
+            "你的工作成果常常能得到上级、同事或社会的肯定。",
+            "在工作中，你可能是一个负责人，虽然可能只领导很少几个人，但你信奉“宁做兵头，不做将尾”的俗语。",
+            "你从事的工作经常在报刊、电视中被提到，因而在人们的心目中很有地位。",
+            "你的工作有数量可观的夜班费、加班费、保健费或营养费等。",
+            "你的工作比较轻松，精神上也不紧张。",
+            "你的工作需要和影视、戏剧、音乐、美术、文学等艺术打交道。"
+        ];
+
+        // 13项职业价值观及其对应的题目编号(从0开始)和描述
+        const valueCategories = [
+            {
+                id: 1,
+                name: "利他主义",
+                questions: [1, 29, 44],
+                description: "工作的价值在于能为大众的幸福和利益尽一份力，得到赞美"
+            },
+            {
+                id: 2,
+                name: "美感",
+                questions: [6, 19, 40],
+                description: "工作的价值在于不断追求美的东西，得到美的体验"
+            },
+            {
+                id: 3,
+                name: "智力刺激",
+                questions: [0, 22, 37],
+                description: "工作的价值在于不断进行智力开发、思考和学习，不断探索和创新"
+            },
+            {
+                id: 4,
+                name: "成就感",
+                questions: [12, 16, 42],
+                description: "工作的价值在于不断取得成就，得到满足，看到自己努力的成果"
+            },
+            {
+                id: 5,
+                name: "独立性",
+                questions: [4, 14, 39],
+                description: "工作的价值在于能充分发挥自己的独立性和主动性，按自己的方式和步调进行工作"
+            },
+            {
+                id: 6,
+                name: "社会地位",
+                questions: [5, 27, 46],
+                description: "工作的价值在于在社会上有地位，受到尊重，使人们敬慕"
+            },
+            {
+                id: 7,
+                name: "管理",
+                questions: [13, 36, 46],
+                description: "工作的价值在于能指挥和管理人，能发挥自己的管理才能"
+            },
+            {
+                id: 8,
+                name: "经济报酬",
+                questions: [2, 21, 38],
+                description: "工作的价值在于有丰厚的收入，有良好的福利待遇"
+            },
+            {
+                id: 9,
+                name: "社会交往",
+                questions: [10, 26, 33],
+                description: "工作的价值在于能和各种人交往，建立比较广泛的社会联系和关系"
+            },
+            {
+                id: 10,
+                name: "安全感",
+                questions: [8, 18, 41],
+                description: "工作的价值在于工作稳定，不会因为技术更新或其他原因而失业"
+            },
+            {
+                id: 11,
+                name: "舒适",
+                questions: [24, 34, 49],
+                description: "工作的价值在于工作环境舒适，工作轻松、自由，没有压力"
+            },
+            {
+                id: 12,
+                name: "人际关系",
+                questions: [7, 32, 33],
+                description: "工作的价值在于能和同事建立良好的关系，大家相处融洽，心情愉快"
+            },
+            {
+                id: 13,
+                name: "追求新意",
+                questions: [3, 28, 43],
+                description: "工作的价值在于工作内容丰富多样，能经常接触到新鲜事物，不断变化"
+            }
+        ];
+
+        // 页面元素
+        const introSection = document.getElementById('intro');
+        const testSection = document.getElementById('test');
+        const resultsSection = document.getElementById('results');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const progressBar = document.getElementById('progress-bar');
+        const mobileProgressBar = document.getElementById('mobile-progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const mobileProgressText = document.getElementById('mobile-progress-text');
+        const currentQuestionNumber = document.getElementById('current-question-number');
+        const topValuesContainer = document.getElementById('top-values');
+        const bottomValuesContainer = document.getElementById('bottom-values');
+        const allValuesContainer = document.getElementById('all-values');
+        const header = document.getElementById('header');
+
+        // 测试状态
+        let currentQuestion = 0;
+        const answers = new Array(questions.length).fill(null);
+        const optionScores = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1 };
+
+        // 开始测试
+        startBtn.addEventListener('click', () => {
+            introSection.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                introSection.classList.add('hidden');
+                testSection.classList.remove('hidden');
+                setTimeout(() => {
+                    testSection.classList.add('opacity-100');
+                }, 50);
+            }, 300);
+            renderQuestion(currentQuestion);
+        });
+
+        // 重新测试
+        restartBtn.addEventListener('click', () => {
+            currentQuestion = 0;
+            answers.fill(null);
+            resultsSection.classList.add('opacity-0');
+            setTimeout(() => {
+                resultsSection.classList.add('hidden');
+                testSection.classList.remove('hidden');
+                renderQuestion(currentQuestion);
+                updateProgress();
+            }, 300);
+        });
+
+        // 上一题
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                renderQuestion(currentQuestion);
+                updateNavigationButtons();
+                updateProgress();
+                scrollToTop();
+            }
+        });
+
+        // 下一题/提交
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestion < questions.length - 1) {
+                if (answers[currentQuestion] === null) {
+                    // 如果未选择答案，提示用户
+                    shakeElement(questionText);
+                    return;
+                }
+                currentQuestion++;
+                renderQuestion(currentQuestion);
+                updateNavigationButtons();
+                updateProgress();
+                scrollToTop();
+            } else {
+                // 最后一题，计算结果
+                calculateResults();
+                testSection.classList.add('opacity-0');
+                setTimeout(() => {
+                    testSection.classList.add('hidden');
+                    resultsSection.classList.remove('hidden');
+                    setTimeout(() => {
+                        resultsSection.classList.add('opacity-100');
+                    }, 50);
+                }, 300);
+            }
+        });
+
+        // 渲染题目
+        function renderQuestion(index) {
+            questionText.textContent = `${index + 1}. ${questions[index]}`;
+            currentQuestionNumber.textContent = `第${index + 1}题`;
+            
+            // 清空选项容器
+            optionsContainer.innerHTML = '';
+            
+            // 创建选项
+            const options = ['A', 'B', 'C', 'D', 'E'];
+            const optionLabels = ['非常重要', '比较重要', '一般', '较不重要', '很不重要'];
+            const optionColors = [
+                'bg-blue-100 text-blue-800 hover:bg-blue-200',
+                'bg-green-100 text-green-800 hover:bg-green-200',
+                'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
+                'bg-orange-100 text-orange-800 hover:bg-orange-200',
+                'bg-red-100 text-red-800 hover:bg-red-200'
+            ];
+            
+            options.forEach((option, i) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = `p-4 rounded-lg cursor-pointer transition-all duration-200 ${optionColors[i]} ${answers[index] === option ? 'ring-2 ring-offset-2 ring-primary' : ''}`;
+                optionDiv.innerHTML = `<span class="font-semibold mr-2">${option}:</span>${optionLabels[i]}`;
+                
+                optionDiv.addEventListener('click', () => {
+                    answers[index] = option;
+                    // 更新选项样式
+                    document.querySelectorAll('#options-container > div').forEach(el => {
+                        el.classList.remove('ring-2', 'ring-offset-2', 'ring-primary');
+                    });
+                    optionDiv.classList.add('ring-2', 'ring-offset-2', 'ring-primary');
+                });
+                
+                optionsContainer.appendChild(optionDiv);
+            });
+        }
+
+        // 更新导航按钮状态
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestion === 0;
+            
+            if (currentQuestion === questions.length - 1) {
+                nextBtn.innerHTML = '提交结果 <i class="fa fa-check ml-2"></i>';
+                nextBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                nextBtn.classList.remove('bg-primary', 'hover:bg-primary/90');
+            } else {
+                nextBtn.innerHTML = '下一题 <i class="fa fa-arrow-right ml-2"></i>';
+                nextBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                nextBtn.classList.add('bg-primary', 'hover:bg-primary/90');
+            }
+        }
+
+        // 更新进度
+        function updateProgress() {
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            mobileProgressBar.style.width = `${progress}%`;
+            progressText.textContent = `${currentQuestion + 1}/${questions.length}题`;
+            mobileProgressText.textContent = `${currentQuestion + 1}/${questions.length}题`;
+            
+            // 滚动时改变导航栏样式
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    header.classList.add('py-2', 'shadow-lg');
+                    header.classList.remove('py-4', 'shadow-md');
+                } else {
+                    header.classList.add('py-4', 'shadow-md');
+                    header.classList.remove('py-2', 'shadow-lg');
+                }
+            });
+        }
+
+        // 计算结果
+        function calculateResults() {
+            // 计算每个价值观的总分
+            const valueScores = valueCategories.map(category => {
+                let score = 0;
+                category.questions.forEach(qIndex => {
+                    if (answers[qIndex] !== null) {
+                        score += optionScores[answers[qIndex]];
+                    }
+                });
+                return { ...category, score };
+            });
+            
+            // 排序
+            const sortedValues = [...valueScores].sort((a, b) => b.score - a.score);
+            
+            // 显示结果
+            displayResults(sortedValues);
+        }
+
+        // 显示结果
+        function displayResults(sortedValues) {
+            // 清空容器
+            topValuesContainer.innerHTML = '';
+            bottomValuesContainer.innerHTML = '';
+            allValuesContainer.innerHTML = '';
+            
+            // 显示得分最高的3项
+            for (let i = 0; i < 3; i++) {
+                const value = sortedValues[i];
+                const valueCard = createValueCard(value, true);
+                topValuesContainer.appendChild(valueCard);
+            }
+            
+            // 显示得分最低的3项
+            const bottomValues = [...sortedValues].reverse().slice(0, 3);
+            for (let i = 0; i < 3; i++) {
+                const value = bottomValues[i];
+                const valueCard = createValueCard(value, false);
+                bottomValuesContainer.appendChild(valueCard);
+            }
+            
+            // 显示所有价值观得分
+            sortedValues.forEach(value => {
+                const valueBar = createValueBar(value);
+                allValuesContainer.appendChild(valueBar);
+            });
+        }
+
+        // 创建价值观卡片
+        function createValueCard(value, isTop) {
+            const card = document.createElement('div');
+            card.className = `bg-white rounded-lg p-5 shadow-md border-t-4 ${isTop ? 'border-primary' : 'border-secondary'} transform transition-all duration-300 hover:shadow-lg`;
+            
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <h4 class="font-bold text-lg">${value.name}</h4>
+                    <span class="bg-${isTop ? 'primary' : 'secondary'}/10 text-${isTop ? 'primary' : 'secondary'} px-3 py-1 rounded-full text-sm font-medium">${value.score}分</span>
+                </div>
+                <p class="text-gray-600 text-sm">${value.description}</p>
+            `;
+            
+            return card;
+        }
+
+        // 创建价值观得分条
+        function createValueBar(value) {
+            const maxScore = 15; // 每个类别3题，每题最高5分，3×5=15
+            const percentage = (value.score / maxScore) * 100;
+            
+            const barContainer = document.createElement('div');
+            barContainer.className = 'mb-4';
+            
+            barContainer.innerHTML = `
+                <div class="flex justify-between mb-1">
+                    <span class="font-medium">${value.name}</span>
+                    <span class="text-sm text-gray-500">${value.score}分</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div class="bg-primary h-full rounded-full progress-bar" style="width: ${percentage}%"></div>
+                </div>
+            `;
+            
+            return barContainer;
+        }
+
+        // 辅助函数：滚动到顶部
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // 辅助函数：抖动元素（用于提示未选择答案）
+        function shakeElement(element) {
+            element.classList.add('animate-shake');
+            setTimeout(() => {
+                element.classList.remove('animate-shake');
+            }, 500);
+        }
+
+        // 添加抖动动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+            .animate-shake {
+                animation: shake 0.5s ease-in-out;
+            }
+            #test, #results {
+                opacity: 0;
+                transition: opacity 0.3s ease-in-out;
+            }
+            #test.opacity-100, #results.opacity-100 {
+                opacity: 1;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
