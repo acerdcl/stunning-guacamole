@@ -8,8 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <!-- 引入LeanCloud SDK -->
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
-    <!-- 引入词云库 -->
-    <script src="https://cdn.jsdelivr.net/npm/wordcloud2.js@1.2.1/src/wordcloud2.min.js"></script>
+    <!-- 引入词云库 - 使用更可靠的CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.1/wordcloud2.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -166,6 +166,37 @@
         let allWords = [];
         let wordFrequency = {};
         let hasSubmitted = localStorage.getItem('hasSubmitted') === 'true';
+        let wordcloudLoaded = false; // 词云库加载状态
+        let wordcloudQueue = false; // 是否有等待处理的词云生成任务
+
+        // 检查词云库是否加载
+        function checkWordcloudLibrary() {
+            return new Promise((resolve, reject) => {
+                // 如果已经加载完成
+                if (window.WordCloud) {
+                    wordcloudLoaded = true;
+                    return resolve(true);
+                }
+                
+                // 检查次数限制，避免无限循环
+                let checkCount = 0;
+                const maxChecks = 30; // 最多检查30次，约30秒
+                
+                // 定期检查
+                const checkInterval = setInterval(() => {
+                    checkCount++;
+                    
+                    if (window.WordCloud) {
+                        clearInterval(checkInterval);
+                        wordcloudLoaded = true;
+                        resolve(true);
+                    } else if (checkCount >= maxChecks) {
+                        clearInterval(checkInterval);
+                        reject(new Error('词云库加载超时'));
+                    }
+                }, 1000); // 每秒检查一次
+            });
+        }
 
         // 检查是否已提交
         if (hasSubmitted) {
@@ -237,25 +268,28 @@
         }
 
         // 生成词云
-        function generateWordCloud() {
-            if (!window.WordCloud) {
-                showWordcloudError('获取数据失败: 词云库未加载');
-                return;
-            }
+        async function generateWordCloud() {
+            // 如果已经有排队的任务，直接返回
+            if (wordcloudQueue) return;
             
-            // 准备词云数据
-            const wordList = Object.entries(wordFrequency).map(([word, count]) => {
-                // 根据出现次数调整权重
-                const weight = Math.min(10, Math.max(1, count));
-                return [word, weight];
-            });
-            
-            if (wordList.length === 0) {
-                showWordcloudError('暂无数据，请等待其他同学提交');
-                return;
-            }
+            wordcloudQueue = true;
             
             try {
+                // 确保词云库已加载
+                await checkWordcloudLibrary();
+                
+                // 准备词云数据 - 只使用学生输入的词语
+                const wordList = Object.entries(wordFrequency).map(([word, count]) => {
+                    // 根据出现次数调整权重
+                    const weight = Math.min(10, Math.max(1, count));
+                    return [word, weight];
+                });
+                
+                if (wordList.length === 0) {
+                    showWordcloudError('暂无数据，请等待其他同学提交');
+                    return;
+                }
+                
                 // 清除现有词云
                 if (wordcloudCanvas.wordcloud) {
                     wordcloudCanvas.wordcloud.destroy();
@@ -291,8 +325,33 @@
                 wordcloudError.classList.add('hidden');
             } catch (error) {
                 console.error('词云生成错误:', error);
-                showWordcloudError('词云生成失败: ' + error.message);
+                showWordcloudError('获取数据失败: ' + error.message);
+                
+                // 如果是库未加载的错误，尝试重新加载
+                if (error.message.includes('词云库')) {
+                    loadWordcloudLibrary();
+                }
+            } finally {
+                wordcloudQueue = false;
             }
+        }
+
+        // 尝试重新加载词云库
+        function loadWordcloudLibrary() {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.1/wordcloud2.min.js';
+            script.onload = function() {
+                wordcloudLoaded = true;
+                // 重新生成词云
+                if (Object.keys(wordFrequency).length > 0) {
+                    generateWordCloud();
+                }
+            };
+            script.onerror = function() {
+                console.error('词云库重新加载失败');
+                showWordcloudError('词云库加载失败，请刷新页面重试');
+            };
+            document.head.appendChild(script);
         }
 
         // 显示词云错误
@@ -347,7 +406,7 @@
                 const words = results.map(result => result.get('word') || '').filter(Boolean);
                 allWords = words;
                 updateWordFrequency(words);
-                generateWordCloud();
+                generateWordCloud(); // 生成词云
                 
                 // 显示一些历史弹幕
                 if (words.length > 0) {
@@ -397,7 +456,7 @@
                 if (newWord.trim()) {
                     allWords.push(newWord);
                     updateWordFrequency(allWords);
-                    generateWordCloud();
+                    generateWordCloud(); // 实时更新词云
                     addDanmaku(newWord, true); // 新提交的弹幕
                 }
             });
@@ -439,6 +498,13 @@
 
         // 页面加载完成后初始化
         window.addEventListener('DOMContentLoaded', () => {
+            // 先检查词云库
+            checkWordcloudLibrary().catch(error => {
+                console.error('词云库检查失败:', error);
+                showWordcloudError('词云库加载失败，正在尝试重新加载...');
+                loadWordcloudLibrary(); // 尝试重新加载
+            });
+            
             // 加载已有数据
             loadAllWords();
             
