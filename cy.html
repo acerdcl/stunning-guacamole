@@ -108,7 +108,7 @@
             <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                 <i class="fa fa-cloud text-primary mr-2"></i>班级职业理想词云
             </h2>
-            <div id="wordcloud" class="w-full h-[clamp(200px,50vw,400px)] rounded-lg overflow-hidden border border-gray-100"></div>
+            <div id="wordcloud" class="w-full h-[clamp(200px,50vw,400px)] rounded-lg overflow-hidden border border-gray-100 bg-gray-50"></div>
         </div>
         
         <!-- 统计信息 -->
@@ -283,37 +283,56 @@
             setTimeout(scheduleRandomDanmakus, interval);
         }
         
-        // 更新词云
+        // 更新词云 - 修复版本
         function updateWordCloud() {
+            console.log("更新词云，当前词频数据:", wordFrequency);
+            
             // 清空现有词云
             wordcloud.innerHTML = '';
             
-            // 准备词云数据
-            wordList = Object.entries(wordFrequency).map(([word, count]) => ({
-                text: word,
-                weight: count + Math.log(count + 1) * 5, // 调整权重使差异更明显
-                color: getRandomColor(),
-                rotate: Math.random() > 0.7 ? (Math.random() > 0.5 ? 90 : -90) : 0 // 30%概率旋转
-            }));
+            // 准备词云数据 - 转换为wordcloud2.js所需的格式 [[word, weight], ...]
+            wordList = Object.entries(wordFrequency).map(([word, count]) => [
+                word, 
+                count + Math.log(count + 1) * 5 // 调整权重使差异更明显
+            ]);
+            
+            console.log("词云数据列表:", wordList);
             
             // 生成词云
             if (wordList.length > 0) {
-                WordCloud(wordcloud, {
+                // 确保容器有正确的尺寸
+                const containerWidth = wordcloud.offsetWidth;
+                const containerHeight = wordcloud.offsetHeight;
+                console.log(`词云容器尺寸: ${containerWidth}x${containerHeight}`);
+                
+                // 配置词云参数
+                const options = {
                     list: wordList,
-                    size: 16,
-                    weightFactor: 8,
                     fontFamily: 'sans-serif',
-                    color: (word) => word.color,
-                    rotate: (word) => word.rotate,
+                    color: () => getRandomColor(),
+                    rotate: () => (Math.random() > 0.7 ? (Math.random() > 0.5 ? 90 : -90) : 0),
                     backgroundColor: 'transparent',
+                    weightFactor: 10,
                     minSize: 10,
                     gridSize: 8,
                     drawOutOfBound: false,
                     shuffle: true
-                });
+                };
+                
+                console.log("词云配置:", options);
+                
+                // 生成词云
+                try {
+                    WordCloud(wordcloud, options);
+                    console.log("词云生成成功");
+                } catch (error) {
+                    console.error("词云生成失败:", error);
+                    wordcloud.innerHTML = '<div class="w-full h-full flex items-center justify-center text-red-500">词云生成失败，请刷新页面</div>';
+                }
             } else {
                 // 没有数据时显示提示
                 wordcloud.innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-400">等待大家的职业理想...</div>';
+                console.log("没有词云数据可显示");
             }
             
             // 更新统计数据
@@ -325,9 +344,13 @@
         // 加载所有词语
         async function loadAllWords() {
             try {
+                showMessage('正在加载职业理想数据...', 'info');
+                
                 // 查询所有记录，按创建时间排序
                 query.ascending('createdAt');
                 const results = await query.find();
+                
+                console.log(`加载到${results.length}条数据`);
                 
                 // 提取词语
                 allWords = results.map(result => result.get('word'));
@@ -337,6 +360,8 @@
                 allWords.forEach(word => {
                     wordFrequency[word] = (wordFrequency[word] || 0) + 1;
                 });
+                
+                showMessage(`成功加载${allWords.length}条职业理想数据`, 'success');
                 
                 // 更新词云
                 updateWordCloud();
@@ -361,29 +386,51 @@
         
         // 监听数据变化
         function watchForChanges() {
-            const liveQuery = query.subscribe();
-            
-            liveQuery.on('create', (object) => {
-                const newWord = object.get('word');
-                allWords.push(newWord);
-                wordFrequency[newWord] = (wordFrequency[newWord] || 0) + 1;
-                updateWordCloud();
-                addDanmaku(newWord);
-            });
+            try {
+                const liveQuery = query.subscribe();
+                
+                liveQuery.on('create', (object) => {
+                    const newWord = object.get('word');
+                    console.log(`收到新词语: ${newWord}`);
+                    allWords.push(newWord);
+                    wordFrequency[newWord] = (wordFrequency[newWord] || 0) + 1;
+                    updateWordCloud();
+                    addDanmaku(newWord);
+                });
+                
+                liveQuery.on('error', (error) => {
+                    console.error('实时查询错误:', error);
+                    showMessage('实时更新连接断开，数据可能无法同步', 'error');
+                });
+                
+                console.log('实时查询已启动');
+            } catch (error) {
+                console.error('启动实时查询失败:', error);
+                showMessage('无法建立实时连接，可能无法看到最新数据', 'error');
+            }
         }
         
-        // 初始化
-        window.addEventListener('DOMContentLoaded', () => {
-            loadAllWords();
-            watchForChanges();
-            scheduleRandomDanmakus();
+        // 初始化 - 确保DOM完全加载后执行
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('页面加载完成，开始初始化');
             
-            // 窗口大小变化时重新绘制词云
-            window.addEventListener('resize', () => {
-                if (wordList.length > 0) {
-                    updateWordCloud();
-                }
-            });
+            // 确保词云容器已准备好
+            if (wordcloud) {
+                console.log('词云容器已找到');
+                loadAllWords();
+                watchForChanges();
+                scheduleRandomDanmakus();
+                
+                // 窗口大小变化时重新绘制词云
+                window.addEventListener('resize', () => {
+                    if (wordList.length > 0) {
+                        updateWordCloud();
+                    }
+                });
+            } else {
+                console.error('未找到词云容器');
+                alert('页面加载错误，未找到词云显示区域');
+            }
         });
     </script>
 </body>
