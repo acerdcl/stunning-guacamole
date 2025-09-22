@@ -37,6 +37,9 @@
       .card-flip {
         transform-style: preserve-3d;
         transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        width: 100%;
+        height: 100%;
       }
       .card-flip.flipped {
         transform: rotateY(180deg);
@@ -44,6 +47,11 @@
       .card-front, .card-back {
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
       }
       .card-back {
         transform: rotateY(180deg);
@@ -123,19 +131,23 @@
     <div class="mb-16">
       <h2 class="text-2xl font-bold text-center mb-8 text-gray-800">点击卡牌进行翻牌</h2>
       
-      <div class="card-container relative w-64 h-80 mx-auto perspective-1000">
-        <!-- 卡牌翻转容器 -->
-        <div id="main-card" class="card-flip absolute w-full h-full cursor-pointer">
-          <!-- 卡牌正面 -->
-          <div class="card-front absolute w-full h-full bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-lg flex flex-col items-center justify-center p-6 shine-effect border-4 border-white/20">
-            <i class="fa fa-question-circle text-6xl text-white mb-4"></i>
-            <h3 class="text-white text-xl font-bold text-center">点击翻牌</h3>
-            <p class="text-white/80 text-sm mt-2 text-center">发现你的角色</p>
-          </div>
-          
-          <!-- 卡牌背面 - 将动态填充内容 -->
-          <div id="card-back" class="card-back absolute w-full h-full bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-100">
-            <!-- 内容将通过JavaScript动态生成 -->
+      <!-- 改进的卡牌容器，解决定位问题 -->
+      <div class="relative w-full max-w-md h-96 mx-auto">
+        <!-- 透视容器 -->
+        <div class="perspective-1000 w-full h-full">
+          <!-- 卡牌翻转容器 -->
+          <div id="main-card" class="card-flip w-full h-full cursor-pointer">
+            <!-- 卡牌正面 -->
+            <div class="card-front bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-lg flex flex-col items-center justify-center p-6 shine-effect border-4 border-white/20">
+              <i class="fa fa-question-circle text-6xl text-white mb-4"></i>
+              <h3 class="text-white text-xl font-bold text-center">点击翻牌</h3>
+              <p class="text-white/80 text-sm mt-2 text-center">发现你的角色</p>
+            </div>
+            
+            <!-- 卡牌背面 - 将动态填充内容 -->
+            <div id="card-back" class="card-back bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-100">
+              <!-- 内容将通过JavaScript动态生成 -->
+            </div>
           </div>
         </div>
       </div>
@@ -305,9 +317,6 @@
     
     // 翻转卡牌并显示随机角色
     function flipCard() {
-      // 添加翻转动画音效（如果需要）
-      // playFlipSound();
-      
       // 如果已经翻过来了，先翻回去
       if (mainCard.classList.contains('flipped')) {
         mainCard.classList.remove('flipped');
@@ -396,7 +405,7 @@
         
         // 如果没有剩余次数，隐藏翻牌区并显示完成消息
         if (remainingPicks === 0) {
-          const cardContainer = document.querySelector('.card-container');
+          const cardContainer = document.querySelector('.perspective-1000');
           cardContainer.classList.add('animate-fade-out');
           
           setTimeout(() => {
@@ -479,7 +488,7 @@
       updateSelectedRoles();
       
       // 显示卡牌和按钮
-      document.querySelector('.card-container').classList.remove('hidden');
+      document.querySelector('.perspective-1000').classList.remove('hidden');
       confirmButton.classList.remove('hidden');
       disableConfirmButton();
       
