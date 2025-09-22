@@ -34,18 +34,20 @@
             .content-auto {
                 content-visibility: auto;
             }
-            .grid-header {
-                @apply flex items-center justify-center p-3 bg-gray-50 rounded-lg font-medium;
+            .grid-header-row {
+                @apply bg-gray-50 font-medium text-center py-2.5 px-1 text-xs md:text-sm;
+            }
+            .grid-header-col {
+                @apply bg-gray-50 font-medium text-center py-3 px-1 text-xs md:text-sm flex items-center justify-center;
             }
             .grid-cell {
-                @apply border border-gray-200 rounded-lg overflow-hidden transition-all;
+                @apply border border-gray-200 transition-all;
             }
             .grid-cell:hover {
                 @apply border-primary/30 shadow-sm;
             }
             .input-field {
-                @apply w-full p-2.5 text-sm bg-transparent border-0 focus:ring-0 focus:outline-none placeholder-gray-400 resize-none;
-                min-height: 50px;
+                @apply w-full h-full p-2.5 text-sm bg-transparent border-0 focus:ring-0 focus:outline-none placeholder-gray-400 resize-none;
             }
             .fade-in {
                 animation: fadeIn 0.6s ease forwards;
@@ -93,84 +95,87 @@
     <!-- 介绍卡片 -->
     <div class="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 opacity-0" id="intro-card">
         <h2 class="font-semibold text-gray-800 mb-3 flex items-center">
-            <i class="fa fa-info-circle text-primary mr-2"></i>什么是九宫格自测？
+            <i class="fa fa-info-circle text-primary mr-2"></i>九宫格结构说明
         </h2>
-        <p class="text-gray-600 text-sm mb-3">
-            把电商职业拆成「人、货、场」三个核心赛道，结合你的「兴趣、能力、价值观」，通过交叉匹配找到最适合你的方向。
-        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
+            <div>
+                <p class="font-medium text-gray-700 mb-1">横向（列）：你的个人特质</p>
+                <p class="text-gray-600"><span class="inline-block w-3 h-3 rounded-full bg-xingqu mr-1"></span>兴趣 → <span class="inline-block w-3 h-3 rounded-full bg-nengli mr-1"></span>能力 → <span class="inline-block w-3 h-3 rounded-full bg-jiazhiguan mr-1"></span>价值观</p>
+            </div>
+            <div>
+                <p class="font-medium text-gray-700 mb-1">纵向（行）：电商核心赛道</p>
+                <p class="text-gray-600"><span class="inline-block w-3 h-3 rounded-full bg-ren mr-1"></span>人 → <span class="inline-block w-3 h-3 rounded-full bg-huo mr-1"></span>货 → <span class="inline-block w-3 h-3 rounded-full bg-chang mr-1"></span>场</p>
+            </div>
+        </div>
         <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-            <p class="mb-2"><span class="font-medium text-gray-700">例：</span>如果你喜欢拆快递（货+兴趣）、会写段子（货+能力）、拒绝996（场+价值观），可能适合「电商内容运营」</p>
+            <p><span class="font-medium text-gray-700">例：</span>"货+能力"格填写你在产品方面的专长，如"挑好货、写测评"</p>
         </div>
     </div>
 
     <!-- 九宫格主体 -->
     <div class="bg-white rounded-xl shadow-sm p-3 md:p-4 mb-6 border border-gray-100 opacity-0" id="grid-container">
-        <form id="test-form" class="space-y-4">
-            <!-- 九宫格标题行 -->
-            <div class="grid grid-cols-3 gap-0.5">
-                <div class="grid-header"></div>
-                <div class="grid-header text-xingqu">
+        <form id="test-form">
+            <!-- 九宫格表格 -->
+            <div class="grid grid-cols-4 gap-0.5">
+                <!-- 空白左上角 -->
+                <div class="col-span-1"></div>
+                
+                <!-- 列标题：兴趣、能力、价值观（横向） -->
+                <div class="col-span-1 grid-header-col text-xingqu border border-gray-200 rounded-t-lg">
                     <i class="fa fa-heart-o mr-1"></i>兴趣
                 </div>
-                <div class="grid-header text-nengli">
+                <div class="col-span-1 grid-header-col text-nengli border-t border-r border-l border-gray-200">
                     <i class="fa fa-cog mr-1"></i>能力
                 </div>
-                <div class="grid-header text-jiazhiguan">
+                <div class="col-span-1 grid-header-col text-jiazhiguan border border-gray-200 rounded-tr-lg">
                     <i class="fa fa-balance-scale mr-1"></i>价值观
                 </div>
-            </div>
-
-            <!-- 九宫格内容行 -->
-            <!-- 人 -->
-            <div class="grid grid-cols-3 gap-0.5">
-                <div class="grid-header text-ren">
+                
+                <!-- 第一行：人（纵向） -->
+                <div class="grid-header-row text-ren border border-gray-200 rounded-l-lg">
                     <i class="fa fa-users mr-1"></i>人
                 </div>
                 <div class="grid-cell">
-                    <input type="text" class="input-field" placeholder="喜欢和用户/客户相关的事？比如：聊八卦、看评论" name="ren_xingqu" required>
+                    <input type="text" class="input-field" placeholder="喜欢和用户相关的事？" name="ren_xingqu" required>
                 </div>
                 <div class="grid-cell">
-                    <input type="text" class="input-field" placeholder="擅长和用户/客户相关的事？比如：抓需求、会沟通" name="ren_nengli" required>
+                    <input type="text" class="input-field" placeholder="擅长和用户相关的事？" name="ren_nengli" required>
                 </div>
                 <div class="grid-cell">
-                    <input type="text" class="input-field" placeholder="对服务用户的原则？比如：不忽悠、耐心沟通" name="ren_jiazhiguan" required>
+                    <input type="text" class="input-field" placeholder="对服务用户的原则？" name="ren_jiazhiguan" required>
                 </div>
-            </div>
-
-            <!-- 货 -->
-            <div class="grid grid-cols-3 gap-0.5">
-                <div class="grid-header text-huo">
+                
+                <!-- 第二行：货（纵向） -->
+                <div class="grid-header-row text-huo border-x border-b border-gray-200">
                     <i class="fa fa-shopping-bag mr-1"></i>货
                 </div>
                 <div class="grid-cell">
-                    <input type="text" class="input-field" placeholder="喜欢和产品相关的事？比如：拆快递、比价格" name="huo_xingqu" required>
+                    <input type="text" class="input-field" placeholder="喜欢和产品相关的事？" name="huo_xingqu" required>
                 </div>
                 <div class="grid-cell">
-                    <input type="text" class="input-field" placeholder="擅长和产品相关的事？比如：挑好货、写测评" name="huo_nengli" required>
+                    <input type="text" class="input-field" placeholder="擅长和产品相关的事？" name="huo_nengli" required>
                 </div>
                 <div class="grid-cell">
-                    <input type="text" class="input-field" placeholder="对选品的原则？比如：只推真货、不夸大" name="huo_jiazhiguan" required>
+                    <input type="text" class="input-field" placeholder="对选品的原则？" name="huo_jiazhiguan" required>
                 </div>
-            </div>
-
-            <!-- 场 -->
-            <div class="grid grid-cols-3 gap-0.5">
-                <div class="grid-header text-chang">
+                
+                <!-- 第三行：场（纵向） -->
+                <div class="grid-header-row text-chang border-x border-b border-gray-200 rounded-bl-lg">
                     <i class="fa fa-map-marker mr-1"></i>场
                 </div>
                 <div class="grid-cell">
-                    <input type="text" class="input-field" placeholder="喜欢和场景相关的事？比如：刷短视频、逛直播" name="chang_xingqu" required>
+                    <input type="text" class="input-field" placeholder="喜欢和场景相关的事？" name="chang_xingqu" required>
                 </div>
                 <div class="grid-cell">
-                    <input type="text" class="input-field" placeholder="擅长和场景相关的事？比如：剪视频、写文案" name="chang_nengli" required>
+                    <input type="text" class="input-field" placeholder="擅长和场景相关的事？" name="chang_nengli" required>
                 </div>
                 <div class="grid-cell">
-                    <input type="text" class="input-field" placeholder="对工作场景的原则？比如：拒绝996、灵活办公" name="chang_jiazhiguan" required>
+                    <input type="text" class="input-field" placeholder="对工作场景的原则？" name="chang_jiazhiguan" required>
                 </div>
             </div>
 
             <!-- 提交按钮 -->
-            <button type="submit" id="submit-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 rounded-lg transition-all flex items-center justify-center">
+            <button type="submit" id="submit-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 rounded-lg transition-all flex items-center justify-center mt-5">
                 <span>生成我的电商职业方向</span>
                 <i class="fa fa-arrow-right ml-2"></i>
             </button>
@@ -231,33 +236,17 @@
                 keywords: ["镜头", "口才", "表演", "互动", "卖货", "展示", "表达", "临场", "自信", "直播"],
                 reason: "你擅长在镜头前表现自己，口才好且能带动气氛，适合担任电商主播，通过直播向观众展示和推荐商品。"
             },
-            {
-                job: "直播运营/场控",
-                keywords: ["场控", "节奏", "互动", "链接", "上架", "流程", "应急", "配合", "直播"],
-                reason: "你擅长把控流程和节奏，能有效配合主播工作，适合负责直播的后台操作、流程控制和应急处理，保障直播顺利进行。"
-            },
             // 数据分析类
             {
                 job: "电商数据分析师",
-                keywords: ["数据", "表格", "Excel", "分析", "趋势", "报表", "规律", "洞察", "Excel", "Python"],
+                keywords: ["数据", "表格", "Excel", "分析", "趋势", "报表", "规律", "洞察", "Python"],
                 reason: "你对数据敏感，擅长从数据中发现规律，适合负责电商数据的收集、分析和解读，为运营决策提供数据支持。"
             },
-            // 设计与创意类
+            // 设计类
             {
                 job: "电商设计师",
                 keywords: ["设计", "图片", "美感", "PS", "视觉", "详情页", "海报", "修图", "审美"],
                 reason: "你具备审美能力和设计技能，擅长视觉表达，适合负责电商商品图片精修、详情页设计和活动海报制作。"
-            },
-            // 其他电商相关
-            {
-                job: "电商客服主管",
-                keywords: ["沟通", "解决", "投诉", "团队", "培训", "服务", "耐心", "协调", "客户"],
-                reason: "你擅长沟通和问题解决，有服务意识，适合管理客服团队，制定服务标准，处理复杂客户问题，提升服务质量。"
-            },
-            {
-                job: "电商活动策划",
-                keywords: ["创意", "活动", "促销", "方案", "执行", "氛围", "转化", "节点", "策划"],
-                reason: "你擅长创意构思和方案执行，能设计吸引人的促销活动，适合负责电商平台的节日活动、大促活动的策划与执行。"
             }
         ];
 
@@ -350,27 +339,26 @@
                         }
                     });
 
-                    // 处理无匹配的情况（最高匹配分数为0）
+                    // 处理无匹配的情况
                     let resultCareer;
                     if (highestScore === 0) {
                         resultCareer = defaultCareer;
                         matchScore.textContent = "匹配度待探索";
                         matchScore.className = "bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full";
-                        keywordsContainer.style.display = "none"; // 隐藏关键词区域
+                        keywordsContainer.style.display = "none";
                     } else {
                         resultCareer = bestMatch;
-                        // 计算匹配度百分比（最高10分对应100%）
                         const percentage = Math.min(Math.round((highestScore / 10) * 100), 100);
                         matchScore.textContent = `匹配度${percentage}%`;
                         matchScore.className = "bg-primary/10 text-primary text-xs px-2 py-1 rounded-full";
-                        keywordsContainer.style.display = "block"; // 显示关键词区域
+                        keywordsContainer.style.display = "block";
                     }
 
                     // 显示结果
                     resultJob.textContent = resultCareer.job;
                     resultReason.textContent = resultCareer.reason;
                     
-                    // 显示用户输入的关键词（有匹配时）
+                    // 显示用户输入的关键词
                     resultKeywords.innerHTML = '';
                     if (highestScore > 0) {
                         const uniqueKeywords = [...new Set(allKeywords)].slice(0, 8);
@@ -400,7 +388,6 @@
                 form.reset();
                 resultSection.classList.add('hidden');
                 resultSection.classList.remove('slide-up');
-                // 滚动到表单
                 form.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
