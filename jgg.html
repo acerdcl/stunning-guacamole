@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>电商赛道九宫格自测 | 找到你的职业方向</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 自定义Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        ren: '#3B82F6',
+                        huo: '#10B981',
+                        chang: '#F59E0B',
+                        xingqu: '#8B5CF6',
+                        nengli: '#EC4899',
+                        jiazhiguan: '#06B6D4'
+                    },
+                    fontFamily: {
+                        sans: ['PingFang SC', 'Helvetica Neue', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .grid-header {
+                @apply flex items-center justify-center p-3 bg-gray-50 rounded-lg font-medium;
+            }
+            .grid-cell {
+                @apply border border-gray-200 rounded-lg overflow-hidden transition-all;
+            }
+            .grid-cell:hover {
+                @apply border-primary/30 shadow-sm;
+            }
+            .input-field {
+                @apply w-full p-2.5 text-sm bg-transparent border-0 focus:ring-0 focus:outline-none placeholder-gray-400 resize-none;
+                min-height: 50px;
+            }
+            .fade-in {
+                animation: fadeIn 0.6s ease forwards;
+            }
+            .slide-up {
+                animation: slideUp 0.5s ease forwards;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideUp {
+                from { transform: translateY(20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            .loader {
+                width: 24px;
+                height: 24px;
+                border: 3px solid rgba(79, 70, 229, 0.2);
+                border-radius: 50%;
+                border-top-color: #4F46E5;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen px-4 py-6 md:py-10 max-w-2xl mx-auto">
+    <!-- 页面加载动画 -->
+    <div id="loader" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="loader mx-auto mb-3"></div>
+            <p class="text-gray-600">准备测试工具中...</p>
+        </div>
+    </div>
+
+    <!-- 页面标题 -->
+    <header class="text-center mb-6 opacity-0" id="page-header">
+        <h1 class="text-[clamp(1.5rem,5vw,2.2rem)] font-bold text-gray-800 mb-2">电商赛道九宫格自测</h1>
+        <p class="text-gray-500 text-sm md:text-base max-w-md mx-auto">3分钟填完9个格子，找到最适合你的电商职业方向</p>
+    </header>
+
+    <!-- 介绍卡片 -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-100 opacity-0" id="intro-card">
+        <h2 class="font-semibold text-gray-800 mb-3 flex items-center">
+            <i class="fa fa-info-circle text-primary mr-2"></i>什么是九宫格自测？
+        </h2>
+        <p class="text-gray-600 text-sm mb-3">
+            把电商职业拆成「人、货、场」三个核心赛道，结合你的「兴趣、能力、价值观」，通过交叉匹配找到最适合你的方向。
+        </p>
+        <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+            <p class="mb-2"><span class="font-medium text-gray-700">例：</span>如果你喜欢拆快递（货+兴趣）、会写段子（货+能力）、拒绝996（场+价值观），可能适合「电商内容运营」</p>
+        </div>
+    </div>
+
+    <!-- 九宫格主体 -->
+    <div class="bg-white rounded-xl shadow-sm p-3 md:p-4 mb-6 border border-gray-100 opacity-0" id="grid-container">
+        <form id="test-form" class="space-y-4">
+            <!-- 九宫格标题行 -->
+            <div class="grid grid-cols-3 gap-0.5">
+                <div class="grid-header"></div>
+                <div class="grid-header text-xingqu">
+                    <i class="fa fa-heart-o mr-1"></i>兴趣
+                </div>
+                <div class="grid-header text-nengli">
+                    <i class="fa fa-cog mr-1"></i>能力
+                </div>
+                <div class="grid-header text-jiazhiguan">
+                    <i class="fa fa-balance-scale mr-1"></i>价值观
+                </div>
+            </div>
+
+            <!-- 九宫格内容行 -->
+            <!-- 人 -->
+            <div class="grid grid-cols-3 gap-0.5">
+                <div class="grid-header text-ren">
+                    <i class="fa fa-users mr-1"></i>人
+                </div>
+                <div class="grid-cell">
+                    <input type="text" class="input-field" placeholder="喜欢和用户/客户相关的事？比如：聊八卦、看评论" name="ren_xingqu" required>
+                </div>
+                <div class="grid-cell">
+                    <input type="text" class="input-field" placeholder="擅长和用户/客户相关的事？比如：抓需求、会沟通" name="ren_nengli" required>
+                </div>
+                <div class="grid-cell">
+                    <input type="text" class="input-field" placeholder="对服务用户的原则？比如：不忽悠、耐心沟通" name="ren_jiazhiguan" required>
+                </div>
+            </div>
+
+            <!-- 货 -->
+            <div class="grid grid-cols-3 gap-0.5">
+                <div class="grid-header text-huo">
+                    <i class="fa fa-shopping-bag mr-1"></i>货
+                </div>
+                <div class="grid-cell">
+                    <input type="text" class="input-field" placeholder="喜欢和产品相关的事？比如：拆快递、比价格" name="huo_xingqu" required>
+                </div>
+                <div class="grid-cell">
+                    <input type="text" class="input-field" placeholder="擅长和产品相关的事？比如：挑好货、写测评" name="huo_nengli" required>
+                </div>
+                <div class="grid-cell">
+                    <input type="text" class="input-field" placeholder="对选品的原则？比如：只推真货、不夸大" name="huo_jiazhiguan" required>
+                </div>
+            </div>
+
+            <!-- 场 -->
+            <div class="grid grid-cols-3 gap-0.5">
+                <div class="grid-header text-chang">
+                    <i class="fa fa-map-marker mr-1"></i>场
+                </div>
+                <div class="grid-cell">
+                    <input type="text" class="input-field" placeholder="喜欢和场景相关的事？比如：刷短视频、逛直播" name="chang_xingqu" required>
+                </div>
+                <div class="grid-cell">
+                    <input type="text" class="input-field" placeholder="擅长和场景相关的事？比如：剪视频、写文案" name="chang_nengli" required>
+                </div>
+                <div class="grid-cell">
+                    <input type="text" class="input-field" placeholder="对工作场景的原则？比如：拒绝996、灵活办公" name="chang_jiazhiguan" required>
+                </div>
+            </div>
+
+            <!-- 提交按钮 -->
+            <button type="submit" id="submit-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 rounded-lg transition-all flex items-center justify-center">
+                <span>生成我的电商职业方向</span>
+                <i class="fa fa-arrow-right ml-2"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- 结果展示区 -->
+    <div id="result-section" class="hidden bg-white rounded-xl shadow-sm p-5 border border-gray-100 mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-bold text-gray-800 text-lg">你的电商职业方向</h2>
+            <span id="match-score" class="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">匹配度98%</span>
+        </div>
+        
+        <div id="result-job" class="text-xl font-semibold text-primary mb-3"></div>
+        
+        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+            <h3 class="font-medium text-gray-700 mb-2">匹配理由：</h3>
+            <p id="result-reason" class="text-gray-600 text-sm"></p>
+        </div>
+        
+        <div class="bg-gray-50 p-4 rounded-lg mb-4" id="keywords-container">
+            <h3 class="font-medium text-gray-700 mb-2">你的优势关键词：</h3>
+            <div id="result-keywords" class="flex flex-wrap gap-2"></div>
+        </div>
+        
+        <button id="reset-btn" class="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2.5 rounded-lg transition-all">
+            <i class="fa fa-refresh mr-2"></i>重新测试
+        </button>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="text-center text-gray-400 text-xs py-4 opacity-0" id="page-footer">
+        <p>电商赛道九宫格自测工具 © 2023 | 帮助你快速定位电商职业方向</p>
+    </footer>
+
+    <script>
+        // 职业匹配规则库
+        const careerMatches = [
+            // 运营类
+            {
+                job: "电商内容运营",
+                keywords: ["短视频", "段子", "文案", "拆快递", "开箱", "聊八卦", "互动", "剪视频", "直播", "拍视频", "写故事"],
+                reason: "你擅长通过内容连接用户和产品，喜欢创作和互动，适合在抖音、小红书等平台通过短视频、图文内容推广商品，激发用户购买欲。"
+            },
+            {
+                job: "电商用户运营",
+                keywords: ["聊人", "抓需求", "社群", "互动", "用户", "评论", "服务", "沟通", "解决问题", "维护客户"],
+                reason: "你擅长理解和服务用户，能快速把握用户需求，适合负责用户拉新、留存和活跃，运营用户社群，提升用户复购率。"
+            },
+            {
+                job: "电商选品运营",
+                keywords: ["挑货", "比价", "参数", "货源", "测评", "选品", "砍价", "质量", "性价比", "找工厂"],
+                reason: "你对产品敏感，擅长筛选优质商品，适合负责电商店铺的选品、货源对接和价格谈判，为用户找到高性价比商品。"
+            },
+            // 直播类
+            {
+                job: "直播主播",
+                keywords: ["镜头", "口才", "表演", "互动", "卖货", "展示", "表达", "临场", "自信", "直播"],
+                reason: "你擅长在镜头前表现自己，口才好且能带动气氛，适合担任电商主播，通过直播向观众展示和推荐商品。"
+            },
+            {
+                job: "直播运营/场控",
+                keywords: ["场控", "节奏", "互动", "链接", "上架", "流程", "应急", "配合", "直播"],
+                reason: "你擅长把控流程和节奏，能有效配合主播工作，适合负责直播的后台操作、流程控制和应急处理，保障直播顺利进行。"
+            },
+            // 数据分析类
+            {
+                job: "电商数据分析师",
+                keywords: ["数据", "表格", "Excel", "分析", "趋势", "报表", "规律", "洞察", "Excel", "Python"],
+                reason: "你对数据敏感，擅长从数据中发现规律，适合负责电商数据的收集、分析和解读，为运营决策提供数据支持。"
+            },
+            // 设计与创意类
+            {
+                job: "电商设计师",
+                keywords: ["设计", "图片", "美感", "PS", "视觉", "详情页", "海报", "修图", "审美"],
+                reason: "你具备审美能力和设计技能，擅长视觉表达，适合负责电商商品图片精修、详情页设计和活动海报制作。"
+            },
+            // 其他电商相关
+            {
+                job: "电商客服主管",
+                keywords: ["沟通", "解决", "投诉", "团队", "培训", "服务", "耐心", "协调", "客户"],
+                reason: "你擅长沟通和问题解决，有服务意识，适合管理客服团队，制定服务标准，处理复杂客户问题，提升服务质量。"
+            },
+            {
+                job: "电商活动策划",
+                keywords: ["创意", "活动", "促销", "方案", "执行", "氛围", "转化", "节点", "策划"],
+                reason: "你擅长创意构思和方案执行，能设计吸引人的促销活动，适合负责电商平台的节日活动、大促活动的策划与执行。"
+            }
+        ];
+
+        // 无匹配时的默认结果
+        const defaultCareer = {
+            job: "电商综合探索者",
+            reason: "你的兴趣和能力组合比较独特，目前没有完全匹配的细分方向。建议从电商综合运营入手，逐步探索人、货、场各环节，找到最适合自己的领域。电商行业包容性强，多元化的能力往往能带来意想不到的机会！",
+            keywords: []
+        };
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 模拟加载过程
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('fade-in');
+                document.getElementById('loader').style.opacity = 0;
+                
+                setTimeout(() => {
+                    document.getElementById('loader').style.display = 'none';
+                    // 显示页面内容，添加动画
+                    showPageElements();
+                }, 500);
+            }, 1000);
+
+            // 显示页面元素并添加动画
+            function showPageElements() {
+                const elements = [
+                    'page-header', 
+                    'intro-card', 
+                    'grid-container', 
+                    'page-footer'
+                ];
+                
+                elements.forEach((id, index) => {
+                    setTimeout(() => {
+                        const element = document.getElementById(id);
+                        element.classList.add('slide-up');
+                        element.style.opacity = 1;
+                    }, index * 150);
+                });
+            }
+
+            // 表单提交处理
+            const form = document.getElementById('test-form');
+            const resultSection = document.getElementById('result-section');
+            const resultJob = document.getElementById('result-job');
+            const resultReason = document.getElementById('result-reason');
+            const resultKeywords = document.getElementById('result-keywords');
+            const keywordsContainer = document.getElementById('keywords-container');
+            const matchScore = document.getElementById('match-score');
+            const submitBtn = document.getElementById('submit-btn');
+            const resetBtn = document.getElementById('reset-btn');
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 显示加载状态
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<div class="loader mx-auto"></div>';
+
+                // 收集表单数据
+                const formData = new FormData(form);
+                const allKeywords = [];
+                
+                formData.forEach((value) => {
+                    const trimmed = value.trim();
+                    if (trimmed) {
+                        // 拆分多个关键词
+                        const words = trimmed.toLowerCase().split(/,|，| |、/).filter(w => w);
+                        allKeywords.push(...words);
+                    }
+                });
+
+                // 分析匹配度
+                setTimeout(() => { 
+                    let bestMatch = null;
+                    let highestScore = 0;
+
+                    careerMatches.forEach(career => {
+                        let score = 0;
+                        career.keywords.forEach(keyword => {
+                            if (allKeywords.some(word => word.includes(keyword))) {
+                                score++;
+                            }
+                        });
+                        
+                        if (score > highestScore) {
+                            highestScore = score;
+                            bestMatch = career;
+                        }
+                    });
+
+                    // 处理无匹配的情况（最高匹配分数为0）
+                    let resultCareer;
+                    if (highestScore === 0) {
+                        resultCareer = defaultCareer;
+                        matchScore.textContent = "匹配度待探索";
+                        matchScore.className = "bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full";
+                        keywordsContainer.style.display = "none"; // 隐藏关键词区域
+                    } else {
+                        resultCareer = bestMatch;
+                        // 计算匹配度百分比（最高10分对应100%）
+                        const percentage = Math.min(Math.round((highestScore / 10) * 100), 100);
+                        matchScore.textContent = `匹配度${percentage}%`;
+                        matchScore.className = "bg-primary/10 text-primary text-xs px-2 py-1 rounded-full";
+                        keywordsContainer.style.display = "block"; // 显示关键词区域
+                    }
+
+                    // 显示结果
+                    resultJob.textContent = resultCareer.job;
+                    resultReason.textContent = resultCareer.reason;
+                    
+                    // 显示用户输入的关键词（有匹配时）
+                    resultKeywords.innerHTML = '';
+                    if (highestScore > 0) {
+                        const uniqueKeywords = [...new Set(allKeywords)].slice(0, 8);
+                        uniqueKeywords.forEach(word => {
+                            const badge = document.createElement('span');
+                            badge.className = 'bg-primary/10 text-primary text-xs px-2 py-1 rounded-full';
+                            badge.textContent = word;
+                            resultKeywords.appendChild(badge);
+                        });
+                    }
+
+                    // 显示结果区域
+                    resultSection.classList.remove('hidden');
+                    resultSection.classList.add('slide-up');
+                    
+                    // 滚动到结果区域
+                    resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // 恢复按钮状态
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span>生成我的电商职业方向</span><i class="fa fa-arrow-right ml-2"></i>';
+                }, 1200);
+            });
+
+            // 重置按钮
+            resetBtn.addEventListener('click', function() {
+                form.reset();
+                resultSection.classList.add('hidden');
+                resultSection.classList.remove('slide-up');
+                // 滚动到表单
+                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    </script>
+</body>
+</html>
