@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商/经管大一新生 · 生涯盲盒开开乐</title>
+    <!-- 外部资源 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF7A00', // 活力橙
+                        secondary: '#1E88E5', // 专业蓝
+                        success: '#4CAF50', // 保留按钮色
+                        cancel: '#F44336', // 放弃按钮色
+                        card: {
+                           人脉: '#FFF5F0',
+                           技能: '#F0F7FF',
+                           认知: '#F0FFF4',
+                           实践: '#FFF8F0'
+                        }
+                    },
+                    fontFamily: {
+                        fun: ['"Comic Sans MS"', 'cursive', 'sans-serif'],
+                        main: ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                        'spin-open': 'spin 0.8s ease-out forwards',
+                        'pop-in': 'popIn 0.5s ease-out forwards',
+                        'fade-out': 'fadeOut 0.3s ease-in forwards',
+                        'shake': 'shake 0.5s ease-in-out'
+                    },
+                    keyframes: {
+                        popIn: {
+                            '0%': { transform: 'scale(0.5)', opacity: '0' },
+                            '80%': { transform: 'scale(1.05)' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        },
+                        fadeOut: {
+                            '0%': { opacity: '1' },
+                            '100%': { opacity: '0' }
+                        },
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '20%': { transform: 'translateX(-5px)' },
+                            '40%': { transform: 'translateX(5px)' },
+                            '60%': { transform: 'translateX(-3px)' },
+                            '80%': { transform: 'translateX(3px)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow-fun {
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.15);
+            }
+            .box-shadow-3d {
+                box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 15px 35px -10px rgba(0,0,0,0.1);
+            }
+            .card-selected {
+                border: 2px solid #4CAF50;
+                box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-blue-50 to-orange-50 min-h-screen font-main text-gray-800">
+    <!-- 页面头部 -->
+    <header class="py-6 px-4 sm:px-6 lg:px-8 bg-white/90 backdrop-blur-sm shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto text-center">
+            <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-fun font-bold text-primary mb-2 text-shadow-fun">
+                生涯盲盒开开乐
+            </h1>
+            <p class="text-[clamp(0.9rem,2vw,1.1rem)] text-gray-600 max-w-2xl mx-auto">
+                电商/经管大一新生专属 | 4次抽取机会，保留2张心仪任务卡！
+            </p>
+        </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <!-- 游戏说明（突出4抽2留规则） -->
+        <div class="bg-white rounded-2xl shadow-md p-6 mb-10 max-w-3xl mx-auto transform transition-all duration-300 hover:shadow-lg">
+            <div class="flex items-center mb-4">
+                <i class="fa fa-lightbulb-o text-primary text-2xl mr-3"></i>
+                <h2 class="text-xl font-bold">盲盒玩法说明</h2>
+            </div>
+            <ul class="text-gray-600 space-y-3 pl-8 list-disc">
+                <li><span class="font-medium text-primary">抽取机会</span>：共4次抽取机会，每次随机获得1张生涯任务卡（18种不重复）</li>
+                <li><span class="font-medium text-primary">保留规则</span>：从4次抽取结果中，选择2张最想完成的任务卡保留</li>
+                <li><span class="font-medium text-primary">任务类型</span>：涵盖「人脉积累」「技能实践」「行业认知」「实战体验」4类</li>
+                <li><span class="font-medium text-primary">重置机制</span>：完成选择后可点击「重置盲盒」，重新获得4次抽取机会</li>
+            </ul>
+            <!-- 进度提示 -->
+            <div class="mt-5 p-4 bg-primary/5 rounded-lg flex justify-between items-center">
+                <div class="flex items-center">
+                    <i class="fa fa-refresh text-primary mr-2"></i>
+                    <span class="text-sm">剩余抽取机会：</span>
+                    <span id="remaining-draws" class="text-primary font-bold ml-1">4</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fa fa-check-circle text-success mr-2"></i>
+                    <span class="text-sm">已保留任务：</span>
+                    <span id="kept-tasks-count" class="text-success font-bold ml-1">0</span>/2
+                </div>
+            </div>
+        </div>
+
+        <!-- 盲盒交互区（核心） -->
+        <div class="mb-12">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold mb-2">点击盲盒，抽取任务卡</h2>
+                <p class="text-gray-600" id="draw-tip">每次点击消耗1次机会，共4次机会</p>
+            </div>
+
+            <!-- 盲盒按钮 -->
+            <div class="perspective-1200 max-w-xs mx-auto">
+                <div id="blind-box" class="cursor-pointer transition-all duration-300 hover:animate-bounce-slow transform hover:scale-105">
+                    <!-- 盲盒外观 -->
+                    <div class="w-64 h-80 mx-auto bg-gradient-to-br from-primary to-primary/80 rounded-2xl box-shadow-3d flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                        <div class="absolute top-6 left-0 right-0 h-2 bg-white/30 rounded-full"></div>
+                        <i class="fa fa-gift text-white text-7xl mb-4"></i>
+                        <h3 class="text-white text-xl font-fun font-bold text-center">点击开盒</h3>
+                        <p class="text-white/80 text-sm mt-2 text-center">第 <span id="current-draw-count" class="font-bold">1</span> 次抽取</p>
+                        <!-- 盲盒装饰 -->
+                        <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-6">
+                            <div class="w-4 h-4 bg-white/40 rounded-full"></div>
+                            <div class="w-4 h-4 bg-white/40 rounded-full"></div>
+                            <div class="w-4 h-4 bg-white/40 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 任务卡弹窗 -->
+            <div id="task-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+                <div id="task-card" class="bg-white rounded-2xl box-shadow-3d w-full max-w-md mx-4 overflow-hidden transform scale-0 opacity-0 transition-all duration-500">
+                    <!-- 任务卡头部 -->
+                    <div id="task-header" class="p-4 text-white">
+                        <div class="flex justify-between items-center">
+                            <h3 id="task-type" class="font-bold text-lg">人脉积累卡</h3>
+                            <span id="task-number" class="bg-white/30 px-2 py-1 rounded-full text-xs">No.1</span>
+                        </div>
+                    </div>
+                    <!-- 任务卡内容 -->
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <i id="task-icon" class="fa fa-user-plus text-primary text-2xl mr-3"></i>
+                            <h4 id="task-title" class="text-xl font-bold">本周加3个学长/学姐微信</h4>
+                        </div>
+                        <div class="mb-5">
+                            <p class="text-gray-600 text-sm mb-2"><i class="fa fa-info-circle text-primary mr-1"></i> 任务说明</p>
+                            <p id="task-desc" class="text-gray-600 pl-6 text-sm">
+                                主动联系电商/经管专业的学长学姐，备注“大一+姓名+专业”，简单交流学习困惑或行业认知，建立初步人脉。
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 text-sm mb-2"><i class="fa fa-star text-primary mr-1"></i> 成长收获</p>
+                            <p id="task-benefit" class="text-gray-600 pl-6 text-sm">
+                                提前了解专业学习路径、实习方向，避免信息差，积累行业人脉基础。
+                            </p>
+                        </div>
+                    </div>
+                    <!-- 任务卡底部（保留/放弃按钮） -->
+                    <div class="bg-gray-50 p-4 flex justify-between">
+                        <button id="cancel-task" class="bg-cancel/10 hover:bg-cancel/20 text-cancel font-medium py-2 px-6 rounded-full transition-all duration-300">
+                            放弃 <i class="fa fa-times ml-1"></i>
+                        </button>
+                        <button id="keep-task" class="bg-success hover:bg-success/90 text-white font-bold py-2 px-6 rounded-full transition-all duration-300">
+                            保留 <i class="fa fa-check ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 任务展示区（分：已抽候选区 + 最终保留区） -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+            <!-- 已抽候选区（4次抽取结果） -->
+            <div class="lg:col-span-2">
+                <div class="flex items-center mb-6">
+                    <i class="fa fa-list-alt text-primary text-2xl mr-3"></i>
+                    <h2 class="text-2xl font-bold">已抽候选任务（共4次）</h2>
+                </div>
+                <div id="drawn-candidates" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <!-- 初始提示 -->
+                    <div class="col-span-full bg-gray-50 rounded-xl p-8 text-center text-gray-500">
+                        <i class="fa fa-gift text-4xl mb-4 opacity-30"></i>
+                        <p>点击上方盲盒抽取，4次结果将显示在这里</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最终保留区（最多2张） -->
+            <div>
+                <div class="flex items-center mb-6">
+                    <i class="fa fa-heart text-success text-2xl mr-3"></i>
+                    <h2 class="text-2xl font-bold">我的保留任务（选2张）</h2>
+                </div>
+                <div id="kept-tasks" class="grid grid-cols-1 gap-5">
+                    <!-- 初始提示 -->
+                    <div class="col-span-full bg-gray-50 rounded-xl p-8 text-center text-gray-500">
+                        <i class="fa fa-check-circle text-4xl mb-4 opacity-30"></i>
+                        <p>从候选任务中点击「保留」，最多选2张</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作按钮区 -->
+        <div class="text-center mb-16">
+            <button id="reset-btn" class="bg-primary/10 hover:bg-primary/20 text-primary font-medium py-3 px-8 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <i class="fa fa-refresh mr-2"></i> 重置盲盒（重新4次抽取）
+            </button>
+            <p id="complete-tip" class="mt-4 text-success font-medium hidden">
+                <i class="fa fa-check-circle mr-1"></i> 已成功保留2张任务卡！可点击重置开始新轮抽取
+            </p>
+        </div>
+
+        <!-- 任务分类说明 -->
+        <div class="bg-white rounded-2xl shadow-md p-6 transform transition-all duration-300 hover:shadow-lg">
+            <h2 class="text-2xl font-bold text-center mb-8">任务卡分类解析</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 分类卡片1：人脉积累 -->
+                <div class="bg-card-人脉 rounded-xl p-5 border-l-4 border-primary transition-all duration-300 hover:shadow-md">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                            <i class="fa fa-users text-primary"></i>
+                        </div>
+                        <h3 class="font-bold text-lg">人脉积累卡</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm">
+                        聚焦“人脉搭建”，如加学长微信、参加行业讲座、进专业社群等，帮助积累行业资源，打破信息壁垒。
+                    </p>
+                </div>
+
+                <!-- 分类卡片2：技能实践 -->
+                <div class="bg-card-技能 rounded-xl p-5 border-l-4 border-secondary transition-all duration-300 hover:shadow-md">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center mr-3">
+                            <i class="fa fa-pencil text-secondary"></i>
+                        </div>
+                        <h3 class="font-bold text-lg">技能实践卡</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm">
+                        侧重“硬技能练习”，如用PS做运营头像、Excel做销售表格、剪映做产品介绍视频等，适配专业常用工具。
+                    </p>
+                </div>
+
+                <!-- 分类卡片3：行业认知 -->
+                <div class="bg-card-认知 rounded-xl p-5 border-l-4 border-green-500 transition-all duration-300 hover:shadow-md">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center mr-3">
+                            <i class="fa fa-line-chart text-green-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg">行业认知卡</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm">
+                        围绕“行业了解”，如调研电商平台、分析品牌案例、看经管类书籍等，帮助建立专业认知。
+                    </p>
+                </div>
+
+                <!-- 分类卡片4：实战体验 -->
+                <div class="bg-card-实践 rounded-xl p-5 border-l-4 border-yellow-500 transition-all duration-300 hover:shadow-md">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center mr-3">
+                            <i class="fa fa-shopping-cart text-yellow-500"></i>
+                        </div>
+                        <h3 class="font-bold text-lg">实战体验卡</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm">
+                        强调“动手实战”，如写创业点子、设计促销海报、录开箱视频等，让理论初步转化为实践。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-gray-800 text-white/80 py-6 mt-16">
+        <div class="container mx-auto px-4 text-center">
+            <p>电商/经管大一新生生涯成长工具 | 生涯盲盒开开乐（4抽2留版）</p>
+            <p class="text-sm mt-2 text-white/60">© 2024 生涯成长实验室</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // 18个生涯盲盒任务数据
+        const careerTasks = [
+            // 人脉积累类（1-4）
+            {
+                id: 1,
+                type: "人脉积累卡",
+                typeBg: "bg-gradient-to-r from-primary to-primary/90",
+                title: "本周加3个学长/学姐微信",
+                icon: "fa-user-plus",
+                iconColor: "text-primary",
+                desc: "主动联系电商/经管专业的学长学姐（可通过班级群、社团、辅导员推荐），备注“大一+姓名+专业”，简单交流1个学习困惑或行业认知，保存联系方式。",
+                benefit: "提前了解专业学习路径、实习方向，避免信息差，积累第一波行业人脉基础。"
+            },
+            {
+                id: 2,
+                type: "人脉积累卡",
+                typeBg: "bg-gradient-to-r from-primary to-primary/90",
+                title: "参加1次电商/经管类行业讲座",
+                icon: "fa-microphone",
+                iconColor: "text-primary",
+                desc: "关注学校就业办、学院公众号或本地电商协会，报名1次线上/线下行业讲座，会后主动向讲师提问并加微信（若允许），备注“参会+姓名+学校”。",
+                benefit: "接触行业前沿信息，建立与行业从业者的连接，拓宽职业视野。"
+            },
+            {
+                id: 3,
+                type: "人脉积累卡",
+                typeBg: "bg-gradient-to-r from-primary to-primary/90",
+                title: "加入2个电商/经管专业社群",
+                icon: "fa-comments",
+                iconColor: "text-primary",
+                desc: "通过QQ、微信搜索“电商专业交流群”“经管新生互助群”等，加入2个优质社群，主动做1次自我介绍（姓名+专业+兴趣方向），并回复3条他人发言。",
+                benefit: "获取专业学习资料，认识同专业同学，形成互助学习氛围。"
+            },
+            {
+                id: 4,
+                type: "人脉积累卡",
+                typeBg: "bg-gradient-to-r from-primary to-primary/90",
+                title: "采访1位电商/经管专业老师",
+                icon: "fa-user-circle",
+                iconColor: "text-primary",
+                desc: "选择1位你感兴趣的专业课老师，提前邮件/微信预约采访时间，准备3个问题（如“专业核心技能”“就业方向建议”），采访后整理成1页笔记并感谢老师。",
+                benefit: "加深与老师的连接，获取专业学习指导，为后续学术/实践支持铺路。"
+            },
+
+            // 技能实践类（5-9）
+            {
+                id: 5,
+                type: "技能实践卡",
+                typeBg: "bg-gradient-to-r from-secondary to-secondary/90",
+                title: "用PS做1张运营岗头像",
+                icon: "fa-picture-o",
+                iconColor: "text-secondary",
+                desc: "下载PS（或用在线工具如Canva），参考电商运营岗头像风格（专业、简洁），设计1张个人头像，包含“姓名+运营新人”元素，保存为JPG格式。",
+                benefit: "初步掌握PS基础操作，了解运营岗视觉审美，为后续实习简历/社交账号准备素材。"
+            },
+            {
+                id: 6,
+                type: "技能实践卡",
+                typeBg: "bg-gradient-to-r from-secondary to-secondary/90",
+                title: "用Excel做1份销售数据表格",
+                icon: "fa-table",
+                iconColor: "text-secondary",
+                desc: "虚构1款产品（如零食、文具）的1周销售数据（包含日期、销量、销售额、客单价），用Excel制作表格，添加“数据筛选”“求和公式”“简单图表”（柱状图）。",
+                benefit: "熟练Excel基础功能，理解电商销售数据逻辑，为后续数据分析课程打基础。"
+            },
+            {
+                id: 7,
+                type: "技能实践卡",
+                typeBg: "bg-gradient-to-r from-secondary to-secondary/90",
+                title: "用剪映做1条15秒产品介绍视频",
+                icon: "fa-video-camera",
+                iconColor: "text-secondary",
+                desc: "选择身边1件物品（如书包、水杯），模拟电商产品介绍，用剪映拍摄3段素材（外观、功能、使用场景），添加字幕、背景音乐、转场效果，导出15秒视频。",
+                benefit: "掌握短视频剪辑基础，理解产品卖点呈现逻辑，适配电商短视频运营需求。"
+            },
+            {
+                id: 8,
+                type: "技能实践卡",
+                typeBg: "bg-gradient-to-r from-secondary to-secondary/90",
+                title: "写1份简单的公众号推文提纲",
+                icon: "fa-pencil-square-o",
+                iconColor: "text-secondary",
+                desc: "以“大一新生如何入门电商专业”为主题，用Word写1份推文提纲，包含标题、导语、3个核心板块（如“必学课程”“常用工具”“实习方向”）、结尾互动，共500字左右。",
+                benefit: "培养内容策划思维，了解公众号推文结构，为后续新媒体运营实践做准备。"
+            },
+            {
+                id: 9,
+                type: "技能实践卡",
+                typeBg: "bg-gradient-to-r from-secondary to-secondary/90",
+                title: "用PPT做1页“个人职业规划”",
+                icon: "fa-file-powerpoint-o",
+                iconColor: "text-secondary",
+                desc: "用PPT制作1页幻灯片，主题为“我的电商/经管职业规划（大一版）”，包含“短期目标（1年）”“中期目标（3年）”“需要提升的技能”3个模块，搭配简单图片和配色。",
+                benefit: "梳理职业方向，掌握PPT基础排版，为后续课程汇报、实习答辩积累经验。"
+            },
+
+            // 行业认知类（10-14）
+            {
+                id: 10,
+                type: "行业认知卡",
+                typeBg: "bg-gradient-to-r from-green-500 to-green-500/90",
+                title: "调研3个主流电商平台差异",
+                icon: "fa-search",
+                iconColor: "text-green-500",
+                desc: "选择淘宝、京东、拼多多3个平台，从“目标用户”“商品类型”“运营模式”“优势特色”4个维度做调研，用表格整理成1页文档，标注你的发现。",
+                benefit: "了解电商行业主流平台生态，建立平台差异化认知，为后续选品、运营方向做铺垫。"
+            },
+            {
+                id: 11,
+                type: "行业认知卡",
+                typeBg: "bg-gradient-to-r from-green-500 to-green-500/90",
+                title: "分析1个品牌的618/双11促销案例",
+                icon: "fa-bar-chart",
+                iconColor: "text-green-500",
+                desc: "选择1个你熟悉的品牌（如完美日记、元气森林），查找其去年618或双11的促销策略（如满减、预售、直播带货），分析“策略亮点”“可能的不足”，写200字总结。",
+                benefit: "理解电商大促逻辑，培养案例分析能力，学习成熟品牌的运营思路。"
+            },
+            {
+                id: 12,
+                type: "行业认知卡",
+                typeBg: "bg-gradient-to-r from-green-500 to-green-500/90",
+                title: "看1本经管类入门书籍并写笔记",
+                icon: "fa-book",
+                iconColor: "text-green-500",
+                desc: "选择1本经管类入门书（如《牛奶可乐经济学》《穷查理宝典》），阅读前3章，用思维导图或文字形式写1页笔记，记录“印象最深的3个观点”和“对专业的启发”。",
+                benefit: "建立经管思维基础，拓宽知识边界，培养深度阅读和总结能力。"
+            },
+            {
+                id: 13,
+                type: "行业认知卡",
+                typeBg: "bg-gradient-to-r from-green-500 to-green-500/90",
+                title: "了解5个电商/经管类热门岗位",
+                icon: "fa-briefcase",
+                iconColor: "text-green-500",
+                desc: "通过智联招聘、前程无忧等平台，查找“电商运营”“市场营销”“供应链管理”“财务助理”“人力资源”5个岗位的JD（职位描述），整理每个岗位的“核心职责”和“任职要求”。",
+                benefit: "明确不同岗位的能力需求，找到自己感兴趣的方向，针对性规划学习。"
+            },
+            {
+                id: 14,
+                type: "行业认知卡",
+                typeBg: "bg-gradient-to-r from-green-500 to-green-500/90",
+                title: "观看1个行业大佬的访谈视频",
+                icon: "fa-play-circle",
+                iconColor: "text-green-500",
+                desc: "在B站、抖音或腾讯视频，搜索电商/经管领域大佬的访谈（如董宇辉、张磊），观看1个15分钟以上的视频，记录“3句对你有启发的话”和“1个行动计划”。",
+                benefit: "学习行业前辈的思维方式，获取成长经验，激发职业动力。"
+            },
+
+            // 实战体验类（15-18）
+            {
+                id: 15,
+                type: "实战体验卡",
+                typeBg: "bg-gradient-to-r from-yellow-500 to-yellow-500/90",
+                title: "在抖音/小红书录1条开箱视频",
+                icon: "fa-camera",
+                iconColor: "text-yellow-500",
+                desc: "购买1件平价商品（如文具、零食），在抖音或小红书录1条30秒开箱视频，包含“拆箱过程”“商品展示”“使用感受”，添加相关话题（如#大一新生 #电商开箱）并发布。",
+                benefit: "体验新媒体内容创作全流程，了解平台传播逻辑，积累实战案例。"
+            },
+            {
+                id: 16,
+                type: "实战体验卡",
+                typeBg: "bg-gradient-to-r from-yellow-500 to-yellow-500/90",
+                title: "设计1张电商促销海报",
+                icon: "fa-image",
+                iconColor: "text-yellow-500",
+                desc: "用Canva或PS，以“新生开学季”为主题，设计1张电商促销海报，包含“标题（如‘开学好物5折起’）”“商品图（可找素材）”“促销信息”“二维码（可虚构）”4个元素。",
+                benefit: "掌握海报设计基础逻辑，理解促销信息的视觉呈现，提升营销审美。"
+            },
+            {
+                id: 17,
+                type: "实战体验卡",
+                typeBg: "bg-gradient-to-r from-yellow-500 to-yellow-500/90",
+                title: "写1个校园创业小点子",
+                icon: "fa-lightbulb-o",
+                iconColor: "text-yellow-500",
+                desc: "结合电商/经管专业知识，构思1个校园创业小点子（如“校园二手书回收”“代订奶茶拼单”），写300字方案，包含“项目内容”“目标用户”“盈利模式”“启动步骤”。",
+                benefit: "培养创业思维，将专业知识与实际需求结合，提升商业洞察力。"
+            },
+            {
+                id: 18,
+                type: "实战体验卡",
+                typeBg: "bg-gradient-to-r from-yellow-500 to-yellow-500/90",
+                title: "模拟1次电商客服沟通",
+                icon: "fa-headphones",
+                iconColor: "text-yellow-500",
+                desc: "找同学配合，你扮演电商客服，对方扮演买家（提出“商品质量问题”“退换货需求”“物流查询”3个场景），模拟沟通过程，记录你的回复话术，最后总结沟通技巧。",
+                benefit: "提升客户沟通能力，了解电商售后流程，为后续客服/运营岗位积累经验。"
+            }
+        ];
+
+        // 全局变量
+        let totalDrawChances = 4;
+        let remainingDraws = 4;
+        let drawnCandidates = [];
+        let keptTasks = [];
+        let currentTask = null;
+        let usedTaskIds = [];
+
+        // DOM元素
+        const blindBox = document.getElementById('blind-box');
+        const taskModal = document.getElementById('task-modal');
+        const taskCard = document.getElementById('task-card');
+        const keepTaskBtn = document.getElementById('keep-task');
+        const cancelTaskBtn = document.getElementById('cancel-task');
+        const remainingDrawsEl = document.getElementById('remaining-draws');
+        const currentDrawCountEl = document.getElementById('current-draw-count');
+        const keptTasksCountEl = document.getElementById('kept-tasks-count');
+        const drawnCandidatesEl = document.getElementById('drawn-candidates');
+        const keptTasksEl = document.getElementById('kept-tasks');
+        const resetBtn = document.getElementById('reset-btn');
+        const completeTip = document.getElementById('complete-tip');
+        const drawTip = document.getElementById('draw-tip');
+
+        // 初始化页面
+        function initPage() {
+            updateProgressDisplay();
+            renderDrawnCandidates();
+            renderKeptTasks();
+            checkResetBtnStatus();
+            updateDrawTip();
+        }
+
+        // 随机抽取任务（避免重复）
+        function drawRandomTask() {
+            const availableTasks = careerTasks.filter(task => !usedTaskIds.includes(task.id));
+            if (availableTasks.length === 0) return null;
+            
+            const randomIndex = Math.floor(Math.random() * availableTasks.length);
+            const selectedTask = availableTasks[randomIndex];
+            usedTaskIds.push(selectedTask.id);
+            return selectedTask;
+        }
+
+        // 更新进度显示
+        function updateProgressDisplay() {
+            remainingDrawsEl.textContent = remainingDraws;
+            currentDrawCountEl.textContent = totalDrawChances - remainingDraws + 1;
+            keptTasksCountEl.textContent = keptTasks.length;
+        }
+
+        // 更新抽取提示
+        function updateDrawTip() {
+            if (remainingDraws === 0) {
+                drawTip.textContent = "已用完4次抽取机会，可从候选中保留2张任务卡";
+                blindBox.style.opacity = "0.6";
+                blindBox.style.pointerEvents = "none";
+            } else if (remainingDraws === 1) {
+                drawTip.textContent = `最后1次抽取机会，珍惜哦！`;
+            } else {
+                drawTip.textContent = `还剩${remainingDraws}次抽取机会，继续探索吧～`;
+            }
+        }
+
+        // 检查重置按钮状态
+        function checkResetBtnStatus() {
+            resetBtn.disabled = drawnCandidates.length === 0;
+        }
+
+        // 渲染任务弹窗
+        function renderTaskModal(task) {
+            currentTask = task;
+            document.getElementById('task-header').className = `p-4 ${task.typeBg} text-white`;
+            document.getElementById('task-type').textContent = task.type;
+            document.getElementById('task-number').textContent = `No.${task.id}`;
+            document.getElementById('task-title').textContent = task.title;
+            document.getElementById('task-icon').className = `fa ${task.icon} ${task.iconColor} text-2xl mr-3`;
+            document.getElementById('task-desc').textContent = task.desc;
+            document.getElementById('task-benefit').textContent = task.benefit;
+
+            // 显示弹窗并添加动画
+            taskModal.classList.remove('hidden');
+            setTimeout(() => {
+                taskCard.classList.add('animate-pop-in');
+            }, 100);
+        }
+
+        // 渲染已抽候选任务
+        function renderDrawnCandidates() {
+            drawnCandidatesEl.innerHTML = '';
+
+            if (drawnCandidates.length === 0) {
+                drawnCandidatesEl.innerHTML = `
+                    <div class="col-span-full bg-gray-50 rounded-xl p-8 text-center text-gray-500">
+                        <i class="fa fa-gift text-4xl mb-4 opacity-30"></i>
+                        <p>点击上方盲盒抽取，4次结果将显示在这里</p>
+                    </div>
+                `;
+            } else {
+                drawnCandidates.forEach(task => {
+                    const isKept = keptTasks.some(t => t.id === task.id);
+                    const taskCard = document.createElement('div');
+                    taskCard.className = `bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg ${isKept ? 'card-selected' : ''}`;
+                    taskCard.innerHTML = `
+                        <div class="${task.typeBg} p-3 text-white text-sm font-medium flex justify-between items-center">
+                            ${task.type}
+                            ${isKept ? '<span class="bg-white/30 px-2 py-0.5 rounded-full text-xs"><i class="fa fa-check mr-1"></i>已保留</span>' : ''}
+                        </div>
+                        <div class="p-4">
+                            <h4 class="font-bold mb-2 line-clamp-2">${task.title}</h4>
+                            <p class="text-gray-600 text-xs line-clamp-2">${task.desc}</p>
+                            <div class="mt-3 flex justify-end">
+                                <span class="text-xs text-gray-500">No.${task.id}</span>
+                            </div>
+                        </div>
+                    `;
+                    drawnCandidatesEl.appendChild(taskCard);
+                });
+            }
+        }
+
+        // 渲染保留任务
+        function renderKeptTasks() {
+            keptTasksEl.innerHTML = '';
+
+            if (keptTasks.length === 0) {
+                keptTasksEl.innerHTML = `
+                    <div class="col-span-full bg-gray-50 rounded-xl p-8 text-center text-gray-500">
+                        <i class="fa fa-check-circle text-4xl mb-4 opacity-30"></i>
+                        <p>从候选任务中点击「保留」，最多选2张</p>
+                    </div>
+                `;
+                completeTip.classList.add('hidden');
+            } else {
+                keptTasks.forEach(task => {
+                    const taskCard = document.createElement('div');
+                    taskCard.className = `bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg card-selected`;
+                    taskCard.innerHTML = `
+                        <div class="${task.typeBg} p-3 text-white text-sm font-medium">
+                            ${task.type} <span class="bg-white/30 px-2 py-0.5 rounded-full text-xs ml-2">已保留</span>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="font-bold mb-2">${task.title}</h4>
+                            <div class="flex justify-between items-center mt-3">
+                                <span class="text-xs text-gray-500">No.${task.id}</span>
+                                <button class="text-cancel text-xs hover:underline" onclick="removeKeptTask(${task.id})">
+                                    <i class="fa fa-times mr-1"></i>取消保留
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    keptTasksEl.appendChild(taskCard);
+                });
+
+                // 显示完成提示
+                if (keptTasks.length === 2) {
+                    completeTip.classList.remove('hidden');
+                } else {
+                    completeTip.classList.add('hidden');
+                }
+            }
+        }
+
+        // 保留任务
+        function keepCurrentTask() {
+            if (!currentTask) return;
+
+            // 检查是否已达保留上限
+            if (keptTasks.length >= 2) {
+                taskCard.classList.add('animate-shake');
+                setTimeout(() => {
+                    taskCard.classList.remove('animate-shake');
+                }, 500);
+                return;
+            }
+
+            // 添加到保留列表
+            keptTasks.push(currentTask);
+            closeTaskModal();
+            renderDrawnCandidates();
+            renderKeptTasks();
+            updateProgressDisplay();
+        }
+
+        // 放弃任务（仅添加到候选列表）
+        function cancelCurrentTask() {
+            if (!currentTask) return;
+            closeTaskModal();
+            renderDrawnCandidates();
+        }
+
+        // 关闭任务弹窗
+        function closeTaskModal() {
+            taskCard.classList.remove('animate-pop-in');
+            taskCard.classList.add('animate-fade-out');
+            
+            setTimeout(() => {
+                taskModal.classList.add('hidden');
+                taskCard.classList.remove('animate-fade-out');
+                currentTask = null;
+            }, 300);
+        }
+
+        // 移除已保留任务
+        function removeKeptTask(taskId) {
+            keptTasks = keptTasks.filter(task => task.id !== taskId);
+            renderKeptTasks();
+            renderDrawnCandidates();
+            updateProgressDisplay();
+        }
+
+        // 重置盲盒
+        function resetBlindBox() {
+            // 重置所有状态
+            remainingDraws = totalDrawChances;
+            drawnCandidates = [];
+            keptTasks = [];
+            usedTaskIds = [];
+            currentTask = null;
+
+            // 更新UI
+            updateProgressDisplay();
+            updateDrawTip();
+            renderDrawnCandidates();
+            renderKeptTasks();
+            checkResetBtnStatus();
+            
+            // 盲盒动画反馈
+            blindBox.classList.add('animate-spin-open');
+            setTimeout(() => {
+                blindBox.classList.remove('animate-spin-open');
+                blindBox.style.opacity = "1";
+                blindBox.style.pointerEvents = "auto";
+            }, 800);
+        }
+
+        // 盲盒点击事件
+        blindBox.addEventListener('click', () => {
+            if (remainingDraws <= 0) return;
+
+            // 盲盒开启动画
+            blindBox.classList.add('animate-spin-open');
+            
+            // 延迟后显示任务弹窗
+            setTimeout(() => {
+                blindBox.classList.remove('animate-spin-open');
+                const selectedTask = drawRandomTask();
+                if (selectedTask) {
+                    drawnCandidates.push(selectedTask);
+                    remainingDraws--;
+                    updateProgressDisplay();
+                    updateDrawTip();
+                    checkResetBtnStatus();
+                    renderTaskModal(selectedTask);
+                }
+            }, 800);
+        });
+
+        // 保留按钮事件
+        keepTaskBtn.addEventListener('click', keepCurrentTask);
+
+        // 放弃按钮事件
+        cancelTaskBtn.addEventListener('click', cancelCurrentTask);
+
+        // 重置按钮事件
+        resetBtn.addEventListener('click', () => {
+            if (confirm('确定要重置所有盲盒吗？已抽和已保留的任务将全部清空～')) {
+                resetBlindBox();
+            }
+        });
+
+        // 点击弹窗外部关闭
+        taskModal.addEventListener('click', (e) => {
+            if (e.target === taskModal) {
+                closeTaskModal();
+            }
+        });
+
+        // 暴露全局函数（用于取消保留）
+        window.removeKeptTask = removeKeptTask;
+
+        // 页面加载完成后初始化
+        window.addEventListener('load', initPage);
+    </script>
+</body>
+</html>
