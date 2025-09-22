@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>舒伯六角色cosplay大乱斗</title>
+  
+  <!-- 引入外部资源 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- 配置Tailwind -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6366f1', // 主色调：靛蓝色，代表专业和创意
+            secondary: '#f97316', // 辅助色：橙色，代表活力
+            dark: '#1e293b',
+            light: '#f8fafc'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <!-- 自定义工具类 -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-flip {
+        transform-style: preserve-3d;
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .card-flip.flipped {
+        transform: rotateY(180deg);
+      }
+      .card-front, .card-back {
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+      .card-back {
+        transform: rotateY(180deg);
+      }
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .hover-lift {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+      .shine-effect {
+        position: relative;
+        overflow: hidden;
+      }
+      .shine-effect::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0.3) 50%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        transform: rotate(30deg);
+        animation: shine 3s infinite;
+      }
+      @keyframes shine {
+        0% {
+          transform: rotate(30deg) translate(-100%, -100%);
+        }
+        100% {
+          transform: rotate(30deg) translate(100%, 100%);
+        }
+      }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen font-sans text-dark transition-opacity duration-500">
+  <!-- 页面头部 -->
+  <header class="py-8 px-4 sm:px-6 lg:px-8 text-center bg-white/80 backdrop-blur-sm shadow-sm">
+    <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-primary mb-2 text-shadow">
+      舒伯六角色
+    </h1>
+    <p class="text-[clamp(1rem,2vw,1.25rem)] text-gray-600 max-w-2xl mx-auto">
+      cosplay大乱斗 - 翻牌挑战，发现你的多重角色
+    </p>
+  </header>
+
+  <!-- 主要内容区 -->
+  <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- 游戏说明 -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-12 max-w-3xl mx-auto text-center transform transition-all duration-300 hover:shadow-lg">
+      <p class="text-gray-700 mb-4">舒伯提出每个人在生涯中扮演六种主要角色。点击卡牌进行翻牌，每次翻牌会随机出现一个角色。</p>
+      <p class="text-gray-700 font-medium">
+        你有 <span id="remaining-picks" class="text-secondary font-bold">3</span> 次翻牌机会
+      </p>
+    </div>
+    
+    <!-- 已选角色展示区 -->
+    <div id="selected-roles" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      <!-- 已选角色将在这里动态显示 -->
+      <div class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-12 text-gray-500">
+        <i class="fa fa-hand-pointer-o text-4xl mb-4 opacity-50 animate-pulse"></i>
+        <p>你的选择将显示在这里</p>
+      </div>
+    </div>
+    
+    <!-- 卡牌翻牌区 -->
+    <div class="mb-16">
+      <h2 class="text-2xl font-bold text-center mb-8 text-gray-800">点击卡牌进行翻牌</h2>
+      
+      <div class="card-container relative w-64 h-80 mx-auto perspective-1000">
+        <!-- 卡牌翻转容器 -->
+        <div id="main-card" class="card-flip absolute w-full h-full cursor-pointer">
+          <!-- 卡牌正面 -->
+          <div class="card-front absolute w-full h-full bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-lg flex flex-col items-center justify-center p-6 shine-effect border-4 border-white/20">
+            <i class="fa fa-question-circle text-6xl text-white mb-4"></i>
+            <h3 class="text-white text-xl font-bold text-center">点击翻牌</h3>
+            <p class="text-white/80 text-sm mt-2 text-center">发现你的角色</p>
+          </div>
+          
+          <!-- 卡牌背面 - 将动态填充内容 -->
+          <div id="card-back" class="card-back absolute w-full h-full bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-100">
+            <!-- 内容将通过JavaScript动态生成 -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- 确认选择按钮 -->
+      <div class="text-center mt-8">
+        <button id="confirm-selection" class="bg-secondary hover:bg-secondary/90 text-white font-bold py-3 px-8 rounded-full shadow-md transition-all duration-300 opacity-50 cursor-not-allowed" disabled>
+          确认选择 <i class="fa fa-check ml-2"></i>
+        </button>
+      </div>
+    </div>
+    
+    <!-- 角色说明区 -->
+    <div class="bg-white rounded-xl shadow-md p-6 transform transition-all duration-300 hover:shadow-lg">
+      <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">舒伯六角色解析</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- 角色说明卡片 -->
+        <div class="bg-gray-50 rounded-lg p-5 hover-lift border border-gray-100">
+          <div class="flex items-center mb-3">
+            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+              <i class="fa fa-child text-blue-600"></i>
+            </div>
+            <h3 class="font-bold text-lg">儿童 (Child)</h3>
+          </div>
+          <p class="text-gray-600 text-sm">代表个人在家庭中作为子女的角色，影响个人价值观和情感发展。</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-5 hover-lift border border-gray-100">
+          <div class="flex items-center mb-3">
+            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
+              <i class="fa fa-graduation-cap text-green-600"></i>
+            </div>
+            <h3 class="font-bold text-lg">学生 (Student)</h3>
+          </div>
+          <p class="text-gray-600 text-sm">指个人在正式教育环境中学习知识和技能的角色。</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-5 hover-lift border border-gray-100">
+          <div class="flex items-center mb-3">
+            <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
+              <i class="fa fa-futbol-o text-yellow-600"></i>
+            </div>
+            <h3 class="font-bold text-lg">休闲者 (Leisurite)</h3>
+          </div>
+          <p class="text-gray-600 text-sm">代表个人在休闲时间从事兴趣爱好和放松活动的角色。</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-5 hover-lift border border-gray-100">
+          <div class="flex items-center mb-3">
+            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mr-3">
+              <i class="fa fa-users text-purple-600"></i>
+            </div>
+            <h3 class="font-bold text-lg">公民 (Citizen)</h3>
+          </div>
+          <p class="text-gray-600 text-sm">指个人在社会中参与社区活动和履行社会责任的角色。</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-5 hover-lift border border-gray-100">
+          <div class="flex items-center mb-3">
+            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3">
+              <i class="fa fa-briefcase text-red-600"></i>
+            </div>
+            <h3 class="font-bold text-lg">工作者 (Worker)</h3>
+          </div>
+          <p class="text-gray-600 text-sm">代表个人在职业领域中从事有偿工作的角色。</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-5 hover-lift border border-gray-100">
+          <div class="flex items-center mb-3">
+            <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mr-3">
+              <i class="fa fa-home text-teal-600"></i>
+            </div>
+            <h3 class="font-bold text-lg">持家者 (Homemaker)</h3>
+          </div>
+          <p class="text-gray-600 text-sm">指个人在家庭中承担照顾家人和管理家务的角色。</p>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <!-- 页脚 -->
+  <footer class="bg-dark text-white/80 py-8 mt-16">
+    <div class="container mx-auto px-4 text-center">
+      <p>基于舒伯生涯发展理论的六角色cosplay大乱斗</p>
+      <p class="text-sm mt-2 text-white/60">© 2023 生涯探索工具</p>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script>
+    // 舒伯六角色数据
+    const roles = [
+      {
+        name: "儿童",
+        englishName: "Child",
+        description: "代表个人在家庭中作为子女的角色，影响个人价值观和情感发展。",
+        icon: "fa-child",
+        color: "from-blue-500 to-blue-600",
+        textColor: "text-blue-600",
+        image: "https://picsum.photos/id/237/300/200"
+      },
+      {
+        name: "学生",
+        englishName: "Student",
+        description: "指个人在正式教育环境中学习知识和技能的角色。",
+        icon: "fa-graduation-cap",
+        color: "from-green-500 to-green-600",
+        textColor: "text-green-600",
+        image: "https://picsum.photos/id/20/300/200"
+      },
+      {
+        name: "休闲者",
+        englishName: "Leisurite",
+        description: "代表个人在休闲时间从事兴趣爱好和放松活动的角色。",
+        icon: "fa-futbol-o",
+        color: "from-yellow-500 to-yellow-600",
+        textColor: "text-yellow-600",
+        image: "https://picsum.photos/id/110/300/200"
+      },
+      {
+        name: "公民",
+        englishName: "Citizen",
+        description: "指个人在社会中参与社区活动和履行社会责任的角色。",
+        icon: "fa-users",
+        color: "from-purple-500 to-purple-600",
+        textColor: "text-purple-600",
+        image: "https://picsum.photos/id/177/300/200"
+      },
+      {
+        name: "工作者",
+        englishName: "Worker",
+        description: "代表个人在职业领域中从事有偿工作的角色。",
+        icon: "fa-briefcase",
+        color: "from-red-500 to-red-600",
+        textColor: "text-red-600",
+        image: "https://picsum.photos/id/42/300/200"
+      },
+      {
+        name: "持家者",
+        englishName: "Homemaker",
+        description: "指个人在家庭中承担照顾家人和管理家务的角色。",
+        icon: "fa-home",
+        color: "from-teal-500 to-teal-600",
+        textColor: "text-teal-600",
+        image: "https://picsum.photos/id/62/300/200"
+      }
+    ];
+    
+    // 已选择的角色
+    let selectedRoles = [];
+    let remainingPicks = 3;
+    let currentRole = null;
+    
+    // DOM元素
+    const mainCard = document.getElementById('main-card');
+    const cardBack = document.getElementById('card-back');
+    const confirmButton = document.getElementById('confirm-selection');
+    const remainingPicksElement = document.getElementById('remaining-picks');
+    const selectedRolesContainer = document.getElementById('selected-roles');
+    
+    // 随机选择一个角色
+    function getRandomRole() {
+      const randomIndex = Math.floor(Math.random() * roles.length);
+      return roles[randomIndex];
+    }
+    
+    // 翻转卡牌并显示随机角色
+    function flipCard() {
+      // 添加翻转动画音效（如果需要）
+      // playFlipSound();
+      
+      // 如果已经翻过来了，先翻回去
+      if (mainCard.classList.contains('flipped')) {
+        mainCard.classList.remove('flipped');
+        
+        // 延迟后显示新角色
+        setTimeout(() => {
+          currentRole = getRandomRole();
+          updateCardBack(currentRole);
+          mainCard.classList.add('flipped');
+          enableConfirmButton();
+        }, 600);
+      } else {
+        currentRole = getRandomRole();
+        updateCardBack(currentRole);
+        mainCard.classList.add('flipped');
+        enableConfirmButton();
+      }
+    }
+    
+    // 更新卡牌背面内容
+    function updateCardBack(role) {
+      cardBack.innerHTML = `
+        <div class="h-full flex flex-col">
+          <div class="bg-gradient-to-r ${role.color} p-4 text-white">
+            <h3 class="text-2xl font-bold">${role.name}</h3>
+            <p class="text-white/80 text-sm">${role.englishName}</p>
+          </div>
+          <div class="relative h-36 overflow-hidden">
+            <img src="${role.image}" alt="${role.name}角色图片" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
+          </div>
+          <div class="flex-grow p-5 flex flex-col items-center justify-center">
+            <i class="fa ${role.icon} text-5xl ${role.textColor} mb-3"></i>
+            <p class="text-gray-600 text-center text-sm">${role.description}</p>
+          </div>
+        </div>
+      `;
+    }
+    
+    // 启用确认按钮
+    function enableConfirmButton() {
+      confirmButton.disabled = false;
+      confirmButton.classList.remove('opacity-50', 'cursor-not-allowed');
+      confirmButton.classList.add('hover:scale-105');
+    }
+    
+    // 禁用确认按钮
+    function disableConfirmButton() {
+      confirmButton.disabled = true;
+      confirmButton.classList.add('opacity-50', 'cursor-not-allowed');
+      confirmButton.classList.remove('hover:scale-105');
+    }
+    
+    // 确认选择角色
+    function confirmSelection() {
+      if (currentRole && remainingPicks > 0) {
+        // 添加到已选角色
+        selectedRoles.push(currentRole);
+        remainingPicks--;
+        
+        // 更新剩余次数显示
+        remainingPicksElement.textContent = remainingPicks;
+        
+        // 更新已选角色展示区
+        updateSelectedRoles();
+        
+        // 添加选择成功的动画效果
+        const selectedCard = document.createElement('div');
+        selectedCard.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-full p-4 shadow-lg z-50 opacity-0 transition-opacity duration-500';
+        selectedCard.innerHTML = `<i class="fa fa-check text-green-500 text-3xl"></i>`;
+        document.body.appendChild(selectedCard);
+        
+        setTimeout(() => {
+          selectedCard.classList.add('opacity-100');
+        }, 100);
+        
+        setTimeout(() => {
+          selectedCard.classList.remove('opacity-100');
+          setTimeout(() => {
+            document.body.removeChild(selectedCard);
+          }, 500);
+        }, 1000);
+        
+        // 翻回卡牌正面
+        mainCard.classList.remove('flipped');
+        disableConfirmButton();
+        
+        // 如果没有剩余次数，隐藏翻牌区并显示完成消息
+        if (remainingPicks === 0) {
+          const cardContainer = document.querySelector('.card-container');
+          cardContainer.classList.add('animate-fade-out');
+          
+          setTimeout(() => {
+            cardContainer.classList.add('hidden');
+            confirmButton.classList.add('hidden');
+            
+            // 显示完成消息
+            const completionMessage = document.createElement('div');
+            completionMessage.className = 'text-center py-8 transform transition-all duration-500 opacity-0 scale-95';
+            completionMessage.innerHTML = `
+              <h3 class="text-2xl font-bold text-primary mb-4">选择完成！</h3>
+              <p class="text-gray-600 mb-6">你已经选择了3个舒伯角色</p>
+              <button id="reset-game" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow-md transition-all duration-300">
+                重新开始 <i class="fa fa-refresh ml-2"></i>
+              </button>
+            `;
+            document.querySelector('.mb-16').appendChild(completionMessage);
+            
+            // 触发动画
+            setTimeout(() => {
+              completionMessage.classList.remove('opacity-0', 'scale-95');
+              completionMessage.classList.add('opacity-100', 'scale-100');
+            }, 10);
+            
+            // 重新开始游戏事件
+            document.getElementById('reset-game').addEventListener('click', resetGame);
+          }, 600);
+        }
+      }
+    }
+    
+    // 更新已选角色展示区
+    function updateSelectedRoles() {
+      // 清空容器
+      selectedRolesContainer.innerHTML = '';
+      
+      // 如果有已选角色，添加到容器
+      if (selectedRoles.length > 0) {
+        selectedRoles.forEach((role, index) => {
+          const roleCard = document.createElement('div');
+          roleCard.className = 'bg-white rounded-xl shadow-md overflow-hidden hover-lift transform transition-all duration-500 opacity-0 translate-y-4';
+          roleCard.style.animationDelay = `${index * 100}ms`;
+          
+          roleCard.innerHTML = `
+            <div class="bg-gradient-to-r ${role.color} p-3 text-white">
+              <div class="flex justify-between items-center">
+                <h3 class="font-bold">${role.name}</h3>
+                <span class="text-sm bg-white/20 px-2 py-1 rounded-full">选择 ${index + 1}</span>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-center mb-2">
+                <i class="fa ${role.icon} ${role.textColor} mr-2"></i>
+                <span class="text-sm text-gray-500">${role.englishName}</span>
+              </div>
+              <p class="text-gray-600 text-sm">${role.description}</p>
+            </div>
+          `;
+          
+          selectedRolesContainer.appendChild(roleCard);
+          
+          // 触发入场动画
+          setTimeout(() => {
+            roleCard.classList.remove('opacity-0', 'translate-y-4');
+          }, 50);
+        });
+      }
+    }
+    
+    // 重置游戏
+    function resetGame() {
+      selectedRoles = [];
+      remainingPicks = 3;
+      currentRole = null;
+      
+      // 更新剩余次数显示
+      remainingPicksElement.textContent = remainingPicks;
+      
+      // 清空已选角色展示区
+      updateSelectedRoles();
+      
+      // 显示卡牌和按钮
+      document.querySelector('.card-container').classList.remove('hidden');
+      confirmButton.classList.remove('hidden');
+      disableConfirmButton();
+      
+      // 移除完成消息
+      document.querySelector('#reset-game').parentElement.remove();
+    }
+    
+    // 事件监听
+    mainCard.addEventListener('click', flipCard);
+    confirmButton.addEventListener('click', confirmSelection);
+    
+    // 页面载入动画
+    window.addEventListener('load', () => {
+      document.body.classList.add('opacity-100');
+      document.body.classList.remove('opacity-0');
+    });
+  </script>
+</body>
+</html>
