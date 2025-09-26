@@ -215,8 +215,7 @@
     <!-- 页脚 -->
     <footer class="bg-white py-4 mt-8">
         <div class="container mx-auto px-4 text-center text-sm text-gray-500">
-            <p>SWOT分析工具 | 帮助学生更好地认识自我</p>
-            <p>Copyright © 2025 by 电商杜老师</p>
+            <p>SWOT分析工具 &copy; 2023 | 帮助学生更好地认识自我</p>
         </div>
     </footer>
 
@@ -373,16 +372,25 @@
                     clonedItem.draggable = false;
                     clonedItem.removeAttribute('id');
                     
-                    // 添加到目标区域
-                    this.querySelector('div').appendChild(clonedItem);
+                    // 【修复核心】根据类型获取正确的目标容器
+                    const targetContainerId = `${dropType}-zone`;
+                    const targetContainer = document.getElementById(targetContainerId);
                     
-                    // 为克隆的项目添加删除按钮事件
-                    clonedItem.querySelector('.delete-item').addEventListener('click', () => {
-                        clonedItem.remove();
-                        checkGenerateButton();
-                    });
-                    
-                    showToast('已添加到分析框', 'success');
+                    if (targetContainer) {
+                        // 添加到目标区域
+                        targetContainer.appendChild(clonedItem);
+                        
+                        // 为克隆的项目添加删除按钮事件
+                        clonedItem.querySelector('.delete-item').addEventListener('click', () => {
+                            clonedItem.remove();
+                            checkGenerateButton();
+                        });
+                        
+                        showToast('已添加到分析框', 'success');
+                    } else {
+                        showToast('目标容器不存在', 'error');
+                        console.error(`目标容器 ${targetContainerId} 不存在`);
+                    }
                 } else {
                     showToast('请将项目拖放到对应类型的分析框中', 'warning');
                 }
@@ -391,10 +399,10 @@
             checkGenerateButton();
         }
 
-        // 检查是否可以生成海报 - 修复版
+        // 检查是否可以生成海报
         function checkGenerateButton() {
             try {
-                // 获取各区域的项目数量
+                // 获取各区域的项目数量（修复：直接使用ID获取容器）
                 const strengthCount = document.getElementById('strength-zone').childElementCount;
                 const weaknessCount = document.getElementById('weakness-zone').childElementCount;
                 const opportunityCount = document.getElementById('opportunity-zone').childElementCount;
@@ -427,7 +435,7 @@
             }
         }
 
-        // 生成SWOT分析海报 - 修复版
+        // 生成SWOT分析海报
         function generatePoster() {
             try {
                 const nickname = nicknameInput.value.trim() || '匿名用户';
@@ -441,15 +449,6 @@
                     .map(el => el.querySelector('span').textContent);
                 const threatItems = Array.from(document.getElementById('threat-zone').children)
                     .map(el => el.querySelector('span').textContent);
-                
-                // 调试信息
-                console.log("生成海报数据:", {
-                    nickname,
-                    strengthItems,
-                    weaknessItems,
-                    opportunityItems,
-                    threatItems
-                });
                 
                 // 生成海报HTML
                 poster.innerHTML = `
@@ -522,7 +521,7 @@
             }
         }
 
-        // 保存到云端 - 修复版
+        // 保存到云端
         function saveToCloud() {
             try {
                 const nickname = nicknameInput.value.trim() || '匿名用户';
@@ -563,7 +562,7 @@
             }
         }
 
-        // 保存到设备 - 修复版
+        // 保存到设备
         function saveToDevice() {
             try {
                 showToast('正在准备图片...', 'info');
