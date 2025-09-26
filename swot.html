@@ -215,16 +215,17 @@
     <!-- 页脚 -->
     <footer class="bg-white py-4 mt-8">
         <div class="container mx-auto px-4 text-center text-sm text-gray-500">
-            <p>SWOT分析工具 &copy; 2023 | 帮助学生更好地认识自我</p>
+            <p>SWOT分析工具 | 帮助学生更好地认识自我</p>
+            <p>Copyright © 2025 by 电商杜老师</p>
         </div>
     </footer>
 
     <script>
-        // 初始化LeanCloud
+        // 初始化LeanCloud - 使用提供的配置信息
         AV.init({
-                    appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
-                    appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
-                    serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com"
+            appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
+            appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
+            serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com"
         });
 
         // 全局变量
@@ -390,139 +391,206 @@
             checkGenerateButton();
         }
 
-        // 检查是否可以生成海报
+        // 检查是否可以生成海报 - 修复版
         function checkGenerateButton() {
-            const strengthCount = document.getElementById('strength-zone').children.length;
-            const weaknessCount = document.getElementById('weakness-zone').children.length;
-            const opportunityCount = document.getElementById('opportunity-zone').children.length;
-            const threatCount = document.getElementById('threat-zone').children.length;
-            
-            // 只有四个区域都至少有一个项目时才能生成海报
-            generatePosterBtn.disabled = !(strengthCount > 0 && weaknessCount > 0 && 
-                                          opportunityCount > 0 && threatCount > 0);
+            try {
+                // 获取各区域的项目数量
+                const strengthCount = document.getElementById('strength-zone').childElementCount;
+                const weaknessCount = document.getElementById('weakness-zone').childElementCount;
+                const opportunityCount = document.getElementById('opportunity-zone').childElementCount;
+                const threatCount = document.getElementById('threat-zone').childElementCount;
+                
+                // 调试信息
+                console.log(`SWOT项目数量: 优势=${strengthCount}, 劣势=${weaknessCount}, 机会=${opportunityCount}, 威胁=${threatCount}`);
+                
+                // 四个区域都至少有一个项目时启用按钮
+                const canGenerate = strengthCount > 0 && weaknessCount > 0 && 
+                                   opportunityCount > 0 && threatCount > 0;
+                                   
+                generatePosterBtn.disabled = !canGenerate;
+                
+                // 提示用户还需要完成哪些区域
+                if (!canGenerate) {
+                    let missing = [];
+                    if (strengthCount === 0) missing.push("优势");
+                    if (weaknessCount === 0) missing.push("劣势");
+                    if (opportunityCount === 0) missing.push("机会");
+                    if (threatCount === 0) missing.push("威胁");
+                    
+                    if (missing.length > 0) {
+                        showToast(`请至少在以下区域添加一项内容: ${missing.join('、')}`, 'info');
+                    }
+                }
+            } catch (error) {
+                console.error("检查生成海报按钮状态时出错:", error);
+                generatePosterBtn.disabled = false; // 出错时强制启用按钮
+            }
         }
 
-        // 生成SWOT分析海报
+        // 生成SWOT分析海报 - 修复版
         function generatePoster() {
-            const nickname = nicknameInput.value.trim() || '匿名用户';
-            
-            // 收集各区域的内容
-            const strengthItems = Array.from(document.getElementById('strength-zone').children).map(el => el.querySelector('span').textContent);
-            const weaknessItems = Array.from(document.getElementById('weakness-zone').children).map(el => el.querySelector('span').textContent);
-            const opportunityItems = Array.from(document.getElementById('opportunity-zone').children).map(el => el.querySelector('span').textContent);
-            const threatItems = Array.from(document.getElementById('threat-zone').children).map(el => el.querySelector('span').textContent);
-            
-            // 生成海报HTML
-            poster.innerHTML = `
-                <div class="bg-primary text-white p-4 text-center">
-                    <h2 class="text-xl font-bold">SWOT分析报告</h2>
-                    <p class="mt-1">${nickname} 的个人分析</p>
-                    <p class="text-sm opacity-80 mt-1">${new Date().toLocaleDateString()}</p>
-                </div>
+            try {
+                const nickname = nicknameInput.value.trim() || '匿名用户';
                 
-                <div class="p-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- 优势 -->
-                        <div class="${colorMap.strength.bg} rounded-lg p-3">
-                            <div class="flex items-center mb-2">
-                                <i class="fa fa-check-circle ${colorMap.strength.text} mr-2"></i>
-                                <h3 class="font-semibold ${colorMap.strength.text}">优势</h3>
+                // 收集各区域的内容
+                const strengthItems = Array.from(document.getElementById('strength-zone').children)
+                    .map(el => el.querySelector('span').textContent);
+                const weaknessItems = Array.from(document.getElementById('weakness-zone').children)
+                    .map(el => el.querySelector('span').textContent);
+                const opportunityItems = Array.from(document.getElementById('opportunity-zone').children)
+                    .map(el => el.querySelector('span').textContent);
+                const threatItems = Array.from(document.getElementById('threat-zone').children)
+                    .map(el => el.querySelector('span').textContent);
+                
+                // 调试信息
+                console.log("生成海报数据:", {
+                    nickname,
+                    strengthItems,
+                    weaknessItems,
+                    opportunityItems,
+                    threatItems
+                });
+                
+                // 生成海报HTML
+                poster.innerHTML = `
+                    <div class="bg-primary text-white p-4 text-center">
+                        <h2 class="text-xl font-bold">SWOT分析报告</h2>
+                        <p class="mt-1">${nickname} 的个人分析</p>
+                        <p class="text-sm opacity-80 mt-1">${new Date().toLocaleDateString()}</p>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- 优势 -->
+                            <div class="${colorMap.strength.bg} rounded-lg p-3">
+                                <div class="flex items-center mb-2">
+                                    <i class="fa fa-check-circle ${colorMap.strength.text} mr-2"></i>
+                                    <h3 class="font-semibold ${colorMap.strength.text}">优势</h3>
+                                </div>
+                                <ul class="text-sm space-y-1">
+                                    ${strengthItems.map(item => `<li>• ${item}</li>`).join('')}
+                                </ul>
                             </div>
-                            <ul class="text-sm space-y-1">
-                                ${strengthItems.map(item => `<li>• ${item}</li>`).join('')}
-                            </ul>
-                        </div>
-                        
-                        <!-- 劣势 -->
-                        <div class="${colorMap.weakness.bg} rounded-lg p-3">
-                            <div class="flex items-center mb-2">
-                                <i class="fa fa-times-circle ${colorMap.weakness.text} mr-2"></i>
-                                <h3 class="font-semibold ${colorMap.weakness.text}">劣势</h3>
+                            
+                            <!-- 劣势 -->
+                            <div class="${colorMap.weakness.bg} rounded-lg p-3">
+                                <div class="flex items-center mb-2">
+                                    <i class="fa fa-times-circle ${colorMap.weakness.text} mr-2"></i>
+                                    <h3 class="font-semibold ${colorMap.weakness.text}">劣势</h3>
+                                </div>
+                                <ul class="text-sm space-y-1">
+                                    ${weaknessItems.map(item => `<li>• ${item}</li>`).join('')}
+                                </ul>
                             </div>
-                            <ul class="text-sm space-y-1">
-                                ${weaknessItems.map(item => `<li>• ${item}</li>`).join('')}
-                            </ul>
-                        </div>
-                        
-                        <!-- 机会 -->
-                        <div class="${colorMap.opportunity.bg} rounded-lg p-3">
-                            <div class="flex items-center mb-2">
-                                <i class="fa fa-lightbulb-o ${colorMap.opportunity.text} mr-2"></i>
-                                <h3 class="font-semibold ${colorMap.opportunity.text}">机会</h3>
+                            
+                            <!-- 机会 -->
+                            <div class="${colorMap.opportunity.bg} rounded-lg p-3">
+                                <div class="flex items-center mb-2">
+                                    <i class="fa fa-lightbulb-o ${colorMap.opportunity.text} mr-2"></i>
+                                    <h3 class="font-semibold ${colorMap.opportunity.text}">机会</h3>
+                                </div>
+                                <ul class="text-sm space-y-1">
+                                    ${opportunityItems.map(item => `<li>• ${item}</li>`).join('')}
+                                </ul>
                             </div>
-                            <ul class="text-sm space-y-1">
-                                ${opportunityItems.map(item => `<li>• ${item}</li>`).join('')}
-                            </ul>
-                        </div>
-                        
-                        <!-- 威胁 -->
-                        <div class="${colorMap.threat.bg} rounded-lg p-3">
-                            <div class="flex items-center mb-2">
-                                <i class="fa fa-exclamation-triangle ${colorMap.threat.text} mr-2"></i>
-                                <h3 class="font-semibold ${colorMap.threat.text}">威胁</h3>
+                            
+                            <!-- 威胁 -->
+                            <div class="${colorMap.threat.bg} rounded-lg p-3">
+                                <div class="flex items-center mb-2">
+                                    <i class="fa fa-exclamation-triangle ${colorMap.threat.text} mr-2"></i>
+                                    <h3 class="font-semibold ${colorMap.threat.text}">威胁</h3>
+                                </div>
+                                <ul class="text-sm space-y-1">
+                                    ${threatItems.map(item => `<li>• ${item}</li>`).join('')}
+                                </ul>
                             </div>
-                            <ul class="text-sm space-y-1">
-                                ${threatItems.map(item => `<li>• ${item}</li>`).join('')}
-                            </ul>
                         </div>
                     </div>
-                </div>
+                    
+                    <div class="bg-gray-100 p-3 text-center text-sm text-gray-600">
+                        生成于学生SWOT分析工具
+                    </div>
+                `;
                 
-                <div class="bg-gray-100 p-3 text-center text-sm text-gray-600">
-                    生成于学生SWOT分析工具
-                </div>
-            `;
-            
-            // 显示海报
-            posterContainer.classList.remove('hidden');
-            scrollToPoster();
+                // 显示海报
+                posterContainer.classList.remove('hidden');
+                scrollToPoster();
+                showToast('海报生成成功', 'success');
+            } catch (error) {
+                console.error("生成海报时出错:", error);
+                showToast('生成海报失败，请重试', 'error');
+            }
         }
 
-        // 保存到云端
+        // 保存到云端 - 修复版
         function saveToCloud() {
-            const nickname = nicknameInput.value.trim() || '匿名用户';
-            
-            // 收集各区域的内容
-            const strengthItems = Array.from(document.getElementById('strength-zone').children).map(el => el.querySelector('span').textContent);
-            const weaknessItems = Array.from(document.getElementById('weakness-zone').children).map(el => el.querySelector('span').textContent);
-            const opportunityItems = Array.from(document.getElementById('opportunity-zone').children).map(el => el.querySelector('span').textContent);
-            const threatItems = Array.from(document.getElementById('threat-zone').children).map(el => el.querySelector('span').textContent);
-            
-            // 创建SWOT分析对象
-            const SWOTAnalysis = AV.Object.extend('SWOTAnalysis');
-            const analysis = new SWOTAnalysis();
-            
-            // 设置数据
-            analysis.set('nickname', nickname);
-            analysis.set('strengths', strengthItems);
-            analysis.set('weaknesses', weaknessItems);
-            analysis.set('opportunities', opportunityItems);
-            analysis.set('threats', threatItems);
-            analysis.set('createdAt', new Date());
-            
-            // 保存到云端
-            analysis.save().then(() => {
-                showToast('成功保存到云端', 'success');
-            }).catch(error => {
-                console.error('保存失败:', error);
-                showToast('保存失败，请稍后再试', 'error');
-            });
+            try {
+                const nickname = nicknameInput.value.trim() || '匿名用户';
+                
+                // 收集各区域的内容
+                const strengthItems = Array.from(document.getElementById('strength-zone').children)
+                    .map(el => el.querySelector('span').textContent);
+                const weaknessItems = Array.from(document.getElementById('weakness-zone').children)
+                    .map(el => el.querySelector('span').textContent);
+                const opportunityItems = Array.from(document.getElementById('opportunity-zone').children)
+                    .map(el => el.querySelector('span').textContent);
+                const threatItems = Array.from(document.getElementById('threat-zone').children)
+                    .map(el => el.querySelector('span').textContent);
+                
+                // 创建SWOT分析对象
+                const SWOTAnalysis = AV.Object.extend('SWOTAnalysis');
+                const analysis = new SWOTAnalysis();
+                
+                // 设置数据
+                analysis.set('nickname', nickname);
+                analysis.set('strengths', strengthItems);
+                analysis.set('weaknesses', weaknessItems);
+                analysis.set('opportunities', opportunityItems);
+                analysis.set('threats', threatItems);
+                analysis.set('createdAt', new Date());
+                
+                // 保存到云端
+                showToast('正在保存到云端...', 'info');
+                analysis.save().then(() => {
+                    showToast('成功保存到云端', 'success');
+                }).catch(error => {
+                    console.error('保存失败:', error);
+                    showToast(`保存失败: ${error.message}`, 'error');
+                });
+            } catch (error) {
+                console.error("保存到云端时出错:", error);
+                showToast('保存失败，请重试', 'error');
+            }
         }
 
-        // 保存到设备
+        // 保存到设备 - 修复版
         function saveToDevice() {
-            html2canvas(document.getElementById('poster')).then(canvas => {
-                // 创建下载链接
-                const link = document.createElement('a');
-                link.download = `SWOT分析_${nicknameInput.value.trim() || '匿名用户'}_${new Date().toLocaleDateString()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                
-                showToast('已保存到设备', 'success');
-            }).catch(error => {
-                console.error('保存图片失败:', error);
-                showToast('保存失败，请稍后再试', 'error');
-            });
+            try {
+                showToast('正在准备图片...', 'info');
+                html2canvas(document.getElementById('poster'), {
+                    useCORS: true,
+                    logging: false
+                }).then(canvas => {
+                    // 创建下载链接
+                    const link = document.createElement('a');
+                    const filename = `SWOT分析_${nicknameInput.value.trim() || '匿名用户'}_${new Date().toLocaleDateString()}.png`;
+                    link.download = filename;
+                    link.href = canvas.toDataURL('image/png');
+                    
+                    // 触发下载
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    showToast('已保存到设备', 'success');
+                }).catch(error => {
+                    console.error('保存图片失败:', error);
+                    showToast(`保存失败: ${error.message}`, 'error');
+                });
+            } catch (error) {
+                console.error("保存到设备时出错:", error);
+                showToast('保存失败，请重试', 'error');
+            }
         }
 
         // 显示提示消息
