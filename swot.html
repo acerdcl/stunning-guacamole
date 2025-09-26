@@ -2,7 +2,10 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="format-detection" content="telephone=no">
     <title>学生SWOT分析工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -34,12 +37,15 @@
             .drag-item {
                 cursor: grab;
                 transition: all 0.3s ease;
+                touch-action: manipulation;
             }
             .drag-item:active {
                 cursor: grabbing;
+                transform: scale(0.98);
             }
             .drop-zone {
                 transition: all 0.3s ease;
+                min-height: 120px;
             }
             .drop-zone.highlight {
                 transform: scale(1.02);
@@ -48,93 +54,103 @@
             .poster-shadow {
                 box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             }
+            .touch-friendly {
+                touch-action: manipulation;
+            }
+            .wechat-tip {
+                background-color: rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(5px);
+            }
         }
     </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-50 font-sans touch-friendly">
     <!-- 顶部导航 -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4">
-            <h1 class="text-xl md:text-2xl font-bold text-primary text-center">
+        <div class="container mx-auto px-4 py-3">
+            <h1 class="text-lg md:text-xl font-bold text-primary text-center">
                 <i class="fa fa-balance-scale mr-2"></i>学生SWOT分析工具
             </h1>
         </div>
     </header>
 
     <!-- 主内容区 -->
-    <main class="container mx-auto px-4 py-6">
+    <main class="container mx-auto px-4 py-4">
         <!-- 输入区域 -->
-        <section class="mb-8">
-            <div class="bg-white rounded-xl p-5 shadow-md mb-6">
+        <section class="mb-6">
+            <div class="bg-white rounded-xl p-4 shadow-md mb-4">
                 <label for="nickname" class="block text-gray-700 font-medium mb-2">你的昵称</label>
                 <input type="text" id="nickname" placeholder="请输入你的昵称" 
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all text-base">
             </div>
 
-            <div class="bg-white rounded-xl p-5 shadow-md">
-                <h2 class="text-lg font-semibold mb-4 text-center">请输入你的SWOT要素</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white rounded-xl p-4 shadow-md">
+                <h2 class="text-base font-semibold mb-3 text-center">请输入你的SWOT要素</h2>
+                <div class="grid grid-cols-1 gap-3">
                     <div>
-                        <label for="strength" class="block text-strength font-medium mb-2">优势 (Strengths)</label>
+                        <label for="strength" class="block text-strength font-medium mb-1 text-sm">优势 (Strengths)</label>
                         <div class="flex">
                             <input type="text" id="strength" placeholder="例如：学习能力强" 
-                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-strength focus:border-strength transition-all">
-                            <button id="add-strength" class="bg-strength text-white px-4 py-2 rounded-r-lg hover:bg-strength/90 transition-colors">
+                                   class="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-strength focus:border-strength transition-all text-base">
+                            <button id="add-strength" class="bg-strength text-white px-4 py-3 rounded-r-lg hover:bg-strength/90 transition-colors">
                                 <i class="fa fa-plus"></i>
                             </button>
                         </div>
                     </div>
                     
                     <div>
-                        <label for="weakness" class="block text-weakness font-medium mb-2">劣势 (Weaknesses)</label>
+                        <label for="weakness" class="block text-weakness font-medium mb-1 text-sm">劣势 (Weaknesses)</label>
                         <div class="flex">
                             <input type="text" id="weakness" placeholder="例如：容易拖延" 
-                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-weakness focus:border-weakness transition-all">
-                            <button id="add-weakness" class="bg-weakness text-white px-4 py-2 rounded-r-lg hover:bg-weakness/90 transition-colors">
+                                   class="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-weakness focus:border-weakness transition-all text-base">
+                            <button id="add-weakness" class="bg-weakness text-white px-4 py-3 rounded-r-lg hover:bg-weakness/90 transition-colors">
                                 <i class="fa fa-plus"></i>
                             </button>
                         </div>
                     </div>
                     
                     <div>
-                        <label for="opportunity" class="block text-opportunity font-medium mb-2">机会 (Opportunities)</label>
+                        <label for="opportunity" class="block text-opportunity font-medium mb-1 text-sm">机会 (Opportunities)</label>
                         <div class="flex">
                             <input type="text" id="opportunity" placeholder="例如：参加竞赛" 
-                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-opportunity focus:border-opportunity transition-all">
-                            <button id="add-opportunity" class="bg-opportunity text-white px-4 py-2 rounded-r-lg hover:bg-opportunity/90 transition-colors">
+                                   class="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-opportunity focus:border-opportunity transition-all text-base">
+                            <button id="add-opportunity" class="bg-opportunity text-white px-4 py-3 rounded-r-lg hover:bg-opportunity/90 transition-colors">
                                 <i class="fa fa-plus"></i>
                             </button>
                         </div>
                     </div>
                     
                     <div>
-                        <label for="threat" class="block text-threat font-medium mb-2">威胁 (Threats)</label>
+                        <label for="threat" class="block text-threat font-medium mb-1 text-sm">威胁 (Threats)</label>
                         <div class="flex">
                             <input type="text" id="threat" placeholder="例如：时间管理差" 
-                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-threat focus:border-threat transition-all">
-                            <button id="add-threat" class="bg-threat text-white px-4 py-2 rounded-r-lg hover:bg-threat/90 transition-colors">
+                                   class="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-threat focus:border-threat transition-all text-base">
+                            <button id="add-threat" class="bg-threat text-white px-4 py-3 rounded-r-lg hover:bg-threat/90 transition-colors">
                                 <i class="fa fa-plus"></i>
                             </button>
                         </div>
                     </div>
                 </div>
                 
-                <div id="items-container" class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <!-- 动态生成的可拖拽项将在这里显示 -->
+                <div class="mt-4">
+                    <p class="text-xs text-gray-500 mb-2">点击下方条目可添加到对应分析框</p>
+                    <div id="items-container" class="grid grid-cols-2 gap-2">
+                        <!-- 动态生成的可拖拽项将在这里显示 -->
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- 拖拽区域 -->
-        <section class="mb-8">
-            <h2 class="text-lg font-semibold mb-4 text-center">请将项目拖放到对应的SWOT分析框中</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 aspect-square md:aspect-auto">
+        <section class="mb-6">
+            <h2 class="text-base font-semibold mb-3 text-center">请将项目添加到对应的SWOT分析框中</h2>
+            <div class="grid grid-cols-1 gap-3">
                 <!-- 优势 -->
-                <div class="drop-zone bg-strength/5 border-2 border-strength/30 rounded-xl p-4 flex flex-col" 
+                <div class="drop-zone bg-strength/5 border-2 border-strength/30 rounded-xl p-3 flex flex-col" 
                      data-type="strength">
                     <div class="flex items-center mb-2">
                         <i class="fa fa-check-circle text-strength mr-2"></i>
-                        <h3 class="font-semibold text-strength">优势 (Strengths)</h3>
+                        <h3 class="font-semibold text-strength">优势</h3>
                     </div>
                     <div class="flex-1 min-h-[100px] bg-white/50 rounded-lg p-2" id="strength-zone">
                         <!-- 拖放的项目将在这里显示 -->
@@ -142,11 +158,11 @@
                 </div>
                 
                 <!-- 劣势 -->
-                <div class="drop-zone bg-weakness/5 border-2 border-weakness/30 rounded-xl p-4 flex flex-col" 
+                <div class="drop-zone bg-weakness/5 border-2 border-weakness/30 rounded-xl p-3 flex flex-col" 
                      data-type="weakness">
                     <div class="flex items-center mb-2">
                         <i class="fa fa-times-circle text-weakness mr-2"></i>
-                        <h3 class="font-semibold text-weakness">劣势 (Weaknesses)</h3>
+                        <h3 class="font-semibold text-weakness">劣势</h3>
                     </div>
                     <div class="flex-1 min-h-[100px] bg-white/50 rounded-lg p-2" id="weakness-zone">
                         <!-- 拖放的项目将在这里显示 -->
@@ -154,11 +170,11 @@
                 </div>
                 
                 <!-- 机会 -->
-                <div class="drop-zone bg-opportunity/5 border-2 border-opportunity/30 rounded-xl p-4 flex flex-col" 
+                <div class="drop-zone bg-opportunity/5 border-2 border-opportunity/30 rounded-xl p-3 flex flex-col" 
                      data-type="opportunity">
                     <div class="flex items-center mb-2">
                         <i class="fa fa-lightbulb-o text-opportunity mr-2"></i>
-                        <h3 class="font-semibold text-opportunity">机会 (Opportunities)</h3>
+                        <h3 class="font-semibold text-opportunity">机会</h3>
                     </div>
                     <div class="flex-1 min-h-[100px] bg-white/50 rounded-lg p-2" id="opportunity-zone">
                         <!-- 拖放的项目将在这里显示 -->
@@ -166,11 +182,11 @@
                 </div>
                 
                 <!-- 威胁 -->
-                <div class="drop-zone bg-threat/5 border-2 border-threat/30 rounded-xl p-4 flex flex-col" 
+                <div class="drop-zone bg-threat/5 border-2 border-threat/30 rounded-xl p-3 flex flex-col" 
                      data-type="threat">
                     <div class="flex items-center mb-2">
                         <i class="fa fa-exclamation-triangle text-threat mr-2"></i>
-                        <h3 class="font-semibold text-threat">威胁 (Threats)</h3>
+                        <h3 class="font-semibold text-threat">威胁</h3>
                     </div>
                     <div class="flex-1 min-h-[100px] bg-white/50 rounded-lg p-2" id="threat-zone">
                         <!-- 拖放的项目将在这里显示 -->
@@ -180,25 +196,34 @@
         </section>
 
         <!-- 生成海报和操作区 -->
-        <section class="mb-8">
-            <div class="text-center mb-6">
-                <button id="generate-poster" class="bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+        <section class="mb-6">
+            <div class="text-center mb-4">
+                <button id="generate-poster" class="bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto" disabled>
                     <i class="fa fa-magic mr-2"></i>生成SWOT分析海报
                 </button>
             </div>
             
             <!-- 海报预览区 -->
             <div id="poster-container" class="hidden">
-                <h2 class="text-lg font-semibold mb-4 text-center">你的SWOT分析海报</h2>
-                <div class="max-w-md mx-auto bg-white rounded-xl overflow-hidden poster-shadow mb-6" id="poster">
-                    <!-- 海报内容将在这里动态生成 -->
+                <h2 class="text-base font-semibold mb-3 text-center">你的SWOT分析海报</h2>
+                <div class="relative mx-auto bg-white rounded-xl overflow-hidden poster-shadow mb-4" id="poster-wrapper">
+                    <div id="poster" class="w-full">
+                        <!-- 海报内容将在这里动态生成 -->
+                    </div>
+                    
+                    <!-- 微信保存提示（仅在微信中显示） -->
+                    <div id="wechat-save-tip" class="wechat-tip hidden absolute inset-0 flex flex-col items-center justify-center text-white p-6 text-center">
+                        <i class="fa fa-hand-o-down text-4xl mb-3 animate-bounce"></i>
+                        <p class="mb-2">长按海报图片</p>
+                        <p>选择"保存图片"到手机</p>
+                    </div>
                 </div>
                 
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button id="save-to-cloud" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center justify-center">
+                <div class="flex flex-col gap-3">
+                    <button id="save-to-cloud" class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center">
                         <i class="fa fa-cloud-upload mr-2"></i> 保存到云端
                     </button>
-                    <button id="save-to-device" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center justify-center">
+                    <button id="save-to-device" class="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center">
                         <i class="fa fa-download mr-2"></i> 保存到手机
                     </button>
                 </div>
@@ -207,21 +232,26 @@
     </main>
 
     <!-- 提示消息 -->
-    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-dark text-white px-6 py-3 rounded-lg shadow-lg opacity-0 transition-opacity duration-300 flex items-center">
+    <div id="toast" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-dark text-white px-5 py-3 rounded-lg shadow-lg opacity-0 transition-opacity duration-300 flex items-center z-50 max-w-[80%]">
         <i class="fa fa-info-circle mr-2"></i>
         <span id="toast-message"></span>
     </div>
 
     <!-- 页脚 -->
-    <footer class="bg-white py-4 mt-8">
-        <div class="container mx-auto px-4 text-center text-sm text-gray-500">
-            <p>SWOT分析工具 &copy; 2023 | 帮助学生更好地认识自我</p>
+    <footer class="bg-white py-3 mt-6">
+        <div class="container mx-auto px-4 text-center text-xs text-gray-500">
+            <p>SWOT分析工具 | 帮助学生更好地认识自我</p>
             <p>Copyright © 2025 by 电商杜老师</p>
         </div>
     </footer>
 
     <script>
-        // 初始化LeanCloud - 使用提供的配置信息
+        // 检测是否在微信中
+        const isWechat = /MicroMessenger/i.test(navigator.userAgent);
+        // 检测是否是小米浏览器
+        const isXiaomiBrowser = /MiuiBrowser/i.test(navigator.userAgent);
+
+        // 初始化LeanCloud
         AV.init({
             appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
             appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
@@ -246,6 +276,8 @@
         const generatePosterBtn = document.getElementById('generate-poster');
         const posterContainer = document.getElementById('poster-container');
         const poster = document.getElementById('poster');
+        const posterWrapper = document.getElementById('poster-wrapper');
+        const wechatSaveTip = document.getElementById('wechat-save-tip');
         const saveToCloudBtn = document.getElementById('save-to-cloud');
         const saveToDeviceBtn = document.getElementById('save-to-device');
         const toast = document.getElementById('toast');
@@ -288,10 +320,15 @@
             // 创建可拖拽元素
             const item = document.createElement('div');
             item.id = itemId;
-            item.className = `drag-item ${colorMap[type].bg} ${colorMap[type].border} border rounded-lg p-3 flex justify-between items-center`;
+            item.className = `drag-item ${colorMap[type].bg} ${colorMap[type].border} border rounded-lg p-3 flex justify-between items-center text-base`;
             item.draggable = true;
             item.setAttribute('data-type', type);
             item.setAttribute('data-text', text);
+            
+            // 小米浏览器特殊处理
+            if (isXiaomiBrowser) {
+                item.classList.add('p-4');
+            }
             
             item.innerHTML = `
                 <span>${text}</span>
@@ -311,6 +348,15 @@
             item.addEventListener('dragstart', handleDragStart);
             item.addEventListener('dragend', handleDragEnd);
             
+            // 添加点击事件（移动端备选方案）
+            item.addEventListener('click', function(e) {
+                // 点击删除按钮时不触发添加
+                if (!e.target.closest('.delete-item')) {
+                    const type = this.getAttribute('data-type');
+                    addItemToZone(type, this.getAttribute('data-text'));
+                }
+            });
+            
             // 添加删除事件
             item.querySelector('.delete-item').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -319,12 +365,57 @@
                 checkGenerateButton();
             });
             
-            showToast('添加成功，可以开始拖拽了', 'success');
+            showToast('添加成功，点击可直接放入对应分析框', 'success');
             checkGenerateButton();
+        }
+
+        // 直接添加项目到对应区域（解决拖拽问题的备选方案）
+        function addItemToZone(type, text) {
+            const targetContainerId = `${type}-zone`;
+            const targetContainer = document.getElementById(targetContainerId);
+            
+            if (targetContainer) {
+                // 创建项目元素
+                const clonedItem = document.createElement('div');
+                clonedItem.className = `drag-item ${colorMap[type].bg} ${colorMap[type].border} border rounded-lg p-2 flex justify-between items-center mb-1`;
+                clonedItem.innerHTML = `
+                    <span>${text}</span>
+                    <button class="delete-item text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="fa fa-times"></i>
+                    </button>
+                `;
+                
+                // 添加到目标区域
+                targetContainer.appendChild(clonedItem);
+                
+                // 为克隆的项目添加删除按钮事件
+                clonedItem.querySelector('.delete-item').addEventListener('click', () => {
+                    clonedItem.remove();
+                    checkGenerateButton();
+                });
+                
+                showToast(`已添加到${getTypeName(type)}`, 'success');
+                checkGenerateButton();
+            }
+        }
+
+        // 获取类型中文名称
+        function getTypeName(type) {
+            const typeMap = {
+                strength: '优势',
+                weakness: '劣势',
+                opportunity: '机会',
+                threat: '威胁'
+            };
+            return typeMap[type] || type;
         }
 
         // 拖拽事件处理
         function handleDragStart(e) {
+            // 小米浏览器拖拽优化
+            if (isXiaomiBrowser) {
+                e.dataTransfer.effectAllowed = 'copy';
+            }
             e.dataTransfer.setData('text/plain', e.target.id);
             setTimeout(() => {
                 e.target.classList.add('opacity-50');
@@ -342,6 +433,10 @@
 
         function handleDragOver(e) {
             e.preventDefault();
+            // 小米浏览器需要特别处理
+            if (isXiaomiBrowser) {
+                e.dataTransfer.dropEffect = 'copy';
+            }
         }
 
         function handleDragEnter(e) {
@@ -366,34 +461,9 @@
                 const itemType = item.getAttribute('data-type');
                 
                 if (dropType === itemType) {
-                    // 克隆项目并添加到目标区域
-                    const clonedItem = item.cloneNode(true);
-                    
-                    // 移除拖拽相关属性和事件
-                    clonedItem.draggable = false;
-                    clonedItem.removeAttribute('id');
-                    
-                    // 【修复核心】根据类型获取正确的目标容器
-                    const targetContainerId = `${dropType}-zone`;
-                    const targetContainer = document.getElementById(targetContainerId);
-                    
-                    if (targetContainer) {
-                        // 添加到目标区域
-                        targetContainer.appendChild(clonedItem);
-                        
-                        // 为克隆的项目添加删除按钮事件
-                        clonedItem.querySelector('.delete-item').addEventListener('click', () => {
-                            clonedItem.remove();
-                            checkGenerateButton();
-                        });
-                        
-                        showToast('已添加到分析框', 'success');
-                    } else {
-                        showToast('目标容器不存在', 'error');
-                        console.error(`目标容器 ${targetContainerId} 不存在`);
-                    }
+                    addItemToZone(dropType, item.getAttribute('data-text'));
                 } else {
-                    showToast('请将项目拖放到对应类型的分析框中', 'warning');
+                    showToast(`请将项目拖放到${getTypeName(itemType)}区域`, 'warning');
                 }
             }
             
@@ -403,14 +473,11 @@
         // 检查是否可以生成海报
         function checkGenerateButton() {
             try {
-                // 获取各区域的项目数量（修复：直接使用ID获取容器）
+                // 获取各区域的项目数量
                 const strengthCount = document.getElementById('strength-zone').childElementCount;
                 const weaknessCount = document.getElementById('weakness-zone').childElementCount;
                 const opportunityCount = document.getElementById('opportunity-zone').childElementCount;
                 const threatCount = document.getElementById('threat-zone').childElementCount;
-                
-                // 调试信息
-                console.log(`SWOT项目数量: 优势=${strengthCount}, 劣势=${weaknessCount}, 机会=${opportunityCount}, 威胁=${threatCount}`);
                 
                 // 四个区域都至少有一个项目时启用按钮
                 const canGenerate = strengthCount > 0 && weaknessCount > 0 && 
@@ -460,7 +527,7 @@
                     </div>
                     
                     <div class="p-4">
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 gap-4">
                             <!-- 优势 -->
                             <div class="${colorMap.strength.bg} rounded-lg p-3">
                                 <div class="flex items-center mb-2">
@@ -512,10 +579,26 @@
                     </div>
                 `;
                 
+                // 微信环境特殊处理
+                if (isWechat) {
+                    wechatSaveTip.classList.remove('hidden');
+                    // 点击海报区域隐藏提示
+                    posterWrapper.addEventListener('click', function() {
+                        wechatSaveTip.classList.add('hidden');
+                    }, { once: true });
+                }
+                
                 // 显示海报
                 posterContainer.classList.remove('hidden');
                 scrollToPoster();
                 showToast('海报生成成功', 'success');
+                
+                // 小米浏览器提示
+                if (isXiaomiBrowser) {
+                    setTimeout(() => {
+                        showToast('提示：点击"保存到手机"按钮保存海报', 'info');
+                    }, 2000);
+                }
             } catch (error) {
                 console.error("生成海报时出错:", error);
                 showToast('生成海报失败，请重试', 'error');
@@ -566,26 +649,51 @@
         // 保存到设备
         function saveToDevice() {
             try {
+                // 微信环境提示
+                if (isWechat) {
+                    wechatSaveTip.classList.remove('hidden');
+                    setTimeout(() => {
+                        wechatSaveTip.classList.add('hidden');
+                    }, 3000);
+                    return;
+                }
+                
                 showToast('正在准备图片...', 'info');
                 html2canvas(document.getElementById('poster'), {
                     useCORS: true,
-                    logging: false
+                    logging: false,
+                    scale: 2, // 提高图片清晰度
+                    scrollY: -window.scrollY // 处理滚动问题
                 }).then(canvas => {
                     // 创建下载链接
                     const link = document.createElement('a');
                     const filename = `SWOT分析_${nicknameInput.value.trim() || '匿名用户'}_${new Date().toLocaleDateString()}.png`;
                     link.download = filename;
-                    link.href = canvas.toDataURL('image/png');
                     
-                    // 触发下载
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                    // 小米浏览器特殊处理
+                    if (isXiaomiBrowser) {
+                        // 使用toDataURL可能在某些浏览器受限，尝试toBlob
+                        canvas.toBlob(blob => {
+                            const url = URL.createObjectURL(blob);
+                            link.href = url;
+                            link.click();
+                            URL.revokeObjectURL(url);
+                        });
+                    } else {
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }
                     
                     showToast('已保存到设备', 'success');
                 }).catch(error => {
                     console.error('保存图片失败:', error);
-                    showToast(`保存失败: ${error.message}`, 'error');
+                    
+                    // 提供备选方案提示
+                    if (isXiaomiBrowser) {
+                        showToast('保存失败，请尝试截图保存', 'error');
+                    } else {
+                        showToast(`保存失败: ${error.message}`, 'error');
+                    }
                 });
             } catch (error) {
                 console.error("保存到设备时出错:", error);
@@ -621,7 +729,8 @@
         // 滚动到海报区域
         function scrollToPoster() {
             posterContainer.scrollIntoView({
-                behavior: 'smooth'
+                behavior: 'smooth',
+                block: 'start'
             });
         }
 
@@ -665,6 +774,31 @@
             zone.addEventListener('dragenter', handleDragEnter);
             zone.addEventListener('dragleave', handleDragLeave);
             zone.addEventListener('drop', handleDrop);
+            
+            // 小米浏览器添加触摸事件支持
+            if (isXiaomiBrowser) {
+                let draggedItem = null;
+                
+                zone.addEventListener('touchstart', function(e) {
+                    // 检测是否有正在拖拽的项目
+                    const activeItem = document.querySelector('.drag-item.opacity-50');
+                    if (activeItem) {
+                        draggedItem = activeItem;
+                    }
+                });
+                
+                zone.addEventListener('touchend', function(e) {
+                    if (draggedItem) {
+                        const dropType = this.getAttribute('data-type');
+                        const itemType = draggedItem.getAttribute('data-type');
+                        
+                        if (dropType === itemType) {
+                            addItemToZone(dropType, draggedItem.getAttribute('data-text'));
+                        }
+                        draggedItem = null;
+                    }
+                });
+            }
         });
         
         // 生成海报按钮
@@ -677,8 +811,13 @@
         saveToDeviceBtn.addEventListener('click', saveToDevice);
 
         // 初始化提示
-        showToast('请输入你的SWOT要素并拖放到相应的分析框中', 'info');
+        if (isWechat) {
+            showToast('微信提示：长按海报可保存到手机', 'info');
+        } else if (isXiaomiBrowser) {
+            showToast('点击条目可直接添加到对应分析框', 'info');
+        } else {
+            showToast('请输入你的SWOT要素并添加到相应的分析框中', 'info');
+        }
     </script>
 </body>
 </html>
-
