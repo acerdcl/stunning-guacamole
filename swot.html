@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生SWOT分析工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        strength: '#10B981', // 优势 - 绿色
+                        weakness: '#EF4444', // 劣势 - 红色
+                        opportunity: '#3B82F6', // 机会 - 蓝色
+                        threat: '#F59E0B', // 威胁 - 橙色
+                        primary: '#6366F1',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .drag-item {
+                cursor: grab;
+                transition: all 0.3s ease;
+            }
+            .drag-item:active {
+                cursor: grabbing;
+            }
+            .drop-zone {
+                transition: all 0.3s ease;
+            }
+            .drop-zone.highlight {
+                transform: scale(1.02);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+            .poster-shadow {
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <h1 class="text-xl md:text-2xl font-bold text-primary text-center">
+                <i class="fa fa-balance-scale mr-2"></i>学生SWOT分析工具
+            </h1>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-6">
+        <!-- 输入区域 -->
+        <section class="mb-8">
+            <div class="bg-white rounded-xl p-5 shadow-md mb-6">
+                <label for="nickname" class="block text-gray-700 font-medium mb-2">你的昵称</label>
+                <input type="text" id="nickname" placeholder="请输入你的昵称" 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+            </div>
+
+            <div class="bg-white rounded-xl p-5 shadow-md">
+                <h2 class="text-lg font-semibold mb-4 text-center">请输入你的SWOT要素</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="strength" class="block text-strength font-medium mb-2">优势 (Strengths)</label>
+                        <div class="flex">
+                            <input type="text" id="strength" placeholder="例如：学习能力强" 
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-strength focus:border-strength transition-all">
+                            <button id="add-strength" class="bg-strength text-white px-4 py-2 rounded-r-lg hover:bg-strength/90 transition-colors">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="weakness" class="block text-weakness font-medium mb-2">劣势 (Weaknesses)</label>
+                        <div class="flex">
+                            <input type="text" id="weakness" placeholder="例如：容易拖延" 
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-weakness focus:border-weakness transition-all">
+                            <button id="add-weakness" class="bg-weakness text-white px-4 py-2 rounded-r-lg hover:bg-weakness/90 transition-colors">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="opportunity" class="block text-opportunity font-medium mb-2">机会 (Opportunities)</label>
+                        <div class="flex">
+                            <input type="text" id="opportunity" placeholder="例如：参加竞赛" 
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-opportunity focus:border-opportunity transition-all">
+                            <button id="add-opportunity" class="bg-opportunity text-white px-4 py-2 rounded-r-lg hover:bg-opportunity/90 transition-colors">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="threat" class="block text-threat font-medium mb-2">威胁 (Threats)</label>
+                        <div class="flex">
+                            <input type="text" id="threat" placeholder="例如：时间管理差" 
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-threat focus:border-threat transition-all">
+                            <button id="add-threat" class="bg-threat text-white px-4 py-2 rounded-r-lg hover:bg-threat/90 transition-colors">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="items-container" class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <!-- 动态生成的可拖拽项将在这里显示 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 拖拽区域 -->
+        <section class="mb-8">
+            <h2 class="text-lg font-semibold mb-4 text-center">请将项目拖放到对应的SWOT分析框中</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 aspect-square md:aspect-auto">
+                <!-- 优势 -->
+                <div class="drop-zone bg-strength/5 border-2 border-strength/30 rounded-xl p-4 flex flex-col" 
+                     data-type="strength">
+                    <div class="flex items-center mb-2">
+                        <i class="fa fa-check-circle text-strength mr-2"></i>
+                        <h3 class="font-semibold text-strength">优势 (Strengths)</h3>
+                    </div>
+                    <div class="flex-1 min-h-[100px] bg-white/50 rounded-lg p-2" id="strength-zone">
+                        <!-- 拖放的项目将在这里显示 -->
+                    </div>
+                </div>
+                
+                <!-- 劣势 -->
+                <div class="drop-zone bg-weakness/5 border-2 border-weakness/30 rounded-xl p-4 flex flex-col" 
+                     data-type="weakness">
+                    <div class="flex items-center mb-2">
+                        <i class="fa fa-times-circle text-weakness mr-2"></i>
+                        <h3 class="font-semibold text-weakness">劣势 (Weaknesses)</h3>
+                    </div>
+                    <div class="flex-1 min-h-[100px] bg-white/50 rounded-lg p-2" id="weakness-zone">
+                        <!-- 拖放的项目将在这里显示 -->
+                    </div>
+                </div>
+                
+                <!-- 机会 -->
+                <div class="drop-zone bg-opportunity/5 border-2 border-opportunity/30 rounded-xl p-4 flex flex-col" 
+                     data-type="opportunity">
+                    <div class="flex items-center mb-2">
+                        <i class="fa fa-lightbulb-o text-opportunity mr-2"></i>
+                        <h3 class="font-semibold text-opportunity">机会 (Opportunities)</h3>
+                    </div>
+                    <div class="flex-1 min-h-[100px] bg-white/50 rounded-lg p-2" id="opportunity-zone">
+                        <!-- 拖放的项目将在这里显示 -->
+                    </div>
+                </div>
+                
+                <!-- 威胁 -->
+                <div class="drop-zone bg-threat/5 border-2 border-threat/30 rounded-xl p-4 flex flex-col" 
+                     data-type="threat">
+                    <div class="flex items-center mb-2">
+                        <i class="fa fa-exclamation-triangle text-threat mr-2"></i>
+                        <h3 class="font-semibold text-threat">威胁 (Threats)</h3>
+                    </div>
+                    <div class="flex-1 min-h-[100px] bg-white/50 rounded-lg p-2" id="threat-zone">
+                        <!-- 拖放的项目将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 生成海报和操作区 -->
+        <section class="mb-8">
+            <div class="text-center mb-6">
+                <button id="generate-poster" class="bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fa fa-magic mr-2"></i>生成SWOT分析海报
+                </button>
+            </div>
+            
+            <!-- 海报预览区 -->
+            <div id="poster-container" class="hidden">
+                <h2 class="text-lg font-semibold mb-4 text-center">你的SWOT分析海报</h2>
+                <div class="max-w-md mx-auto bg-white rounded-xl overflow-hidden poster-shadow mb-6" id="poster">
+                    <!-- 海报内容将在这里动态生成 -->
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button id="save-to-cloud" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center justify-center">
+                        <i class="fa fa-cloud-upload mr-2"></i> 保存到云端
+                    </button>
+                    <button id="save-to-device" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center justify-center">
+                        <i class="fa fa-download mr-2"></i> 保存到手机
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 提示消息 -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-dark text-white px-6 py-3 rounded-lg shadow-lg opacity-0 transition-opacity duration-300 flex items-center">
+        <i class="fa fa-info-circle mr-2"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="bg-white py-4 mt-8">
+        <div class="container mx-auto px-4 text-center text-sm text-gray-500">
+            <p>SWOT分析工具 &copy; 2023 | 帮助学生更好地认识自我</p>
+        </div>
+    </footer>
+
+    <script>
+        // 初始化LeanCloud
+        AV.init({
+                    appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
+                    appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
+                    serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com"
+        });
+
+        // 全局变量
+        let currentItemId = 0;
+        const items = {}; // 存储所有创建的项目
+
+        // DOM元素
+        const nicknameInput = document.getElementById('nickname');
+        const strengthInput = document.getElementById('strength');
+        const weaknessInput = document.getElementById('weakness');
+        const opportunityInput = document.getElementById('opportunity');
+        const threatInput = document.getElementById('threat');
+        const addStrengthBtn = document.getElementById('add-strength');
+        const addWeaknessBtn = document.getElementById('add-weakness');
+        const addOpportunityBtn = document.getElementById('add-opportunity');
+        const addThreatBtn = document.getElementById('add-threat');
+        const itemsContainer = document.getElementById('items-container');
+        const generatePosterBtn = document.getElementById('generate-poster');
+        const posterContainer = document.getElementById('poster-container');
+        const poster = document.getElementById('poster');
+        const saveToCloudBtn = document.getElementById('save-to-cloud');
+        const saveToDeviceBtn = document.getElementById('save-to-device');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        // 颜色映射
+        const colorMap = {
+            strength: {
+                bg: 'bg-strength/10',
+                text: 'text-strength',
+                border: 'border-strength'
+            },
+            weakness: {
+                bg: 'bg-weakness/10',
+                text: 'text-weakness',
+                border: 'border-weakness'
+            },
+            opportunity: {
+                bg: 'bg-opportunity/10',
+                text: 'text-opportunity',
+                border: 'border-opportunity'
+            },
+            threat: {
+                bg: 'bg-threat/10',
+                text: 'text-threat',
+                border: 'border-threat'
+            }
+        };
+
+        // 添加SWOT项目
+        function addSWOTItem(type, text) {
+            if (!text.trim()) {
+                showToast('请输入内容后再添加', 'warning');
+                return;
+            }
+
+            currentItemId++;
+            const itemId = `item-${currentItemId}`;
+            
+            // 创建可拖拽元素
+            const item = document.createElement('div');
+            item.id = itemId;
+            item.className = `drag-item ${colorMap[type].bg} ${colorMap[type].border} border rounded-lg p-3 flex justify-between items-center`;
+            item.draggable = true;
+            item.setAttribute('data-type', type);
+            item.setAttribute('data-text', text);
+            
+            item.innerHTML = `
+                <span>${text}</span>
+                <button class="delete-item text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fa fa-times"></i>
+                </button>
+            `;
+            
+            // 添加到容器
+            itemsContainer.appendChild(item);
+            items[itemId] = { type, text };
+            
+            // 清空输入框
+            document.getElementById(type).value = '';
+            
+            // 添加拖拽事件监听
+            item.addEventListener('dragstart', handleDragStart);
+            item.addEventListener('dragend', handleDragEnd);
+            
+            // 添加删除事件
+            item.querySelector('.delete-item').addEventListener('click', (e) => {
+                e.stopPropagation();
+                item.remove();
+                delete items[itemId];
+                checkGenerateButton();
+            });
+            
+            showToast('添加成功，可以开始拖拽了', 'success');
+            checkGenerateButton();
+        }
+
+        // 拖拽事件处理
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.id);
+            setTimeout(() => {
+                e.target.classList.add('opacity-50');
+            }, 0);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('opacity-50');
+            
+            // 移除所有高亮
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.classList.remove('highlight');
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            this.classList.add('highlight');
+        }
+
+        function handleDragLeave() {
+            this.classList.remove('highlight');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('highlight');
+            
+            const itemId = e.dataTransfer.getData('text/plain');
+            const item = document.getElementById(itemId);
+            
+            if (item) {
+                // 检查拖放区域类型是否与项目类型匹配
+                const dropType = this.getAttribute('data-type');
+                const itemType = item.getAttribute('data-type');
+                
+                if (dropType === itemType) {
+                    // 克隆项目并添加到目标区域
+                    const clonedItem = item.cloneNode(true);
+                    
+                    // 移除拖拽相关属性和事件
+                    clonedItem.draggable = false;
+                    clonedItem.removeAttribute('id');
+                    
+                    // 添加到目标区域
+                    this.querySelector('div').appendChild(clonedItem);
+                    
+                    // 为克隆的项目添加删除按钮事件
+                    clonedItem.querySelector('.delete-item').addEventListener('click', () => {
+                        clonedItem.remove();
+                        checkGenerateButton();
+                    });
+                    
+                    showToast('已添加到分析框', 'success');
+                } else {
+                    showToast('请将项目拖放到对应类型的分析框中', 'warning');
+                }
+            }
+            
+            checkGenerateButton();
+        }
+
+        // 检查是否可以生成海报
+        function checkGenerateButton() {
+            const strengthCount = document.getElementById('strength-zone').children.length;
+            const weaknessCount = document.getElementById('weakness-zone').children.length;
+            const opportunityCount = document.getElementById('opportunity-zone').children.length;
+            const threatCount = document.getElementById('threat-zone').children.length;
+            
+            // 只有四个区域都至少有一个项目时才能生成海报
+            generatePosterBtn.disabled = !(strengthCount > 0 && weaknessCount > 0 && 
+                                          opportunityCount > 0 && threatCount > 0);
+        }
+
+        // 生成SWOT分析海报
+        function generatePoster() {
+            const nickname = nicknameInput.value.trim() || '匿名用户';
+            
+            // 收集各区域的内容
+            const strengthItems = Array.from(document.getElementById('strength-zone').children).map(el => el.querySelector('span').textContent);
+            const weaknessItems = Array.from(document.getElementById('weakness-zone').children).map(el => el.querySelector('span').textContent);
+            const opportunityItems = Array.from(document.getElementById('opportunity-zone').children).map(el => el.querySelector('span').textContent);
+            const threatItems = Array.from(document.getElementById('threat-zone').children).map(el => el.querySelector('span').textContent);
+            
+            // 生成海报HTML
+            poster.innerHTML = `
+                <div class="bg-primary text-white p-4 text-center">
+                    <h2 class="text-xl font-bold">SWOT分析报告</h2>
+                    <p class="mt-1">${nickname} 的个人分析</p>
+                    <p class="text-sm opacity-80 mt-1">${new Date().toLocaleDateString()}</p>
+                </div>
+                
+                <div class="p-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- 优势 -->
+                        <div class="${colorMap.strength.bg} rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <i class="fa fa-check-circle ${colorMap.strength.text} mr-2"></i>
+                                <h3 class="font-semibold ${colorMap.strength.text}">优势</h3>
+                            </div>
+                            <ul class="text-sm space-y-1">
+                                ${strengthItems.map(item => `<li>• ${item}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <!-- 劣势 -->
+                        <div class="${colorMap.weakness.bg} rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <i class="fa fa-times-circle ${colorMap.weakness.text} mr-2"></i>
+                                <h3 class="font-semibold ${colorMap.weakness.text}">劣势</h3>
+                            </div>
+                            <ul class="text-sm space-y-1">
+                                ${weaknessItems.map(item => `<li>• ${item}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <!-- 机会 -->
+                        <div class="${colorMap.opportunity.bg} rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <i class="fa fa-lightbulb-o ${colorMap.opportunity.text} mr-2"></i>
+                                <h3 class="font-semibold ${colorMap.opportunity.text}">机会</h3>
+                            </div>
+                            <ul class="text-sm space-y-1">
+                                ${opportunityItems.map(item => `<li>• ${item}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <!-- 威胁 -->
+                        <div class="${colorMap.threat.bg} rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <i class="fa fa-exclamation-triangle ${colorMap.threat.text} mr-2"></i>
+                                <h3 class="font-semibold ${colorMap.threat.text}">威胁</h3>
+                            </div>
+                            <ul class="text-sm space-y-1">
+                                ${threatItems.map(item => `<li>• ${item}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-100 p-3 text-center text-sm text-gray-600">
+                    生成于学生SWOT分析工具
+                </div>
+            `;
+            
+            // 显示海报
+            posterContainer.classList.remove('hidden');
+            scrollToPoster();
+        }
+
+        // 保存到云端
+        function saveToCloud() {
+            const nickname = nicknameInput.value.trim() || '匿名用户';
+            
+            // 收集各区域的内容
+            const strengthItems = Array.from(document.getElementById('strength-zone').children).map(el => el.querySelector('span').textContent);
+            const weaknessItems = Array.from(document.getElementById('weakness-zone').children).map(el => el.querySelector('span').textContent);
+            const opportunityItems = Array.from(document.getElementById('opportunity-zone').children).map(el => el.querySelector('span').textContent);
+            const threatItems = Array.from(document.getElementById('threat-zone').children).map(el => el.querySelector('span').textContent);
+            
+            // 创建SWOT分析对象
+            const SWOTAnalysis = AV.Object.extend('SWOTAnalysis');
+            const analysis = new SWOTAnalysis();
+            
+            // 设置数据
+            analysis.set('nickname', nickname);
+            analysis.set('strengths', strengthItems);
+            analysis.set('weaknesses', weaknessItems);
+            analysis.set('opportunities', opportunityItems);
+            analysis.set('threats', threatItems);
+            analysis.set('createdAt', new Date());
+            
+            // 保存到云端
+            analysis.save().then(() => {
+                showToast('成功保存到云端', 'success');
+            }).catch(error => {
+                console.error('保存失败:', error);
+                showToast('保存失败，请稍后再试', 'error');
+            });
+        }
+
+        // 保存到设备
+        function saveToDevice() {
+            html2canvas(document.getElementById('poster')).then(canvas => {
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.download = `SWOT分析_${nicknameInput.value.trim() || '匿名用户'}_${new Date().toLocaleDateString()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                showToast('已保存到设备', 'success');
+            }).catch(error => {
+                console.error('保存图片失败:', error);
+                showToast('保存失败，请稍后再试', 'error');
+            });
+        }
+
+        // 显示提示消息
+        function showToast(message, type = 'info') {
+            toastMessage.textContent = message;
+            
+            // 设置图标和颜色
+            const icon = toast.querySelector('i');
+            if (type === 'success') {
+                icon.className = 'fa fa-check-circle mr-2 text-green-400';
+            } else if (type === 'warning') {
+                icon.className = 'fa fa-exclamation-circle mr-2 text-yellow-400';
+            } else if (type === 'error') {
+                icon.className = 'fa fa-times-circle mr-2 text-red-400';
+            } else {
+                icon.className = 'fa fa-info-circle mr-2';
+            }
+            
+            // 显示提示
+            toast.style.opacity = '1';
+            
+            // 3秒后隐藏
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 3000);
+        }
+
+        // 滚动到海报区域
+        function scrollToPoster() {
+            posterContainer.scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+
+        // 事件监听
+        addStrengthBtn.addEventListener('click', () => {
+            addSWOTItem('strength', strengthInput.value);
+        });
+        
+        addWeaknessBtn.addEventListener('click', () => {
+            addSWOTItem('weakness', weaknessInput.value);
+        });
+        
+        addOpportunityBtn.addEventListener('click', () => {
+            addSWOTItem('opportunity', opportunityInput.value);
+        });
+        
+        addThreatBtn.addEventListener('click', () => {
+            addSWOTItem('threat', threatInput.value);
+        });
+        
+        // 为输入框添加回车事件
+        strengthInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addSWOTItem('strength', strengthInput.value);
+        });
+        
+        weaknessInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addSWOTItem('weakness', weaknessInput.value);
+        });
+        
+        opportunityInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addSWOTItem('opportunity', opportunityInput.value);
+        });
+        
+        threatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addSWOTItem('threat', threatInput.value);
+        });
+        
+        // 为所有拖放区域添加事件监听
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.addEventListener('dragover', handleDragOver);
+            zone.addEventListener('dragenter', handleDragEnter);
+            zone.addEventListener('dragleave', handleDragLeave);
+            zone.addEventListener('drop', handleDrop);
+        });
+        
+        // 生成海报按钮
+        generatePosterBtn.addEventListener('click', generatePoster);
+        
+        // 保存到云端
+        saveToCloudBtn.addEventListener('click', saveToCloud);
+        
+        // 保存到设备
+        saveToDeviceBtn.addEventListener('click', saveToDevice);
+
+        // 初始化提示
+        showToast('请输入你的SWOT要素并拖放到相应的分析框中', 'info');
+    </script>
+</body>
+</html>
