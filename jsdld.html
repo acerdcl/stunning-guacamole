@@ -104,17 +104,16 @@
       舒伯六角色
     </h1>
     <p class="text-[clamp(1rem,2vw,1.25rem)] text-gray-600 max-w-2xl mx-auto">
-      cosplay大乱斗 - 翻牌挑战，发现你的多重角色
+      cosplay大乱斗 - 翻牌挑战，发现你的多重角色（角色不重复）
     </p>
   </header>
-
   <!-- 主要内容区 -->
   <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <!-- 游戏说明 -->
+    <!-- 游戏说明（新增不重复提示） -->
     <div class="bg-white rounded-xl shadow-md p-6 mb-12 max-w-3xl mx-auto text-center transform transition-all duration-300 hover:shadow-lg">
-      <p class="text-gray-700 mb-4">舒伯提出每个人在生涯中扮演六种主要角色。点击卡牌进行翻牌，每次翻牌会随机出现一个角色。</p>
+      <p class="text-gray-700 mb-4">舒伯提出每个人在生涯中扮演六种主要角色。点击卡牌进行翻牌，每次翻牌会随机出现一个<strong class="text-secondary">未被选择过</strong>的角色。</p>
       <p class="text-gray-700 font-medium">
-        你有 <span id="remaining-picks" class="text-secondary font-bold">3</span> 次翻牌机会
+        你有 <span id="remaining-picks" class="text-secondary font-bold">3</span> 次翻牌机会 | 剩余可选择角色：<span id="remaining-roles" class="text-primary font-bold">6</span> 个
       </p>
     </div>
     
@@ -236,12 +235,12 @@
       <p class="text-sm mt-2 text-white/60">Copyright © 2025 by 电商杜老师 生涯探索工具</p>
     </div>
   </footer>
-
   <!-- JavaScript -->
   <script>
-    // 舒伯六角色数据
+    // 舒伯六角色数据（新增唯一ID，用于去重）
     const roles = [
       {
+        id: 1, // 新增唯一ID
         name: "儿童",
         englishName: "Child",
         description: "代表个人在家庭中作为子女的角色，影响个人价值观和情感发展。",
@@ -251,6 +250,7 @@
         image: "https://picsum.photos/id/237/300/200"
       },
       {
+        id: 2, // 新增唯一ID
         name: "学生",
         englishName: "Student",
         description: "指个人在正式教育环境中学习知识和技能的角色。",
@@ -260,6 +260,7 @@
         image: "https://picsum.photos/id/20/300/200"
       },
       {
+        id: 3, // 新增唯一ID
         name: "休闲者",
         englishName: "Leisurite",
         description: "代表个人在休闲时间从事兴趣爱好和放松活动的角色。",
@@ -269,6 +270,7 @@
         image: "https://picsum.photos/id/110/300/200"
       },
       {
+        id: 4, // 新增唯一ID
         name: "公民",
         englishName: "Citizen",
         description: "指个人在社会中参与社区活动和履行社会责任的角色。",
@@ -278,6 +280,7 @@
         image: "https://picsum.photos/id/177/300/200"
       },
       {
+        id: 5, // 新增唯一ID
         name: "工作者",
         englishName: "Worker",
         description: "代表个人在职业领域中从事有偿工作的角色。",
@@ -287,6 +290,7 @@
         image: "https://picsum.photos/id/42/300/200"
       },
       {
+        id: 6, // 新增唯一ID
         name: "持家者",
         englishName: "Homemaker",
         description: "指个人在家庭中承担照顾家人和管理家务的角色。",
@@ -297,26 +301,52 @@
       }
     ];
     
+    // 核心：新增已选角色ID数组（用于去重）
+    let usedIds = []; 
     // 已选择的角色
     let selectedRoles = [];
     let remainingPicks = 3;
     let currentRole = null;
     
-    // DOM元素
+    // DOM元素（新增剩余角色显示元素）
     const mainCard = document.getElementById('main-card');
     const cardBack = document.getElementById('card-back');
     const confirmButton = document.getElementById('confirm-selection');
     const remainingPicksElement = document.getElementById('remaining-picks');
+    const remainingRolesElement = document.getElementById('remaining-roles');
     const selectedRolesContainer = document.getElementById('selected-roles');
     
-    // 随机选择一个角色
+    // 关键修改：随机选择「未被选过」的角色
     function getRandomRole() {
-      const randomIndex = Math.floor(Math.random() * roles.length);
-      return roles[randomIndex];
+      // 筛选出未被选择的角色（排除usedIds中的ID）
+      const availableRoles = roles.filter(role => !usedIds.includes(role.id));
+      
+      // 若所有角色已被选完，提示用户
+      if (availableRoles.length === 0) {
+        alert("所有6个角色已被选择完毕，无法继续抽取！");
+        return null;
+      }
+      
+      // 从可用角色中随机选择
+      const randomIndex = Math.floor(Math.random() * availableRoles.length);
+      return availableRoles[randomIndex];
     }
     
-    // 翻转卡牌并显示随机角色
+    // 更新剩余可选择角色数量
+    function updateRemainingRoles() {
+      const availableCount = roles.filter(role => !usedIds.includes(role.id)).length;
+      remainingRolesElement.textContent = availableCount;
+    }
+    
+    // 翻转卡牌并显示随机角色（新增可用角色检查）
     function flipCard() {
+      // 先检查是否有可用角色
+      const availableRoles = roles.filter(role => !usedIds.includes(role.id));
+      if (availableRoles.length === 0) {
+        mainCard.style.pointerEvents = "none"; // 禁用翻牌
+        return;
+      }
+      
       // 如果已经翻过来了，先翻回去
       if (mainCard.classList.contains('flipped')) {
         mainCard.classList.remove('flipped');
@@ -324,19 +354,21 @@
         // 延迟后显示新角色
         setTimeout(() => {
           currentRole = getRandomRole();
+          if (!currentRole) return; // 无可用角色时终止
           updateCardBack(currentRole);
           mainCard.classList.add('flipped');
           enableConfirmButton();
         }, 600);
       } else {
         currentRole = getRandomRole();
+        if (!currentRole) return; // 无可用角色时终止
         updateCardBack(currentRole);
         mainCard.classList.add('flipped');
         enableConfirmButton();
       }
     }
     
-    // 更新卡牌背面内容
+    // 更新卡牌背面内容（不变）
     function updateCardBack(role) {
       cardBack.innerHTML = `
         <div class="h-full flex flex-col">
@@ -355,29 +387,33 @@
       `;
     }
     
-    // 启用确认按钮
+    // 启用确认按钮（不变）
     function enableConfirmButton() {
       confirmButton.disabled = false;
       confirmButton.classList.remove('opacity-50', 'cursor-not-allowed');
       confirmButton.classList.add('hover:scale-105');
     }
     
-    // 禁用确认按钮
+    // 禁用确认按钮（不变）
     function disableConfirmButton() {
       confirmButton.disabled = true;
       confirmButton.classList.add('opacity-50', 'cursor-not-allowed');
       confirmButton.classList.remove('hover:scale-105');
     }
     
-    // 确认选择角色
+    // 确认选择角色（关键：新增将角色ID加入usedIds）
     function confirmSelection() {
       if (currentRole && remainingPicks > 0) {
-        // 添加到已选角色
+        // 核心：将当前角色ID加入已选数组（实现去重）
+        usedIds.push(currentRole.id);
+        // 添加到已选角色列表
         selectedRoles.push(currentRole);
+        // 减少剩余次数
         remainingPicks--;
         
-        // 更新剩余次数显示
+        // 更新页面显示（新增剩余角色数量更新）
         remainingPicksElement.textContent = remainingPicks;
+        updateRemainingRoles();
         
         // 更新已选角色展示区
         updateSelectedRoles();
@@ -403,8 +439,9 @@
         mainCard.classList.remove('flipped');
         disableConfirmButton();
         
-        // 如果没有剩余次数，隐藏翻牌区并显示完成消息
-        if (remainingPicks === 0) {
+        // 如果没有剩余次数或没有可用角色，隐藏翻牌区并显示完成消息
+        const availableRoles = roles.filter(role => !usedIds.includes(role.id));
+        if (remainingPicks === 0 || availableRoles.length === 0) {
           const cardContainer = document.querySelector('.perspective-1000');
           cardContainer.classList.add('animate-fade-out');
           
@@ -412,12 +449,17 @@
             cardContainer.classList.add('hidden');
             confirmButton.classList.add('hidden');
             
-            // 显示完成消息
+            // 显示完成消息（根据情况调整文案）
+            const completionTitle = remainingPicks === 0 ? "选择完成！" : "所有角色已选完！";
+            const completionDesc = remainingPicks === 0 
+              ? `你已经选择了3个舒伯角色（共6个角色）` 
+              : `你已选${selectedRoles.length}个角色，所有角色均已被选择`;
+            
             const completionMessage = document.createElement('div');
             completionMessage.className = 'text-center py-8 transform transition-all duration-500 opacity-0 scale-95';
             completionMessage.innerHTML = `
-              <h3 class="text-2xl font-bold text-primary mb-4">选择完成！</h3>
-              <p class="text-gray-600 mb-6">你已经选择了3个舒伯角色</p>
+              <h3 class="text-2xl font-bold text-primary mb-4">${completionTitle}</h3>
+              <p class="text-gray-600 mb-6">${completionDesc}</p>
               <button id="reset-game" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow-md transition-all duration-300">
                 重新开始 <i class="fa fa-refresh ml-2"></i>
               </button>
@@ -437,7 +479,7 @@
       }
     }
     
-    // 更新已选角色展示区
+    // 更新已选角色展示区（不变）
     function updateSelectedRoles() {
       // 清空容器
       selectedRolesContainer.innerHTML = '';
@@ -472,35 +514,49 @@
             roleCard.classList.remove('opacity-0', 'translate-y-4');
           }, 50);
         });
+      } else {
+        // 无已选角色时显示提示
+        selectedRolesContainer.innerHTML = `
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-12 text-gray-500">
+            <i class="fa fa-hand-pointer-o text-4xl mb-4 opacity-50 animate-pulse"></i>
+            <p>你的选择将显示在这里</p>
+          </div>
+        `;
       }
     }
     
-    // 重置游戏
+    // 重置游戏（关键：清空usedIds数组）
     function resetGame() {
       selectedRoles = [];
+      usedIds = []; // 清空已选ID，恢复所有角色可选择
       remainingPicks = 3;
       currentRole = null;
       
-      // 更新剩余次数显示
+      // 更新页面显示
       remainingPicksElement.textContent = remainingPicks;
+      updateRemainingRoles();
       
       // 清空已选角色展示区
       updateSelectedRoles();
       
       // 显示卡牌和按钮
-      document.querySelector('.perspective-1000').classList.remove('hidden');
+      const cardContainer = document.querySelector('.perspective-1000');
+      cardContainer.classList.remove('hidden', 'animate-fade-out');
       confirmButton.classList.remove('hidden');
       disableConfirmButton();
+      
+      // 恢复翻牌功能
+      mainCard.style.pointerEvents = "auto";
       
       // 移除完成消息
       document.querySelector('#reset-game').parentElement.remove();
     }
     
-    // 事件监听
+    // 事件监听（不变）
     mainCard.addEventListener('click', flipCard);
     confirmButton.addEventListener('click', confirmSelection);
     
-    // 页面载入动画
+    // 页面载入动画（不变）
     window.addEventListener('load', () => {
       document.body.classList.add('opacity-100');
       document.body.classList.remove('opacity-0');
