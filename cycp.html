@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创业潜能测评 | 5分钟发现你的创业天赋</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#FF7D00',
+                        dark: '#1D2129',
+                        'gray-medium': '#86909C',
+                        'gray-light': '#F2F3F5',
+                       射手: '#36CFC9',
+                        刺客: '#722ED1',
+                        战士: '#F53F3F'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .animate-float {
+                animation: float 6s ease-in-out infinite;
+            }
+            .animate-pulse-slow {
+                animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            .progress-ring-circle {
+                transition: stroke-dashoffset 0.35s;
+                transform: rotate(-90deg);
+                transform-origin: 50% 50%;
+            }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-light text-dark min-h-screen flex flex-col">
+    <!-- 顶部导航 -->
+    <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 transition-all duration-300 shadow-sm">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-rocket text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-primary">创业潜能测评</h1>
+            </div>
+            <nav>
+                <button id="leaderboardBtn" class="hidden md:flex items-center space-x-1 text-gray-medium hover:text-primary transition-colors">
+                    <i class="fa fa-trophy"></i>
+                    <span>排行榜</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow container mx-auto px-4 pt-24 pb-16">
+        <!-- 欢迎页面 -->
+        <section id="welcomeSection" class="min-h-[70vh] flex flex-col items-center justify-center text-center">
+            <div class="max-w-2xl mx-auto">
+                <div class="relative mb-8">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-full blur opacity-30 animate-pulse-slow"></div>
+                    <div class="relative bg-white rounded-full p-6 shadow-lg">
+                        <i class="fa fa-lightbulb-o text-5xl text-primary"></i>
+                    </div>
+                </div>
+                
+                <h2 class="text-[clamp(2rem,5vw,3.5rem)] font-bold mb-6 leading-tight text-shadow">
+                    发现你的<span class="text-primary">创业天赋</span>
+                </h2>
+                
+                <p class="text-gray-medium text-lg mb-8">
+                    只需5分钟，完成10道题，揭示你的创业潜能，看看你是"创业射手"、"灵活刺客"还是"打工战士"
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    <div class="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                        <div class="w-12 h-12 bg-射手/10 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa fa-crosshairs text-射手 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">创业射手</h3>
+                        <p class="text-gray-medium text-sm">目标明确，执行力强，擅长把握市场机会</p>
+                    </div>
+                    
+                    <div class="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                        <div class="w-12 h-12 bg-刺客/10 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa fa-bolt text-刺客 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">灵活刺客</h3>
+                        <p class="text-gray-medium text-sm">思维敏捷，适应性强，擅长突破常规</p>
+                    </div>
+                    
+                    <div class="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+                        <div class="w-12 h-12 bg-战士/10 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa fa-shield text-战士 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">打工战士</h3>
+                        <p class="text-gray-medium text-sm">稳健可靠，执行力强，是团队中的坚实力量</p>
+                    </div>
+                </div>
+                
+                <button id="startBtn" class="bg-primary hover:bg-primary/90 text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 text-lg">
+                    开始测评 <i class="fa fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- 答题页面 -->
+        <section id="quizSection" class="hidden min-h-[70vh]">
+            <div class="max-w-2xl mx-auto">
+                <!-- 进度和计时器 -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+                    <div class="w-full md:w-auto mb-4 md:mb-0">
+                        <div class="flex items-center mb-2">
+                            <span id="questionProgress" class="font-semibold">第 1/10 题</span>
+                            <div class="ml-auto flex items-center text-gray-medium">
+                                <i class="fa fa-clock-o mr-1"></i>
+                                <span id="timer">5:00</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-gray-light rounded-full h-2.5">
+                            <div id="progressBar" class="bg-primary h-2.5 rounded-full" style="width: 10%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 题目卡片 -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-8 transform transition-all duration-500">
+                    <h3 id="questionText" class="text-xl md:text-2xl font-semibold mb-6">
+                        当你有了一个创业想法，你会首先做什么？
+                    </h3>
+                    
+                    <div id="optionsContainer" class="space-y-4">
+                        <div class="option-item border border-gray-200 rounded-xl p-4 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="radio" name="question" value="A" class="mt-1 mr-3">
+                                <span>立即开始行动，边做边完善想法</span>
+                            </label>
+                        </div>
+                        
+                        <div class="option-item border border-gray-200 rounded-xl p-4 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="radio" name="question" value="B" class="mt-1 mr-3">
+                                <span>进行深入调研，分析市场需求和竞争情况</span>
+                            </label>
+                        </div>
+                        
+                        <div class="option-item border border-gray-200 rounded-xl p-4 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="radio" name="question" value="C" class="mt-1 mr-3">
+                                <span>寻找有经验的人咨询，获取建议</span>
+                            </label>
+                        </div>
+                        
+                        <div class="option-item border border-gray-200 rounded-xl p-4 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="radio" name="question" value="D" class="mt-1 mr-3">
+                                <span>制定详细计划，确保万无一失后再行动</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 导航按钮 -->
+                <div class="flex justify-between">
+                    <button id="prevBtn" class="px-6 py-3 border border-gray-300 rounded-full text-gray-medium hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa fa-arrow-left mr-2"></i> 上一题
+                    </button>
+                    
+                    <button id="nextBtn" class="px-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors">
+                        下一题 <i class="fa fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 结果页面 -->
+        <section id="resultSection" class="hidden min-h-[70vh] flex flex-col items-center justify-center">
+            <div class="max-w-2xl mx-auto w-full">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-4">你的创业潜能结果</h2>
+                    <p class="text-gray-medium">基于你的回答，我们分析出你的创业特质</p>
+                </div>
+                
+                <!-- 结果卡片 -->
+                <div id="resultCard" class="bg-white rounded-2xl shadow-xl p-8 mb-10 transform transition-all duration-500 hover:shadow-2xl">
+                    <div class="text-center mb-8">
+                        <div id="rankIcon" class="w-24 h-24 mx-auto mb-4 rounded-full bg-射手/10 flex items-center justify-center">
+                            <i class="fa fa-crosshairs text-4xl text-射手"></i>
+                        </div>
+                        <h3 id="rankTitle" class="text-3xl font-bold text-射手 mb-2">创业射手</h3>
+                        <p id="rankDescription" class="text-gray-medium">你具备敏锐的市场洞察力和果断的执行力，是天生的创业者</p>
+                    </div>
+                    
+                    <!-- 特质分析 -->
+                    <div class="mb-8">
+                        <h4 class="font-semibold text-lg mb-4">你的创业特质分析</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm">冒险精神</span>
+                                    <span class="text-sm font-medium">85%</span>
+                                </div>
+                                <div class="w-full bg-gray-light rounded-full h-2">
+                                    <div class="bg-primary h-2 rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm">执行力</span>
+                                    <span class="text-sm font-medium">90%</span>
+                                </div>
+                                <div class="w-full bg-gray-light rounded-full h-2">
+                                    <div class="bg-primary h-2 rounded-full" style="width: 90%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm">创新思维</span>
+                                    <span class="text-sm font-medium">75%</span>
+                                </div>
+                                <div class="w-full bg-gray-light rounded-full h-2">
+                                    <div class="bg-primary h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm">团队协作</span>
+                                    <span class="text-sm font-medium">65%</span>
+                                </div>
+                                <div class="w-full bg-gray-light rounded-full h-2">
+                                    <div class="bg-primary h-2 rounded-full" style="width: 65%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 建议 -->
+                    <div class="bg-gray-light/50 rounded-xl p-4">
+                        <h4 class="font-semibold mb-2 flex items-center">
+                            <i class="fa fa-lightbulb-o text-secondary mr-2"></i> 给你的建议
+                        </h4>
+                        <p id="suggestion" class="text-gray-medium text-sm">
+                            你的冒险精神和执行力是创业的宝贵资产。建议在行动前适当增加市场调研，同时注意培养团队协作能力，这将有助于你在创业路上走得更远。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button id="restartBtn" class="px-6 py-3 border border-gray-300 rounded-full text-gray-medium hover:bg-gray-100 transition-colors">
+                        重新测评
+                    </button>
+                    
+                    <button id="showLeaderboardBtn" class="px-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors">
+                        <i class="fa fa-trophy mr-2"></i> 查看排行榜
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 排行榜页面 -->
+        <section id="leaderboardSection" class="hidden min-h-[70vh]">
+            <div class="max-w-2xl mx-auto">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-2xl font-bold">实时排行榜</h2>
+                    <button id="backBtn" class="text-primary hover:text-primary/80 transition-colors">
+                        <i class="fa fa-arrow-left mr-1"></i> 返回
+                    </button>
+                </div>
+                
+                <!-- 段位筛选 -->
+                <div class="flex justify-center mb-8">
+                    <div class="inline-flex bg-white rounded-full p-1 shadow-sm">
+                        <button class="rank-filter-btn px-5 py-2 rounded-full text-sm font-medium bg-射手 text-white" data-rank="all">
+                            全部
+                        </button>
+                        <button class="rank-filter-btn px-5 py-2 rounded-full text-sm font-medium text-gray-medium hover:bg-gray-100" data-rank="创业射手">
+                            创业射手
+                        </button>
+                        <button class="rank-filter-btn px-5 py-2 rounded-full text-sm font-medium text-gray-medium hover:bg-gray-100" data-rank="灵活刺客">
+                            灵活刺客
+                        </button>
+                        <button class="rank-filter-btn px-5 py-2 rounded-full text-sm font-medium text-gray-medium hover:bg-gray-100" data-rank="打工战士">
+                            打工战士
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 排行榜列表 -->
+                <div class="space-y-4 mb-10">
+                    <!-- 前三名 -->
+                    <div class="grid grid-cols-3 gap-4 mb-8">
+                        <!-- 第二名 -->
+                        <div class="bg-white rounded-xl shadow-md p-4 text-center transform transition-transform hover:scale-105">
+                            <div class="w-16 h-16 mx-auto mb-2 rounded-full bg-gray-light flex items-center justify-center">
+                                <span class="font-bold text-2xl text-gray-medium">2</span>
+                            </div>
+                            <div class="w-10 h-10 mx-auto mb-2 rounded-full overflow-hidden border-2 border-刺客">
+                                <img src="https://picsum.photos/200/200?random=1" alt="用户头像" class="w-full h-full object-cover">
+                            </div>
+                            <h4 class="font-semibold">李明</h4>
+                            <div class="text-xs text-刺客 bg-刺客/10 rounded-full px-2 py-1 inline-block mt-1">灵活刺客</div>
+                            <p class="text-sm font-medium mt-2">92分</p>
+                        </div>
+                        
+                        <!-- 第一名 -->
+                        <div class="bg-white rounded-xl shadow-lg p-4 text-center transform transition-transform hover:scale-105 relative">
+                            <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center">
+                                <i class="fa fa-crown text-xs text-white"></i>
+                            </div>
+                            <div class="w-16 h-16 mx-auto mb-2 rounded-full bg-gray-light flex items-center justify-center">
+                                <span class="font-bold text-2xl text-yellow-500">1</span>
+                            </div>
+                            <div class="w-10 h-10 mx-auto mb-2 rounded-full overflow-hidden border-2 border-射手">
+                                <img src="https://picsum.photos/200/200?random=2" alt="用户头像" class="w-full h-full object-cover">
+                            </div>
+                            <h4 class="font-semibold">王强</h4>
+                            <div class="text-xs text-射手 bg-射手/10 rounded-full px-2 py-1 inline-block mt-1">创业射手</div>
+                            <p class="text-sm font-medium mt-2">98分</p>
+                        </div>
+                        
+                        <!-- 第三名 -->
+                        <div class="bg-white rounded-xl shadow-md p-4 text-center transform transition-transform hover:scale-105">
+                            <div class="w-16 h-16 mx-auto mb-2 rounded-full bg-gray-light flex items-center justify-center">
+                                <span class="font-bold text-2xl text-gray-medium">3</span>
+                            </div>
+                            <div class="w-10 h-10 mx-auto mb-2 rounded-full overflow-hidden border-2 border-战士">
+                                <img src="https://picsum.photos/200/200?random=3" alt="用户头像" class="w-full h-full object-cover">
+                            </div>
+                            <h4 class="font-semibold">张伟</h4>
+                            <div class="text-xs text-战士 bg-战士/10 rounded-full px-2 py-1 inline-block mt-1">打工战士</div>
+                            <p class="text-sm font-medium mt-2">89分</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 排行榜列表项 -->
+                    <div class="leaderboard-item bg-white rounded-xl shadow-sm p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                        <div class="flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-gray-light flex items-center justify-center text-sm font-medium mr-4">4</span>
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
+                                    <img src="https://picsum.photos/200/200?random=4" alt="用户头像" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <h4 class="font-medium">陈杰</h4>
+                                    <div class="text-xs text-射手 bg-射手/10 rounded-full px-2 py-0.5 inline-block">创业射手</div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="font-semibold">85分</span>
+                    </div>
+                    
+                    <div class="leaderboard-item bg-white rounded-xl shadow-sm p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                        <div class="flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-gray-light flex items-center justify-center text-sm font-medium mr-4">5</span>
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
+                                    <img src="https://picsum.photos/200/200?random=5" alt="用户头像" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <h4 class="font-medium">赵丽</h4>
+                                    <div class="text-xs text-刺客 bg-刺客/10 rounded-full px-2 py-0.5 inline-block">灵活刺客</div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="font-semibold">82分</span>
+                    </div>
+                    
+                    <div class="leaderboard-item bg-white rounded-xl shadow-sm p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                        <div class="flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-gray-light flex items-center justify-center text-sm font-medium mr-4">6</span>
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
+                                    <img src="https://picsum.photos/200/200?random=6" alt="用户头像" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <h4 class="font-medium">刘强</h4>
+                                    <div class="text-xs text-战士 bg-战士/10 rounded-full px-2 py-0.5 inline-block">打工战士</div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="font-semibold">79分</span>
+                    </div>
+                    
+                    <div class="leaderboard-item bg-white rounded-xl shadow-sm p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                        <div class="flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-gray-light flex items-center justify-center text-sm font-medium mr-4">7</span>
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
+                                    <img src="https://picsum.photos/200/200?random=7" alt="用户头像" class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <h4 class="font-medium">你</h4>
+                                    <div class="text-xs text-primary bg-primary/10 rounded-full px-2 py-0.5 inline-block">你的段位</div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="font-semibold">75分</span>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button id="backToResultBtn" class="px-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors">
+                        返回我的结果
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white py-6 border-t">
+        <div class="container mx-auto px-4 text-center text-gray-medium text-sm">
+            <p>创业潜能测评 &copy; 2023 | 本测评仅供参考，不构成创业建议</p>
+        </div>
+    </footer>
+
+    <script>
+        // 题目数据
+        const questions = [
+            {
+                text: "当你有了一个创业想法，你会首先做什么？",
+                options: [
+                    "立即开始行动，边做边完善想法",
+                    "进行深入调研，分析市场需求和竞争情况",
+                    "寻找有经验的人咨询，获取建议",
+                    "制定详细计划，确保万无一失后再行动"
+                ]
+            },
+            {
+                text: "面对创业中的不确定性，你通常会？",
+                options: [
+                    "将其视为机会，勇于尝试",
+                    "通过数据分析降低风险",
+                    "寻求团队共识后再决策",
+                    "尽可能规避风险，选择稳妥方案"
+                ]
+            },
+            {
+                text: "当你的创业项目遇到重大挫折时，你会？",
+                options: [
+                    "迅速调整方向，寻找新的突破口",
+                    "坚持原有路线，相信长期价值",
+                    "与团队深入讨论，集思广益",
+                    "评估风险，必要时及时止损"
+                ]
+            },
+            {
+                text: "在团队决策中，你更倾向于？",
+                options: [
+                    "快速决策，即使信息不完整",
+                    "基于数据和分析做出决策",
+                    "充分听取各方意见后决策",
+                    "遵循既定流程和规则决策"
+                ]
+            },
+            {
+                text: "你认为创业成功最重要的因素是？",
+                options: [
+                    "敏锐的市场嗅觉和行动力",
+                    "完善的商业模式和执行力",
+                    "优秀的团队和合作精神",
+                    "稳健的运营和风险控制"
+                ]
+            },
+            {
+                text: "当需要在短期内完成一项重要任务时，你会？",
+                options: [
+                    "集中精力突破关键点，忽略次要细节",
+                    "制定详细计划，按步骤执行",
+                    "合理分配任务，发挥团队优势",
+                    "优先保证质量，必要时延长时间"
+                ]
+            },
+            {
+                text: "你对工作与生活平衡的看法是？",
+                options: [
+                    "创业阶段可以牺牲生活，专注工作",
+                    "高效工作，保证一定的生活质量",
+                    "团队共同努力，合理分配时间",
+                    "工作生活必须平衡，不能相互影响"
+                ]
+            },
+            {
+                text: "面对竞争对手的模仿，你会？",
+                options: [
+                    "快速创新，保持领先",
+                    "优化现有产品，提高壁垒",
+                    "加强团队建设，提升凝聚力",
+                    "降低成本，保持价格优势"
+                ]
+            },
+            {
+                text: "你更倾向于哪种创业模式？",
+                options: [
+                    "颠覆性创新，创造新市场",
+                    "改进现有产品，提升用户体验",
+                    "整合资源，打造平台生态",
+                    "深耕细分市场，做精做专"
+                ]
+            },
+            {
+                text: "你对失败的态度是？",
+                options: [
+                    "视为学习机会，快速尝试新方向",
+                    "深入分析原因，避免重蹈覆辙",
+                    "总结经验，与团队共同成长",
+                    "谨慎对待，避免再次失败"
+                ]
+            }
+        ];
+
+        // DOM元素
+        const welcomeSection = document.getElementById('welcomeSection');
+        const quizSection = document.getElementById('quizSection');
+        const resultSection = document.getElementById('resultSection');
+        const leaderboardSection = document.getElementById('leaderboardSection');
+        
+        const startBtn = document.getElementById('startBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const leaderboardBtn = document.getElementById('leaderboardBtn');
+        const showLeaderboardBtn = document.getElementById('showLeaderboardBtn');
+        const backBtn = document.getElementById('backBtn');
+        const backToResultBtn = document.getElementById('backToResultBtn');
+        
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const questionProgress = document.getElementById('questionProgress');
+        const progressBar = document.getElementById('progressBar');
+        const timer = document.getElementById('timer');
+        
+        const rankTitle = document.getElementById('rankTitle');
+        const rankIcon = document.getElementById('rankIcon');
+        const rankDescription = document.getElementById('rankDescription');
+        const suggestion = document.getElementById('suggestion');
+        
+        // 测评状态
+        let currentQuestion = 0;
+        let answers = [];
+        let timeLeft = 300; // 5分钟，单位秒
+        let timerInterval;
+        let score = 0;
+
+        // 段位数据
+        const ranks = {
+            '创业射手': {
+                icon: 'fa-crosshairs',
+                color: '射手',
+                description: '你具备敏锐的市场洞察力和果断的执行力，是天生的创业者',
+                suggestion: '你的冒险精神和执行力是创业的宝贵资产。建议在行动前适当增加市场调研，同时注意培养团队协作能力，这将有助于你在创业路上走得更远。'
+            },
+            '灵活刺客': {
+                icon: 'fa-bolt',
+                color: '刺客',
+                description: '你思维敏捷，适应性强，擅长在变化中寻找机会',
+                suggestion: '你的灵活性和创新思维是巨大优势。建议加强长期规划能力，同时建立更稳定的资源网络，这将帮助你将创意转化为持续的商业价值。'
+            },
+            '打工战士': {
+                icon: 'fa-shield',
+                color: '战士',
+                description: '你稳健可靠，执行力强，是团队中不可或缺的核心力量',
+                suggestion: '你的责任感和执行力备受信赖。如果考虑创业，可以从副业或合伙创业开始，逐步培养风险承担能力和战略眼光，充分发挥你的执行优势。'
+            }
+        };
+
+        // 初始化事件监听
+        function initEventListeners() {
+            startBtn.addEventListener('click', startQuiz);
+            prevBtn.addEventListener('click', goToPrevQuestion);
+            nextBtn.addEventListener('click', goToNextQuestion);
+            restartBtn.addEventListener('click', restartQuiz);
+            leaderboardBtn.addEventListener('click', showLeaderboard);
+            showLeaderboardBtn.addEventListener('click', showLeaderboard);
+            backBtn.addEventListener('click', goBackFromLeaderboard);
+            backToResultBtn.addEventListener('click', goBackToResult);
+            
+            // 段位筛选按钮
+            document.querySelectorAll('.rank-filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 移除所有按钮的选中状态
+                    document.querySelectorAll('.rank-filter-btn').forEach(b => {
+                        b.classList.remove('bg-射手', 'bg-刺客', 'bg-战士', 'text-white');
+                        b.classList.add('text-gray-medium', 'hover:bg-gray-100');
+                    });
+                    
+                    // 设置当前按钮的选中状态
+                    const rank = this.dataset.rank;
+                    if (rank === 'all') {
+                        this.classList.add('bg-射手', 'text-white');
+                    } else {
+                        this.classList.add(`bg-${ranks[rank].color}`, 'text-white');
+                    }
+                    this.classList.remove('text-gray-medium', 'hover:bg-gray-100');
+                    
+                    // 这里可以添加筛选逻辑
+                });
+            });
+        }
+
+        // 开始测评
+        function startQuiz() {
+            welcomeSection.classList.add('hidden');
+            quizSection.classList.remove('hidden');
+            
+            loadQuestion(currentQuestion);
+            startTimer();
+            
+            // 滚动到顶部
+            window.scrollTo(0, 0);
+        }
+
+        // 加载题目
+        function loadQuestion(index) {
+            const question = questions[index];
+            questionText.textContent = question.text;
+            
+            // 清空选项容器
+            optionsContainer.innerHTML = '';
+            
+            // 添加选项
+            question.options.forEach((option, i) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option-item border border-gray-200 rounded-xl p-4 hover:border-primary hover:bg-primary/5 cursor-pointer transition-all';
+                
+                const label = document.createElement('label');
+                label.className = 'flex items-start cursor-pointer';
+                
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'question';
+                input.value = String.fromCharCode(65 + i);
+                input.className = 'mt-1 mr-3';
+                
+                // 如果有保存的答案，设置选中状态
+                if (answers[index] && answers[index] === input.value) {
+                    input.checked = true;
+                    optionDiv.classList.add('border-primary', 'bg-primary/5');
+                }
+                
+                const span = document.createElement('span');
+                span.textContent = option;
+                
+                label.appendChild(input);
+                label.appendChild(span);
+                optionDiv.appendChild(label);
+                
+                // 添加点击事件
+                optionDiv.addEventListener('click', () => {
+                    // 移除其他选项的选中状态
+                    document.querySelectorAll('.option-item').forEach(item => {
+                        item.classList.remove('border-primary', 'bg-primary/5');
+                        item.querySelector('input').checked = false;
+                    });
+                    
+                    // 设置当前选项为选中
+                    input.checked = true;
+                    optionDiv.classList.add('border-primary', 'bg-primary/5');
+                    
+                    // 保存答案
+                    answers[index] = input.value;
+                });
+                
+                optionsContainer.appendChild(optionDiv);
+            });
+            
+            // 更新进度
+            questionProgress.textContent = `第 ${index + 1}/${questions.length} 题`;
+            progressBar.style.width = `${((index + 1) / questions.length) * 100}%`;
+            
+            // 更新按钮状态
+            prevBtn.disabled = index === 0;
+            nextBtn.textContent = index === questions.length - 1 ? '完成测评' : '下一题';
+            nextBtn.innerHTML = index === questions.length - 1 ? 
+                '完成测评 <i class="fa fa-check ml-2"></i>' : 
+                '下一题 <i class="fa fa-arrow-right ml-2"></i>';
+        }
+
+        // 上一题
+        function goToPrevQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                loadQuestion(currentQuestion);
+            }
+        }
+
+        // 下一题
+        function goToNextQuestion() {
+            // 检查是否选择了答案
+            const selectedOption = document.querySelector(`input[name="question"]:checked`);
+            if (!selectedOption && currentQuestion < questions.length - 1) {
+                // 未选择答案，提示用户
+                shakeElement(optionsContainer);
+                return;
+            }
+            
+            // 保存答案
+            if (selectedOption) {
+                answers[currentQuestion] = selectedOption.value;
+            }
+            
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                loadQuestion(currentQuestion);
+            } else {
+                // 完成测评
+                finishQuiz();
+            }
+        }
+
+        // 开始计时器
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                
+                // 格式化时间
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timer.textContent = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+                
+                // 时间不足1分钟时变红
+                if (timeLeft <= 60) {
+                    timer.classList.add('text-red-500');
+                }
+                
+                // 时间到
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    finishQuiz();
+                }
+            }, 1000);
+        }
+
+        // 完成测评
+        function finishQuiz() {
+            clearInterval(timerInterval);
+            
+            // 计算得分
+            calculateScore();
+            
+            // 显示结果
+            showResult();
+        }
+
+        // 计算得分
+        function calculateScore() {
+            // 这里只是简单模拟得分计算，实际应用中可以根据更复杂的算法
+            score = 0;
+            answers.forEach(answer => {
+                if (answer) {
+                    // 随机加分，实际应用中应根据答案对应不同分值
+                    score += Math.floor(Math.random() * 10) + 5;
+                }
+            });
+            
+            // 确保得分在0-100之间
+            score = Math.min(100, Math.max(0, score));
+        }
+
+        // 显示结果
+        function showResult() {
+            quizSection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+            
+            // 确定段位
+            let rank;
+            if (score >= 80) {
+                rank = '创业射手';
+            } else if (score >= 60) {
+                rank = '灵活刺客';
+            } else {
+                rank = '打工战士';
+            }
+            
+            // 更新结果显示
+            const rankData = ranks[rank];
+            rankTitle.textContent = rank;
+            rankTitle.className = `text-3xl font-bold text-${rankData.color} mb-2`;
+            rankIcon.className = `w-24 h-24 mx-auto mb-4 rounded-full bg-${rankData.color}/10 flex items-center justify-center`;
+            rankIcon.innerHTML = `<i class="fa ${rankData.icon} text-4xl text-${rankData.color}"></i>`;
+            rankDescription.textContent = rankData.description;
+            suggestion.textContent = rankData.suggestion;
+            
+            // 滚动到顶部
+            window.scrollTo(0, 0);
+        }
+
+        // 重新测评
+        function restartQuiz() {
+            currentQuestion = 0;
+            answers = [];
+            timeLeft = 300;
+            timer.classList.remove('text-red-500');
+            
+            resultSection.classList.add('hidden');
+            leaderboardSection.classList.add('hidden');
+            welcomeSection.classList.remove('hidden');
+        }
+
+        // 显示排行榜
+        function showLeaderboard() {
+            welcomeSection.classList.add('hidden');
+            quizSection.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            leaderboardSection.classList.remove('hidden');
+            
+            // 滚动到顶部
+            window.scrollTo(0, 0);
+        }
+
+        // 从排行榜返回
+        function goBackFromLeaderboard() {
+            leaderboardSection.classList.add('hidden');
+            
+            // 如果已经完成测评，返回结果页，否则返回欢迎页
+            if (resultSection.classList.contains('hidden') && !quizSection.classList.contains('hidden')) {
+                quizSection.classList.remove('hidden');
+            } else if (!resultSection.classList.contains('hidden')) {
+                resultSection.classList.remove('hidden');
+            } else {
+                welcomeSection.classList.remove('hidden');
+            }
+        }
+
+        // 返回结果页
+        function goBackToResult() {
+            leaderboardSection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+        }
+
+        // 元素抖动动画
+        function shakeElement(element) {
+            element.classList.add('animate-shake');
+            setTimeout(() => {
+                element.classList.remove('animate-shake');
+            }, 500);
+        }
+
+        // 初始化
+        function init() {
+            initEventListeners();
+            
+            // 添加自定义动画
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                    20%, 40%, 60%, 80% { transform: translateX(5px); }
+                }
+                .animate-shake {
+                    animation: shake 0.5s ease-in-out;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
