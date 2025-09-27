@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>理想就业城市选择工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .hover-lift {
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            .hover-lift:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+            .factor-active {
+                @apply bg-primary text-white border-primary;
+            }
+            .city-active {
+                @apply bg-secondary text-white border-secondary;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-map-marker text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-primary">理想就业城市选择</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#" class="text-gray-600 hover:text-primary transition-colors">
+                    <i class="fa fa-question-circle mr-1"></i>使用帮助
+                </a>
+                <a href="#" class="text-gray-600 hover:text-primary transition-colors">
+                    <i class="fa fa-info-circle mr-1"></i>关于
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- 页面标题 -->
+            <div class="text-center mb-10">
+                <h2 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold mb-4">找到适合你的就业城市</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">通过选择你关注的因素，我们将为你分析国内主要城市的表现，助你做出明智的就业城市选择</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- 左侧：因素选择 -->
+                <div class="lg:col-span-1 space-y-8">
+                    <!-- 关注因素选择 -->
+                    <div class="bg-white rounded-xl p-6 shadow-md">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center">
+                            <i class="fa fa-filter text-primary mr-2"></i> 选择你关注的因素
+                        </h3>
+                        <p class="text-sm text-gray-500 mb-4">至少选择2个因素进行比较</p>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="factorsContainer">
+                            <button class="factor-btn border-2 rounded-lg p-3 flex flex-col items-center justify-center hover:border-primary transition-all" data-factor="housing">
+                                <i class="fa fa-home text-xl mb-2"></i>
+                                <span>低房价</span>
+                            </button>
+                            
+                            <button class="factor-btn border-2 rounded-lg p-3 flex flex-col items-center justify-center hover:border-primary transition-all" data-factor="food">
+                                <i class="fa fa-cutlery text-xl mb-2"></i>
+                                <span>美食多</span>
+                            </button>
+                            
+                            <button class="factor-btn border-2 rounded-lg p-3 flex flex-col items-center justify-center hover:border-primary transition-all" data-factor="climate">
+                                <i class="fa fa-sun-o text-xl mb-2"></i>
+                                <span>气候好</span>
+                            </button>
+                            
+                            <button class="factor-btn border-2 rounded-lg p-3 flex flex-col items-center justify-center hover:border-primary transition-all" data-factor="jobs">
+                                <i class="fa fa-briefcase text-xl mb-2"></i>
+                                <span>岗位密</span>
+                            </button>
+                            
+                            <button class="factor-btn border-2 rounded-lg p-3 flex flex-col items-center justify-center hover:border-primary transition-all" data-factor="salary">
+                                <i class="fa fa-money text-xl mb-2"></i>
+                                <span>高工资</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 城市选择 -->
+                    <div class="bg-white rounded-xl p-6 shadow-md">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center">
+                            <i class="fa fa-building text-primary mr-2"></i> 选择要比较的城市
+                        </h3>
+                        <p class="text-sm text-gray-500 mb-4">最多选择5个城市进行比较</p>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="citiesContainer">
+                            <!-- 城市按钮将通过JS动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 推荐按钮 -->
+                    <button id="analyzeBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                        <i class="fa fa-bar-chart mr-2"></i> 生成分析报告
+                    </button>
+                </div>
+                
+                <!-- 右侧：结果展示 -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- 雷达图展示区 -->
+                    <div class="bg-white rounded-xl p-6 shadow-md">
+                        <h3 class="text-lg font-semibold mb-6 flex items-center">
+                            <i class="fa fa-line-chart text-primary mr-2"></i> 城市因素对比雷达图
+                        </h3>
+                        
+                        <div class="relative aspect-square md:aspect-video">
+                            <!-- 初始提示 -->
+                            <div id="chartPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-gray-500">
+                                <i class="fa fa-pie-chart text-5xl mb-4 text-gray-300"></i>
+                                <p>请选择关注的因素和城市，然后点击"生成分析报告"按钮查看对比结果</p>
+                            </div>
+                            
+                            <!-- 雷达图容器 -->
+                            <canvas id="cityRadarChart" class="w-full h-full hidden"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- 推荐城市 -->
+                    <div class="bg-white rounded-xl p-6 shadow-md">
+                        <h3 class="text-lg font-semibold mb-6 flex items-center">
+                            <i class="fa fa-star text-accent mr-2"></i> 为你推荐的城市
+                        </h3>
+                        
+                        <div id="recommendationPlaceholder" class="flex flex-col items-center justify-center text-center p-6 text-gray-500">
+                            <i class="fa fa-map-signs text-5xl mb-4 text-gray-300"></i>
+                            <p>完成选择后，这里将显示根据你的偏好推荐的城市</p>
+                        </div>
+                        
+                        <div id="recommendations" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                            <!-- 推荐城市将通过JS动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 城市详情 -->
+                    <div class="bg-white rounded-xl p-6 shadow-md">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center">
+                            <i class="fa fa-info-circle text-primary mr-2"></i> 城市简要分析
+                        </h3>
+                        
+                        <div id="cityDetails" class="text-gray-600">
+                            <p class="italic text-center text-gray-500">选择城市后可查看详细分析</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white py-6 border-t mt-12">
+        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>理想就业城市选择工具 &copy; 2023 | 数据仅供参考，实际情况可能有所不同</p>
+        </div>
+    </footer>
+
+    <script>
+        // 城市数据 - 各因素得分范围为0-100
+        const cityData = {
+            北京: {
+                housing: 30,    // 房价较高
+                food: 85,       // 美食丰富
+                climate: 60,    // 气候一般，冬季较冷
+                jobs: 95,       // 就业机会多
+                salary: 90,     // 薪资水平高
+                color: 'rgba(239, 68, 68, 0.7)',
+                details: '北京作为中国首都，政治文化中心，拥有最多的央企、国企和高科技企业总部，就业机会丰富，薪资水平高。但房价和生活成本也较高，气候四季分明，冬季寒冷干燥。'
+            },
+            上海: {
+                housing: 25,    // 房价很高
+                food: 95,       // 美食非常丰富
+                climate: 65,    // 气候温和，夏季湿热
+                jobs: 95,       // 就业机会多
+                salary: 92,     // 薪资水平高
+                color: 'rgba(59, 130, 246, 0.7)',
+                details: '上海是中国的经济中心，金融和国际贸易发达，外资企业集中，薪资水平全国领先。生活便利，国际化程度高，但房价和生活成本高昂，夏季较为湿热。'
+            },
+            广州: {
+                housing: 50,    // 房价中等
+                food: 98,       // 美食非常丰富
+                climate: 70,    // 气候温暖，夏季炎热潮湿
+                jobs: 85,       // 就业机会较多
+                salary: 80,     // 薪资水平较高
+                color: 'rgba(16, 185, 129, 0.7)',
+                details: '广州是华南地区的经济中心，制造业和贸易发达，生活成本相对北上深较低。饮食文化丰富，气候温暖湿润，适合喜欢南方气候的人。'
+            },
+            深圳: {
+                housing: 40,    // 房价较高
+                food: 80,       // 美食丰富
+                climate: 75,    // 气候温暖
+                jobs: 90,       // 就业机会多
+                salary: 88,     // 薪资水平高
+                color: 'rgba(139, 92, 246, 0.7)',
+                details: '深圳是中国科技创新中心，互联网和高科技企业集中，创业氛围浓厚，对年轻人友好。气候温暖湿润，冬季短暂，但房价依然较高。'
+            },
+            杭州: {
+                housing: 45,    // 房价中等偏高
+                food: 85,       // 美食丰富
+                climate: 70,    // 气候宜人，四季分明
+                jobs: 80,       // 就业机会较多
+                salary: 82,     // 薪资水平较高
+                color: 'rgba(245, 158, 11, 0.7)',
+                details: '杭州是电子商务和互联网产业的重要基地，阿里巴巴等知名企业总部所在地。城市环境优美，有"人间天堂"之称，生活品质较高。'
+            },
+            成都: {
+                housing: 60,    // 房价中等
+                food: 95,       // 美食非常丰富
+                climate: 65,    // 气候温和，多雾
+                jobs: 75,       // 就业机会中等
+                salary: 70,     // 薪资水平中等
+                color: 'rgba(236, 72, 153, 0.7)',
+                details: '成都是西南地区的中心城市，生活节奏相对缓慢，美食众多，休闲文化发达。房价相对合理，近年来高科技产业发展迅速，就业机会增加。'
+            },
+            武汉: {
+                housing: 65,    // 房价中等偏低
+                food: 85,       // 美食丰富
+                climate: 60,    // 气候四季分明，夏季炎热
+                jobs: 75,       // 就业机会中等
+                salary: 72,     // 薪资水平中等
+                color: 'rgba(6, 182, 212, 0.7)',
+                details: '武汉是中部地区的交通和经济中心，高校众多，人才储备丰富。房价相对亲民，制造业和信息技术产业较为发达，夏季较为炎热。'
+            },
+            西安: {
+                housing: 70,    // 房价较低
+                food: 85,       // 美食丰富
+                climate: 55,    // 气候干燥，冬季寒冷
+                jobs: 70,       // 就业机会中等
+                salary: 68,     // 薪资水平中等偏低
+                color: 'rgba(16, 185, 129, 0.7)',
+                details: '西安是西北地区的中心城市，历史文化名城，近年来大力发展高科技产业。房价相对较低，生活成本适中，气候较为干燥。'
+            },
+            南京: {
+                housing: 50,    // 房价中等
+                food: 80,       // 美食丰富
+                climate: 65,    // 气候宜人
+                jobs: 78,       // 就业机会较多
+                salary: 78,     // 薪资水平中等偏高
+                color: 'rgba(59, 130, 246, 0.7)',
+                details: '南京是华东地区重要的中心城市，教育资源丰富，高新技术产业发达。城市历史悠久，文化底蕴深厚，生活环境良好。'
+            },
+            重庆: {
+                housing: 75,    // 房价较低
+                food: 95,       // 美食非常丰富
+                climate: 60,    // 气候湿润，夏季炎热
+                jobs: 72,       // 就业机会中等
+                salary: 68,     // 薪资水平中等偏低
+                color: 'rgba(239, 68, 68, 0.7)',
+                details: '重庆是中西部地区重要的经济中心，近年来发展迅速。房价亲民，美食以火锅为代表非常有名，城市地貌独特，夏季较为炎热。'
+            },
+            苏州: {
+                housing: 55,    // 房价中等
+                food: 85,       // 美食丰富
+                climate: 70,    // 气候宜人
+                jobs: 80,       // 就业机会较多
+                salary: 80,     // 薪资水平较高
+                color: 'rgba(139, 92, 246, 0.7)',
+                details: '苏州是中国最强地级市之一，制造业和高新技术产业发达，紧邻上海，区位优势明显。历史文化名城，环境优美，生活品质高。'
+            },
+            青岛: {
+                housing: 60,    // 房价中等
+                food: 85,       // 美食丰富
+                climate: 70,    // 气候宜人，海洋性气候
+                jobs: 70,       // 就业机会中等
+                salary: 70,     // 薪资水平中等
+                color: 'rgba(6, 182, 212, 0.7)',
+                details: '青岛是北方重要的港口城市和经济中心，海洋经济发达，气候宜人。生活节奏适中，房价相对合理，啤酒文化闻名。'
+            }
+        };
+        
+        // 因素名称映射
+        const factorLabels = {
+            housing: '低房价',
+            food: '美食多',
+            climate: '气候好',
+            jobs: '岗位密',
+            salary: '高工资'
+        };
+        
+        // 页面状态
+        const state = {
+            selectedFactors: [],
+            selectedCities: [],
+            chart: null
+        };
+        
+        // DOM元素
+        const factorsContainer = document.getElementById('factorsContainer');
+        const citiesContainer = document.getElementById('citiesContainer');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const chartPlaceholder = document.getElementById('chartPlaceholder');
+        const cityRadarChart = document.getElementById('cityRadarChart');
+        const recommendations = document.getElementById('recommendations');
+        const recommendationPlaceholder = document.getElementById('recommendationPlaceholder');
+        const cityDetails = document.getElementById('cityDetails');
+        
+        // 初始化页面
+        function init() {
+            // 生成城市选择按钮
+            generateCityButtons();
+            
+            // 初始化事件监听
+            initEventListeners();
+            
+            // 禁用分析按钮
+            updateAnalyzeButtonState();
+        }
+        
+        // 生成城市选择按钮
+        function generateCityButtons() {
+            for (const city in cityData) {
+                const cityBtn = document.createElement('button');
+                cityBtn.className = 'city-btn border-2 rounded-lg p-2 text-sm flex items-center justify-center hover:border-secondary transition-all';
+                cityBtn.dataset.city = city;
+                cityBtn.textContent = city;
+                
+                citiesContainer.appendChild(cityBtn);
+            }
+        }
+        
+        // 初始化事件监听
+        function initEventListeners() {
+            // 因素选择按钮
+            document.querySelectorAll('.factor-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const factor = btn.dataset.factor;
+                    toggleFactorSelection(factor, btn);
+                });
+            });
+            
+            // 城市选择按钮
+            document.querySelectorAll('.city-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const city = btn.dataset.city;
+                    toggleCitySelection(city, btn);
+                });
+            });
+            
+            // 分析按钮
+            analyzeBtn.addEventListener('click', generateAnalysis);
+        }
+        
+        // 切换因素选择状态
+        function toggleFactorSelection(factor, btn) {
+            const index = state.selectedFactors.indexOf(factor);
+            
+            if (index === -1) {
+                // 选中因素
+                state.selectedFactors.push(factor);
+                btn.classList.add('factor-active');
+            } else {
+                // 取消选中
+                state.selectedFactors.splice(index, 1);
+                btn.classList.remove('factor-active');
+            }
+            
+            updateAnalyzeButtonState();
+        }
+        
+        // 切换城市选择状态
+        function toggleCitySelection(city, btn) {
+            const index = state.selectedCities.indexOf(city);
+            
+            if (index === -1) {
+                // 选中城市（最多选5个）
+                if (state.selectedCities.length < 5) {
+                    state.selectedCities.push(city);
+                    btn.classList.add('city-active');
+                    
+                    // 更新城市详情
+                    updateCityDetails();
+                }
+            } else {
+                // 取消选中
+                state.selectedCities.splice(index, 1);
+                btn.classList.remove('city-active');
+                
+                // 更新城市详情
+                updateCityDetails();
+            }
+            
+            updateAnalyzeButtonState();
+        }
+        
+        // 更新分析按钮状态
+        function updateAnalyzeButtonState() {
+            // 至少选择2个因素和1个城市才能分析
+            const canAnalyze = state.selectedFactors.length >= 2 && state.selectedCities.length >= 1;
+            analyzeBtn.disabled = !canAnalyze;
+        }
+        
+        // 更新城市详情
+        function updateCityDetails() {
+            if (state.selectedCities.length === 0) {
+                cityDetails.innerHTML = '<p class="italic text-center text-gray-500">选择城市后可查看详细分析</p>';
+                return;
+            }
+            
+            let detailsHTML = '';
+            state.selectedCities.forEach(city => {
+                detailsHTML += `
+                    <div class="mb-4 pb-4 ${state.selectedCities.indexOf(city) !== state.selectedCities.length - 1 ? 'border-b' : ''}">
+                        <h4 class="font-semibold text-primary mb-2">${city}</h4>
+                        <p>${cityData[city].details}</p>
+                    </div>
+                `;
+            });
+            
+            cityDetails.innerHTML = detailsHTML;
+        }
+        
+        // 生成分析报告
+        function generateAnalysis() {
+            // 隐藏占位符，显示图表
+            chartPlaceholder.classList.add('hidden');
+            cityRadarChart.classList.remove('hidden');
+            
+            // 隐藏推荐占位符，显示推荐
+            recommendationPlaceholder.classList.add('hidden');
+            recommendations.classList.remove('hidden');
+            
+            // 生成雷达图
+            generateRadarChart();
+            
+            // 生成推荐
+            generateRecommendations();
+        }
+        
+        // 生成雷达图
+        function generateRadarChart() {
+            // 准备图表数据
+            const labels = state.selectedFactors.map(factor => factorLabels[factor]);
+            
+            const datasets = state.selectedCities.map(city => {
+                const data = state.selectedFactors.map(factor => cityData[city][factor]);
+                
+                return {
+                    label: city,
+                    data: data,
+                    backgroundColor: cityData[city].color,
+                    borderColor: cityData[city].color.replace('0.7', '1'),
+                    pointBackgroundColor: cityData[city].color.replace('0.7', '1'),
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: cityData[city].color.replace('0.7', '1')
+                };
+            });
+            
+            // 如果已有图表，先销毁
+            if (state.chart) {
+                state.chart.destroy();
+            }
+            
+            // 创建新图表
+            const ctx = cityRadarChart.getContext('2d');
+            state.chart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}分`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+        
+        // 生成推荐城市
+        function generateRecommendations() {
+            // 清空现有推荐
+            recommendations.innerHTML = '';
+            
+            // 计算每个城市的加权得分（这里简单使用平均分）
+            const cityScores = {};
+            
+            state.selectedCities.forEach(city => {
+                let total = 0;
+                state.selectedFactors.forEach(factor => {
+                    total += cityData[city][factor];
+                });
+                
+                cityScores[city] = total / state.selectedFactors.length;
+            });
+            
+            // 按得分排序
+            const sortedCities = Object.keys(cityScores).sort((a, b) => cityScores[b] - cityScores[a]);
+            
+            // 生成推荐卡片
+            sortedCities.forEach((city, index) => {
+                const score = Math.round(cityScores[city]);
+                const rankClass = index === 0 ? 'bg-yellow-100 text-yellow-600' : 
+                                 index === 1 ? 'bg-gray-100 text-gray-600' : 
+                                 index === 2 ? 'bg-orange-100 text-orange-600' : 
+                                 'bg-gray-50 text-gray-500';
+                
+                const recommendationCard = document.createElement('div');
+                recommendationCard.className = 'border rounded-xl p-4 hover-lift';
+                
+                recommendationCard.innerHTML = `
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-lg">${city}</h4>
+                        <div class="w-8 h-8 rounded-full ${rankClass} flex items-center justify-center font-bold">
+                            ${index + 1}
+                        </div>
+                    </div>
+                    <div class="flex items-center mb-3">
+                        <div class="w-full bg-gray-200 rounded-full h-2 mr-2">
+                            <div class="bg-primary h-2 rounded-full" style="width: ${score}%"></div>
+                        </div>
+                        <span class="font-semibold">${score}分</span>
+                    </div>
+                    <p class="text-sm text-gray-600 line-clamp-2">${cityData[city].details}</p>
+                `;
+                
+                recommendations.appendChild(recommendationCard);
+            });
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
