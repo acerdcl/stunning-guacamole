@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>你是哪类信息捕手 - 职业信息搜集测评</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.1/dist/av-min.js"></script>
+  
+  <!-- 配置Tailwind -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3B82F6',
+            secondary: '#F97316',
+            accent: '#10B981',
+            dark: '#1E293B',
+            light: '#F8FAFC'
+          },
+          fontFamily: {
+            inter: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .card-hover {
+        transition: all 0.3s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+      .progress-animation {
+        transition: width 0.5s ease-in-out;
+      }
+    }
+  </style>
+</head>
+
+<body class="font-inter bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen text-dark">
+  <!-- 页面容器 -->
+  <div class="container mx-auto px-4 py-8 max-w-4xl">
+    
+    <!-- 头部标题 -->
+    <header class="text-center mb-10">
+      <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold text-primary mb-3 text-shadow">你是哪类信息捕手？</h1>
+      <p class="text-gray-600 text-lg max-w-2xl mx-auto">通过5道题，发现你搜集职业信息的独特风格，找到最适合自己的求职策略</p>
+    </header>
+    
+    <!-- 进度条 -->
+    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-10">
+      <div id="progress-bar" class="bg-primary h-2.5 rounded-full progress-animation" style="width: 0%"></div>
+    </div>
+    
+    <!-- 主要内容区 -->
+    <main>
+      <!-- 欢迎界面 -->
+      <section id="welcome-screen" class="text-center py-10">
+        <div class="w-32 h-32 mx-auto mb-6 bg-primary/10 rounded-full flex items-center justify-center">
+          <i class="fa fa-search text-5xl text-primary"></i>
+        </div>
+        <h2 class="text-2xl font-bold mb-4">职业信息搜集风格测评</h2>
+        <p class="text-gray-600 mb-8 max-w-lg mx-auto">
+          在求职过程中，每个人搜集和处理信息的方式都有所不同。这个测评将帮助你了解自己的信息处理风格，
+          并提供针对性的策略建议，让你的职业规划更有效率。
+        </p>
+        <button id="start-btn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl">
+          开始测评 <i class="fa fa-arrow-right ml-2"></i>
+        </button>
+      </section>
+      
+      <!-- 问卷区域 -->
+      <section id="quiz-screen" class="hidden">
+        <div id="question-container">
+          <!-- 问题1 -->
+          <div class="question active" data-question="1">
+            <h3 class="text-xl font-bold mb-6 text-center">1. 当你开始寻找实习或工作信息时，你通常会？</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="A">
+                <p>尽可能多地浏览各种招聘网站，投递大量简历，希望广撒网能有收获</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="B">
+                <p>明确自己的目标，只关注符合条件的职位，仔细研究后再投递</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="C">
+                <p>知道应该找，但总是会拖延，直到截止日期临近才匆忙行动</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="D">
+                <p>先询问身边的学长学姐、老师或朋友，了解他们的推荐和经验</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 问题2 -->
+          <div class="question hidden" data-question="2">
+            <h3 class="text-xl font-bold mb-6 text-center">2. 当你收到多个面试邀请时，你会如何选择？</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="A">
+                <p>尽可能参加所有面试，不想错过任何机会</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="B">
+                <p>根据公司前景、岗位匹配度等因素筛选，只参加最有价值的几个</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="C">
+                <p>可能会错过一些，因为来不及准备或忘记回复</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="D">
+                <p>向了解这些公司的人打听情况，根据他们的建议做决定</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 问题3 -->
+          <div class="question hidden" data-question="3">
+            <h3 class="text-xl font-bold mb-6 text-center">3. 你如何获取行业动态和职业发展信息？</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="A">
+                <p>关注大量行业公众号、微博和网站，接收各种资讯推送</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="B">
+                <p>订阅少数几个权威来源，定期深入阅读分析报告</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="C">
+                <p>偶尔看到感兴趣的会了解一下，没有固定的信息获取习惯</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="D">
+                <p>通过行业交流群、线下活动等，从同行那里获取第一手信息</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 问题4 -->
+          <div class="question hidden" data-question="4">
+            <h3 class="text-xl font-bold mb-6 text-center">4. 当需要准备一份简历或作品集时，你会？</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="A">
+                <p>制作一份通用版本，稍作修改就用于多个申请</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="B">
+                <p>针对每个目标职位的要求，精心定制内容和重点</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="C">
+                <p>拖延到最后一刻，可能匆匆完成甚至有些敷衍</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="D">
+                <p>向有经验的人请教，参考他们的成功案例和建议</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 问题5 -->
+          <div class="question hidden" data-question="5">
+            <h3 class="text-xl font-bold mb-6 text-center">5. 面对职业选择的困惑时，你更倾向于？</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="A">
+                <p>尝试多种不同的方向，通过实践来找到适合自己的</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="B">
+                <p>深入研究各选项的优缺点，做理性分析后再决定</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="C">
+                <p>暂时不做决定，等待更明确的机会出现</p>
+              </div>
+              <div class="option card-hover border border-gray-200 rounded-xl p-5 cursor-pointer" data-score="D">
+                <p>与信任的人讨论，听取他们的意见和经验分享</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 导航按钮 -->
+        <div class="flex justify-between mt-10">
+          <button id="prev-btn" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-full transition-all duration-300">
+            <i class="fa fa-arrow-left mr-2"></i> 上一题
+          </button>
+          <button id="next-btn" class="bg-primary hover:bg-primary/90 text-white font-bold py-2 px-6 rounded-full transition-all duration-300">
+            下一题 <i class="fa fa-arrow-right ml-2"></i>
+          </button>
+          <button id="submit-btn" class="hidden bg-secondary hover:bg-secondary/90 text-white font-bold py-2 px-6 rounded-full transition-all duration-300">
+            查看结果 <i class="fa fa-check ml-2"></i>
+          </button>
+        </div>
+      </section>
+      
+      <!-- 结果展示区域 -->
+      <section id="result-screen" class="hidden text-center">
+        <div id="result-content" class="mb-10">
+          <!-- 结果将通过JS动态填充 -->
+        </div>
+        
+        <!-- 策略建议 -->
+        <div id="strategy" class="bg-white rounded-2xl shadow-lg p-6 mb-10 transform transition-all duration-500 opacity-0 translate-y-4">
+          <h3 class="text-xl font-bold mb-4 text-primary">对你的职业信息搜集建议</h3>
+          <p id="strategy-text" class="text-gray-700"></p>
+        </div>
+        
+        <!-- 海报生成区域 -->
+        <div id="poster-container" class="my-10">
+          <div id="poster" class="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto transform transition-all duration-500 opacity-0 translate-y-4">
+            <div class="mb-4">
+              <h3 class="text-2xl font-bold text-primary">信息捕手测评</h3>
+              <p class="text-gray-500">我是<span id="poster-type" class="font-bold"></span></p>
+            </div>
+            <div id="poster-animal" class="my-6"></div>
+            <div class="text-sm text-gray-600 mb-4">
+              <p id="poster-traits"></p>
+            </div>
+            <div class="text-xs text-gray-400">
+              <p>职业信息搜集风格测评 · 长按保存分享</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+          <button id="save-poster" class="bg-accent hover:bg-accent/90 text-white font-bold py-3 px-6 rounded-full transition-all duration-300">
+            <i class="fa fa-download mr-2"></i> 保存海报
+          </button>
+          <button id="restart-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-full transition-all duration-300">
+            <i class="fa fa-refresh mr-2"></i> 重新测评
+          </button>
+        </div>
+      </section>
+    </main>
+    
+    <!-- 页脚 -->
+    <footer class="mt-20 text-center text-gray-500 text-sm">
+      <p>Copyright © 2025 by 电商杜老师 · 信息搜集风格测评工具</p>
+    </footer>
+  </div>
+
+  <script>
+    // 初始化LeanCloud
+    AV.init({
+      appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
+      appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
+      serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com"
+    });
+    
+    // 存储用户答案
+    const answers = [];
+    let currentQuestion = 1;
+    const totalQuestions = 5;
+    
+    // DOM元素
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultScreen = document.getElementById('result-screen');
+    const startBtn = document.getElementById('start-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const savePosterBtn = document.getElementById('save-poster');
+    const progressBar = document.getElementById('progress-bar');
+    const options = document.querySelectorAll('.option');
+    
+    // 开始测评
+    startBtn.addEventListener('click', () => {
+      welcomeScreen.classList.add('hidden');
+      quizScreen.classList.remove('hidden');
+      updateProgress();
+    });
+    
+    // 选项点击事件
+    options.forEach(option => {
+      option.addEventListener('click', () => {
+        // 清除当前问题的所有选中状态
+        const currentOptions = document.querySelector(`.question[data-question="${currentQuestion}"] .option`).parentNode.querySelectorAll('.option');
+        currentOptions.forEach(opt => {
+          opt.classList.remove('bg-primary/10', 'border-primary');
+          opt.classList.add('border-gray-200');
+        });
+        
+        // 设置当前选项为选中状态
+        option.classList.remove('border-gray-200');
+        option.classList.add('bg-primary/10', 'border-primary');
+        
+        // 保存答案
+        answers[currentQuestion - 1] = option.getAttribute('data-score');
+        
+        // 显示下一步按钮
+        if (currentQuestion < totalQuestions) {
+          nextBtn.classList.remove('hidden');
+        } else {
+          submitBtn.classList.remove('hidden');
+        }
+      });
+    });
+    
+    // 上一题按钮
+    prevBtn.addEventListener('click', () => {
+      if (currentQuestion > 1) {
+        // 隐藏当前问题
+        document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.add('hidden');
+        document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.remove('active');
+        
+        // 显示上一题
+        currentQuestion--;
+        document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.remove('hidden');
+        document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.add('active');
+        
+        // 更新按钮状态
+        nextBtn.classList.remove('hidden');
+        submitBtn.classList.add('hidden');
+        
+        if (currentQuestion === 1) {
+          prevBtn.classList.add('hidden');
+        }
+        
+        updateProgress();
+      }
+    });
+    
+    // 下一题按钮
+    nextBtn.addEventListener('click', () => {
+      if (currentQuestion < totalQuestions && answers[currentQuestion - 1]) {
+        // 隐藏当前问题
+        document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.add('hidden');
+        document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.remove('active');
+        
+        // 显示下一题
+        currentQuestion++;
+        document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.remove('hidden');
+        document.querySelector(`.question[data-question="${currentQuestion}"]`).classList.add('active');
+        
+        // 更新按钮状态
+        prevBtn.classList.remove('hidden');
+        
+        if (currentQuestion === totalQuestions) {
+          nextBtn.classList.add('hidden');
+          submitBtn.classList.remove('hidden');
+        }
+        
+        updateProgress();
+      }
+    });
+    
+    // 提交答案，显示结果
+    submitBtn.addEventListener('click', () => {
+      if (answers.length === totalQuestions && answers[totalQuestions - 1]) {
+        // 计算结果
+        const result = calculateResult();
+        
+        // 显示结果
+        displayResult(result);
+        
+        // 保存结果到LeanCloud
+        saveResultToLeanCloud(result);
+        
+        // 切换到结果页
+        quizScreen.classList.add('hidden');
+        resultScreen.classList.remove('hidden');
+        
+        // 动画显示结果元素
+        setTimeout(() => {
+          document.getElementById('strategy').classList.remove('opacity-0', 'translate-y-4');
+          document.getElementById('poster').classList.remove('opacity-0', 'translate-y-4');
+        }, 300);
+      }
+    });
+    
+    // 重新测评
+    restartBtn.addEventListener('click', () => {
+      // 重置状态
+      currentQuestion = 1;
+      answers.length = 0;
+      
+      // 重置UI
+      resultScreen.classList.add('hidden');
+      welcomeScreen.classList.remove('hidden');
+      document.querySelectorAll('.question').forEach((q, index) => {
+        q.classList.add('hidden');
+        q.classList.remove('active');
+        if (index === 0) {
+          q.classList.remove('hidden');
+          q.classList.add('active');
+        }
+      });
+      
+      // 重置按钮状态
+      prevBtn.classList.add('hidden');
+      nextBtn.classList.remove('hidden');
+      submitBtn.classList.add('hidden');
+      
+      // 重置选项样式
+      options.forEach(option => {
+        option.classList.remove('bg-primary/10', 'border-primary');
+        option.classList.add('border-gray-200');
+      });
+      
+      // 重置进度条
+      progressBar.style.width = '0%';
+      
+      // 重置结果动画状态
+      document.getElementById('strategy').classList.add('opacity-0', 'translate-y-4');
+      document.getElementById('poster').classList.add('opacity-0', 'translate-y-4');
+    });
+    
+    // 保存海报
+    savePosterBtn.addEventListener('click', () => {
+      html2canvas(document.getElementById('poster')).then(canvas => {
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.download = '信息捕手测评结果.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    });
+    
+    // 更新进度条
+    function updateProgress() {
+      const progress = (currentQuestion / totalQuestions) * 100;
+      progressBar.style.width = `${progress}%`;
+    }
+    
+    // 计算结果
+    function calculateResult() {
+      // 统计各类型数量
+      const counts = {
+        A: 0,
+        B: 0,
+        C: 0,
+        D: 0
+      };
+      
+      answers.forEach(answer => {
+        counts[answer]++;
+      });
+      
+      // 找到数量最多的类型
+      let maxCount = 0;
+      let resultType = 'A';
+      
+      for (const type in counts) {
+        if (counts[type] > maxCount) {
+          maxCount = counts[type];
+          resultType = type;
+        }
+      }
+      
+      return resultType;
+    }
+    
+    // 显示结果
+    function displayResult(type) {
+      // 结果数据
+      const resultData = {
+        A: {
+          name: "海投型",
+          animal: "章鱼",
+          traits: "广泛撒网、机会导向、适应性强、信息获取量大但筛选困难",
+          strategy: "建议建立信息过滤机制，设置明确的筛选标准，避免在低价值机会上浪费过多精力。可以尝试制作一个简单的评分卡，对每个机会从多个维度进行评分，优先跟进高分机会。",
+          icon: '<i class="fa fa-octopus-deploy text-6xl text-primary"></i>',
+          color: 'text-primary'
+        },
+        B: {
+          name: "精准型",
+          animal: "猎豹",
+          traits: "目标明确、效率高、专注深入、信息筛选严格但可能错过潜在机会",
+          strategy: "建议在保持精准筛选的同时，适当放宽一些标准，留出10-20%的精力探索一些看似不相关但有潜力的机会，避免陷入信息茧房。",
+          icon: '<i class="fa fa-paw text-6xl text-secondary"></i>',
+          color: 'text-secondary'
+        },
+        C: {
+          name: "拖延型",
+          traits: "深思熟虑、谨慎决策、易受干扰、行动滞后于计划",
+          animal: "树懒",
+          strategy: "建议采用番茄工作法，设定25分钟的专注时段专门用于信息搜集和处理，完成后休息5分钟。同时，制定明确的小目标和截止日期，并请同学或老师监督。",
+          icon: '<i class="fa fa-tree text-6xl text-accent"></i>',
+          color: 'text-accent'
+        },
+        D: {
+          name: "社交型",
+          animal: "孔雀",
+          traits: "人脉广泛、善于沟通、信息来源多元、依赖他人推荐",
+          strategy: "建议系统地管理你的社交网络，将不同领域的联系人分类整理。定期与关键联系人保持互动，分享有用的信息，同时也主动提供帮助，将你的社交圈转化为有效的内推资源池。",
+          icon: '<i class="fa fa-feather text-6xl text-purple-500"></i>',
+          color: 'text-purple-500'
+        }
+      };
+      
+      const data = resultData[type];
+      
+      // 填充结果内容
+      const resultContent = document.getElementById('result-content');
+      resultContent.innerHTML = `
+        <h2 class="text-3xl font-bold mb-4 ${data.color}">你是${data.name}信息捕手！</h2>
+        <div class="w-40 h-40 mx-auto my-8 bg-white rounded-full shadow-lg flex items-center justify-center">
+          ${data.icon}
+        </div>
+        <h3 class="text-xl font-bold mb-2">对应动物：${data.animal}</h3>
+        <p class="text-gray-700 max-w-lg mx-auto mb-6">你的信息搜集特质：${data.traits}</p>
+      `;
+      
+      // 填充策略建议
+      document.getElementById('strategy-text').textContent = data.strategy;
+      
+      // 填充海报内容
+      document.getElementById('poster-type').textContent = data.name + '信息捕手';
+      document.getElementById('poster-animal').innerHTML = `<div class="${data.color}">${data.icon}</div>`;
+      document.getElementById('poster-traits').textContent = data.traits;
+    }
+    
+    // 保存结果到LeanCloud
+    function saveResultToLeanCloud(resultType) {
+      const Result = AV.Object.extend('QuizResult');
+      const result = new Result();
+      
+      result.set('type', resultType);
+      result.set('timestamp', new Date());
+      
+      result.save().then(() => {
+        console.log('结果已保存到LeanCloud');
+      }).catch(error => {
+        console.error('保存结果失败:', error);
+      });
+    }
+  </script>
+</body>
+</html>
