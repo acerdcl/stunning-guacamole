@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>客户数据合规知识测试 - 网店运营推广课程</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.1/dist/av-min.js"></script>
+  
+  <!-- 配置Tailwind -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1E40AF', // 深蓝色作为主色调，代表信任和合规
+            secondary: '#3B82F6',
+            success: '#10B981',
+            danger: '#EF4444',
+            neutral: '#64748B'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-hover {
+        transition: all 0.3s ease;
+      }
+      .card-hover:hover {
+        transform: translateY(-3px);
+      }
+      .progress-animation {
+        transition: width 0.5s ease-in-out;
+      }
+      .badge-shine {
+        animation: shine 2s infinite;
+      }
+      @keyframes shine {
+        0%, 100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.7); }
+        50% { box-shadow: 0 0 25px rgba(59, 130, 246, 0.9); }
+      }
+    }
+  </style>
+</head>
+
+<body class="font-sans bg-gray-50 min-h-screen text-gray-800">
+  <!-- 页面容器 -->
+  <div class="container mx-auto px-4 py-8 max-w-4xl">
+    
+    <!-- 头部 -->
+    <header class="text-center mb-8">
+      <div class="inline-block bg-primary/10 p-3 rounded-full mb-4">
+        <i class="fa fa-shield text-3xl text-primary"></i>
+      </div>
+      <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-primary mb-2">客户数据合规知识测试</h1>
+      <p class="text-neutral max-w-2xl mx-auto">网店运营推广课程 - 客户关系维护模块</p>
+    </header>
+    
+    <!-- 进度条 -->
+    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-8 overflow-hidden">
+      <div id="progress-bar" class="bg-primary h-2.5 rounded-full progress-animation" style="width: 0%"></div>
+    </div>
+    
+    <!-- 主要内容区 -->
+    <main>
+      <!-- 欢迎界面 -->
+      <section id="welcome-screen" class="bg-white rounded-2xl shadow-md p-8 mb-8 transform transition-all duration-500">
+        <div class="text-center">
+          <div class="w-24 h-24 mx-auto mb-6 bg-primary/10 rounded-full flex items-center justify-center">
+            <i class="fa fa-database text-4xl text-primary"></i>
+          </div>
+          <h2 class="text-2xl font-bold mb-4 text-primary">数据合规知识挑战</h2>
+          <p class="text-gray-600 mb-6">
+            在网店运营中，合法合规地采集和使用客户信息是维护客户关系的基础，也是法律要求。
+            本测试包含10道题目，将评估你对客户数据合规知识的掌握程度。
+          </p>
+          <ul class="text-left text-gray-600 mb-8 max-w-md mx-auto space-y-2">
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+              <span>共10道单选题，每题10分，满分100分</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+              <span>答对≥8题（80分）可获得"数据小卫士"勋章</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+              <span>完成后可查看详细解析和保存证书</span>
+            </li>
+          </ul>
+          <button id="start-btn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl">
+            开始测试 <i class="fa fa-arrow-right ml-2"></i>
+          </button>
+        </div>
+      </section>
+      
+      <!-- 测试区域 -->
+      <section id="quiz-screen" class="hidden">
+        <div id="question-container" class="bg-white rounded-2xl shadow-md p-6 md:p-8 mb-6">
+          <!-- 问题将通过JS动态生成 -->
+        </div>
+        
+        <!-- 导航按钮 -->
+        <div class="flex justify-between">
+          <button id="prev-btn" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-6 rounded-full transition-all duration-300">
+            <i class="fa fa-arrow-left mr-2"></i> 上一题
+          </button>
+          <div class="text-gray-500" id="question-counter">第 1/10 题</div>
+          <button id="next-btn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-full transition-all duration-300">
+            下一题 <i class="fa fa-arrow-right ml-2"></i>
+          </button>
+          <button id="submit-btn" class="hidden bg-success hover:bg-success/90 text-white font-medium py-2 px-6 rounded-full transition-all duration-300">
+            提交答案 <i class="fa fa-check ml-2"></i>
+          </button>
+        </div>
+      </section>
+      
+      <!-- 结果展示区域 -->
+      <section id="result-screen" class="hidden">
+        <div class="bg-white rounded-2xl shadow-md p-6 md:p-8 mb-8 transform transition-all duration-500 opacity-0 translate-y-4" id="result-card">
+          <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold mb-2 text-primary">测试结果</h2>
+            <p class="text-neutral">你的客户数据合规知识得分</p>
+          </div>
+          
+          <div class="flex flex-col items-center mb-8">
+            <div class="relative w-40 h-40 mb-4">
+              <div class="absolute inset-0 rounded-full border-8 border-gray-200"></div>
+              <div id="score-ring" class="absolute inset-0 rounded-full border-8 border-primary border-t-transparent transform -rotate-45"></div>
+              <div class="absolute inset-0 flex items-center justify-center flex-col">
+                <span id="score-display" class="text-4xl font-bold text-primary">0</span>
+                <span class="text-gray-500">分</span>
+              </div>
+            </div>
+            
+            <div id="badge-container" class="hidden mt-2">
+              <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-full font-bold badge-shine">
+                <i class="fa fa-award mr-2"></i> 数据小卫士
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-6">
+            <h3 class="text-xl font-bold mb-3 text-gray-800">答题情况</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-gray-50 p-4 rounded-xl">
+                <p class="text-gray-500 text-sm">答对题数</p>
+                <p id="correct-count" class="text-2xl font-bold text-success">0</p>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-xl">
+                <p class="text-gray-500 text-sm">答错题数</p>
+                <p id="wrong-count" class="text-2xl font-bold text-danger">0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 错题解析 -->
+        <div id="explanations-section" class="bg-white rounded-2xl shadow-md p-6 md:p-8 mb-8 transform transition-all duration-500 opacity-0 translate-y-4 delay-300">
+          <h3 class="text-xl font-bold mb-4 text-primary">错题解析</h3>
+          <div id="explanations-container">
+            <!-- 解析将通过JS动态生成 -->
+            <p class="text-gray-500 text-center">恭喜！你全部答对了</p>
+          </div>
+        </div>
+        
+        <!-- 证书区域 -->
+        <div id="certificate-section" class="my-8">
+          <div id="certificate" class="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto border-4 border-primary/20 transform transition-all duration-500 opacity-0 translate-y-4 delay-500">
+            <div class="text-center">
+              <div class="mb-4">
+                <h3 class="text-2xl font-bold text-primary">客户数据合规知识证书</h3>
+                <p class="text-gray-500">网店运营推广课程</p>
+              </div>
+              
+              <div id="certificate-badge" class="my-6">
+                <!-- 证书徽章将动态生成 -->
+              </div>
+              
+              <p class="text-gray-700 mb-2">兹证明完成客户数据合规知识测试</p>
+              <p class="text-xl font-bold mb-6" id="certificate-score">得分：0分</p>
+              
+              <div class="text-sm text-gray-500">
+                <p>测试日期：<span id="certificate-date"></span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+          <button id="save-certificate" class="bg-secondary hover:bg-secondary/90 text-white font-bold py-3 px-6 rounded-full transition-all duration-300">
+            <i class="fa fa-download mr-2"></i> 保存证书
+          </button>
+          <button id="restart-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-full transition-all duration-300">
+            <i class="fa fa-refresh mr-2"></i> 重新测试
+          </button>
+        </div>
+      </section>
+    </main>
+    
+    <!-- 页脚 -->
+    <footer class="mt-16 text-center text-gray-500 text-sm">
+      <p>网店运营推广课程  Copyright © 2025 by 电商杜老师</p>
+    </footer>
+  </div>
+
+  <script>
+    // 初始化LeanCloud
+    AV.init({
+      appId: "uJ3KsasvmBzf9Xn2OodGclFx-gzGzoHsz",
+      appKey: "JEsdiH1q5v1NzqyLCLqJVWvt",
+      serverURLs: "https://uj3ksasv.lc-cn-n1-shared.com"
+    });
+    
+    // 题库数据
+    const questions = [
+      {
+        id: 1,
+        text: "在采集客户信息时，以下哪种做法是合规的？",
+        options: [
+          { id: "A", text: "默认勾选同意收集所有信息" },
+          { id: "B", text: "明确告知客户收集信息的目的并获得同意" },
+          { id: "C", text: "从第三方平台购买客户信息" },
+          { id: "D", text: "在客户不知情的情况下收集其浏览记录" }
+        ],
+        correct: "B",
+        explanation: "根据数据保护法规，收集个人信息必须遵循知情同意原则，明确告知收集目的并获得用户同意。"
+      },
+      {
+        id: 2,
+        text: "关于客户数据的存储期限，正确的做法是？",
+        options: [
+          { id: "A", text: "永久保存所有客户数据，以便未来营销使用" },
+          { id: "B", text: "只保存到交易完成，之后立即删除" },
+          { id: "C", text: "根据收集目的确定必要的保存期限，到期后删除或匿名化" },
+          { id: "D", text: "保存时间越长越好，方便进行数据分析" }
+        ],
+        correct: "C",
+        explanation: "数据存储应遵循最小必要和期限适当原则，不应无限期保存，应根据收集目的确定合理期限。"
+      },
+      {
+        id: 3,
+        text: "当客户要求删除其个人信息时，网店应当？",
+        options: [
+          { id: "A", text: "拒绝删除，因为需要用于未来营销" },
+          { id: "B", text: "在合理期限内删除，并停止使用该信息" },
+          { id: "C", text: "仅删除部分信息，保留核心数据" },
+          { id: "D", text: "要求客户支付一定费用才删除" }
+        ],
+        correct: "B",
+        explanation: "根据数据主体权利，客户有权要求删除其个人信息，企业应在合理期限内响应并执行删除操作。"
+      },
+      {
+        id: 4,
+        text: "以下哪项不属于敏感个人信息？",
+        options: [
+          { id: "A", text: "客户的手机号码" },
+          { id: "B", text: "客户的银行卡号" },
+          { id: "C", text: "客户的健康状况" },
+          { id: "D", text: "客户的宗教信仰" }
+        ],
+        correct: "A",
+        explanation: "敏感个人信息通常包括金融信息、健康信息、宗教信仰、生物识别信息等，手机号码属于一般个人信息。"
+      },
+      {
+        id: 5,
+        text: "将客户信息分享给合作伙伴时，正确的做法是？",
+        options: [
+          { id: "A", text: "无需告知客户，直接分享以扩大业务" },
+          { id: "B", text: "仅分享给有合作关系的企业，无需特别限制" },
+          { id: "C", text: "获得客户明确同意，并与合作伙伴签订数据安全协议" },
+          { id: "D", text: "只要不收费，就可以随意分享" }
+        ],
+        correct: "C",
+        explanation: "分享客户信息给第三方必须获得客户明确同意，并确保第三方采取适当的安全措施保护数据。"
+      },
+      {
+        id: 6,
+        text: "关于客户数据安全，以下做法错误的是？",
+        options: [
+          { id: "A", text: "定期备份客户数据" },
+          { id: "B", text: "使用强密码并定期更换" },
+          { id: "C", text: "允许员工随意下载客户数据到个人设备" },
+          { id: "D", text: "安装防火墙和杀毒软件" }
+        ],
+        correct: "C",
+        explanation: "客户数据应严格控制访问权限，不允许随意下载到个人设备，以防数据泄露。"
+      },
+      {
+        id: 7,
+        text: "在进行客户画像和精准营销时，应避免？",
+        options: [
+          { id: "A", text: "基于客户明确同意的信息进行分析" },
+          { id: "B", text: "使用收集范围外的信息进行推断" },
+          { id: "C", text: "允许客户查看和修改其画像信息" },
+          { id: "D", text: "设定明确的营销信息推送频率" }
+        ],
+        correct: "B",
+        explanation: "客户画像应基于已收集并获得同意的信息，不应超出收集范围进行推测，避免侵犯客户隐私。"
+      },
+      {
+        id: 8,
+        text: "当发生客户数据泄露时，网店应当？",
+        options: [
+          { id: "A", text: "隐瞒不报，避免影响企业声誉" },
+          { id: "B", text: "立即采取补救措施，并按规定通知受影响客户和监管机构" },
+          { id: "C", text: "仅在客户发现后才进行处理" },
+          { id: "D", text: "只通知部分重要客户" }
+        ],
+        correct: "B",
+        explanation: "数据泄露后应立即采取补救措施，及时通知受影响用户和监管机构，这是多数数据保护法规的要求。"
+      },
+      {
+        id: 9,
+        text: "针对未成年人的个人信息收集，以下正确的是？",
+        options: [
+          { id: "A", text: "与成年人信息收集要求相同" },
+          { id: "B", text: "需要获得其监护人的同意" },
+          { id: "C", text: "可以收集但不用于营销" },
+          { id: "D", text: "仅在假期可以收集" }
+        ],
+        correct: "B",
+        explanation: "未成年人的个人信息受特殊保护，收集未成年人信息需要获得其监护人的明确同意。"
+      },
+      {
+        id: 10,
+        text: "客户要求查看自己被收集的信息时，企业应当？",
+        options: [
+          { id: "A", text: "拒绝提供，防止信息被滥用" },
+          { id: "B", text: "免费提供客户的全部信息副本" },
+          { id: "C", text: "仅提供部分信息，并收取高额费用" },
+          { id: "D", text: "要求客户提供大量证明文件才提供" }
+        ],
+        correct: "B",
+        explanation: "客户有权访问自己的个人信息，企业应免费提供完整信息副本，不应设置不合理障碍。"
+      }
+    ];
+    
+    // 存储用户答案
+    const userAnswers = [];
+    let currentQuestion = 0; // 从0开始索引
+    const totalQuestions = questions.length;
+    
+    // DOM元素
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultScreen = document.getElementById('result-screen');
+    const questionContainer = document.getElementById('question-container');
+    const questionCounter = document.getElementById('question-counter');
+    const startBtn = document.getElementById('start-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const saveCertificateBtn = document.getElementById('save-certificate');
+    const progressBar = document.getElementById('progress-bar');
+    const scoreDisplay = document.getElementById('score-display');
+    const correctCount = document.getElementById('correct-count');
+    const wrongCount = document.getElementById('wrong-count');
+    const scoreRing = document.getElementById('score-ring');
+    const badgeContainer = document.getElementById('badge-container');
+    const explanationsContainer = document.getElementById('explanations-container');
+    const resultCard = document.getElementById('result-card');
+    const explanationsSection = document.getElementById('explanations-section');
+    const certificate = document.getElementById('certificate');
+    const certificateScore = document.getElementById('certificate-score');
+    const certificateDate = document.getElementById('certificate-date');
+    const certificateBadge = document.getElementById('certificate-badge');
+    
+    // 开始测试
+    startBtn.addEventListener('click', () => {
+      welcomeScreen.classList.add('hidden');
+      quizScreen.classList.remove('hidden');
+      renderQuestion(currentQuestion);
+      updateProgress();
+    });
+    
+    // 上一题按钮
+    prevBtn.addEventListener('click', () => {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        renderQuestion(currentQuestion);
+        updateNavigationButtons();
+        updateProgress();
+      }
+    });
+    
+    // 下一题按钮
+    nextBtn.addEventListener('click', () => {
+      if (currentQuestion < totalQuestions - 1) {
+        // 检查是否已选择答案
+        const selectedOption = document.querySelector('.option.selected');
+        if (selectedOption) {
+          userAnswers[currentQuestion] = selectedOption.getAttribute('data-option');
+          currentQuestion++;
+          renderQuestion(currentQuestion);
+          updateNavigationButtons();
+          updateProgress();
+        } else {
+          alert('请选择一个答案');
+        }
+      }
+    });
+    
+    // 提交答案
+    submitBtn.addEventListener('click', () => {
+      // 保存最后一题答案
+      const selectedOption = document.querySelector('.option.selected');
+      if (selectedOption) {
+        userAnswers[currentQuestion] = selectedOption.getAttribute('data-option');
+        
+        // 计算得分
+        const score = calculateScore();
+        
+        // 显示结果
+        displayResult(score);
+        
+        // 保存结果到LeanCloud
+        saveResultToLeanCloud(score);
+        
+        // 切换到结果页
+        quizScreen.classList.add('hidden');
+        resultScreen.classList.remove('hidden');
+        
+        // 触发动画
+        setTimeout(() => {
+          resultCard.classList.remove('opacity-0', 'translate-y-4');
+        }, 100);
+        
+        setTimeout(() => {
+          explanationsSection.classList.remove('opacity-0', 'translate-y-4');
+        }, 400);
+        
+        setTimeout(() => {
+          certificate.classList.remove('opacity-0', 'translate-y-4');
+        }, 700);
+      } else {
+        alert('请选择一个答案');
+      }
+    });
+    
+    // 重新测试
+    restartBtn.addEventListener('click', () => {
+      // 重置状态
+      currentQuestion = 0;
+      userAnswers.length = 0;
+      
+      // 重置UI
+      resultScreen.classList.add('hidden');
+      welcomeScreen.classList.remove('hidden');
+      
+      // 重置动画状态
+      resultCard.classList.add('opacity-0', 'translate-y-4');
+      explanationsSection.classList.add('opacity-0', 'translate-y-4');
+      certificate.classList.add('opacity-0', 'translate-y-4');
+      
+      // 重置进度条
+      progressBar.style.width = '0%';
+    });
+    
+    // 保存证书
+    saveCertificateBtn.addEventListener('click', () => {
+      html2canvas(document.getElementById('certificate')).then(canvas => {
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.download = '客户数据合规知识证书.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    });
+    
+    // 渲染问题
+    function renderQuestion(index) {
+      const question = questions[index];
+      
+      // 更新计数器
+      questionCounter.textContent = `第 ${index + 1}/${totalQuestions} 题`;
+      
+      // 生成问题HTML
+      let optionsHtml = '';
+      question.options.forEach(option => {
+        const isSelected = userAnswers[index] === option.id;
+        optionsHtml += `
+          <div class="option card-hover border ${isSelected ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-primary/50'} rounded-xl p-4 mb-3 cursor-pointer transition-all duration-200" data-option="${option.id}">
+            <div class="flex items-start">
+              <div class="w-6 h-6 rounded-full border ${isSelected ? 'border-primary bg-primary text-white' : 'border-gray-300'} flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                ${isSelected ? '<i class="fa fa-check text-xs"></i>' : option.id}
+              </div>
+              <p>${option.text}</p>
+            </div>
+          </div>
+        `;
+      });
+      
+      questionContainer.innerHTML = `
+        <h3 class="text-xl font-bold mb-6">${question.id}. ${question.text}</h3>
+        <div class="options-container">
+          ${optionsHtml}
+        </div>
+      `;
+      
+      // 为选项添加点击事件
+      document.querySelectorAll('.option').forEach(option => {
+        option.addEventListener('click', () => {
+          // 清除其他选项的选中状态
+          document.querySelectorAll('.option').forEach(opt => {
+            opt.classList.remove('selected', 'border-primary', 'bg-primary/5');
+            opt.classList.add('border-gray-200');
+            opt.querySelector('div:first-child').classList.remove('border-primary', 'bg-primary', 'text-white');
+            opt.querySelector('div:first-child').classList.add('border-gray-300');
+            opt.querySelector('div:first-child').innerHTML = opt.getAttribute('data-option');
+          });
+          
+          // 设置当前选项为选中状态
+          option.classList.add('selected', 'border-primary', 'bg-primary/5');
+          option.classList.remove('border-gray-200');
+          const indicator = option.querySelector('div:first-child');
+          indicator.classList.remove('border-gray-300');
+          indicator.classList.add('border-primary', 'bg-primary', 'text-white');
+          indicator.innerHTML = '<i class="fa fa-check text-xs"></i>';
+        });
+      });
+    }
+    
+    // 更新导航按钮状态
+    function updateNavigationButtons() {
+      // 上一题按钮
+      if (currentQuestion === 0) {
+        prevBtn.classList.add('hidden');
+      } else {
+        prevBtn.classList.remove('hidden');
+      }
+      
+      // 下一题和提交按钮
+      if (currentQuestion === totalQuestions - 1) {
+        nextBtn.classList.add('hidden');
+        submitBtn.classList.remove('hidden');
+      } else {
+        nextBtn.classList.remove('hidden');
+        submitBtn.classList.add('hidden');
+      }
+    }
+    
+    // 更新进度条
+    function updateProgress() {
+      const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+      progressBar.style.width = `${progress}%`;
+    }
+    
+    // 计算得分
+    function calculateScore() {
+      let correct = 0;
+      questions.forEach((question, index) => {
+        if (userAnswers[index] === question.correct) {
+          correct++;
+        }
+      });
+      return {
+        score: (correct / questions.length) * 100,
+        correct: correct,
+        wrong: questions.length - correct
+      };
+    }
+    
+    // 显示结果
+    function displayResult(result) {
+      // 更新得分显示
+      scoreDisplay.textContent = Math.round(result.score);
+      correctCount.textContent = result.correct;
+      wrongCount.textContent = result.wrong;
+      
+      // 设置得分环
+      const circumference = 2 * Math.PI * 45; // 基于40px宽的圆环计算
+      const offset = circumference - (result.score / 100) * circumference;
+      scoreRing.style.strokeDasharray = circumference;
+      scoreRing.style.strokeDashoffset = offset;
+      
+      // 显示徽章（如果得分≥80）
+      if (result.score >= 80) {
+        badgeContainer.classList.remove('hidden');
+      }
+      
+      // 生成错题解析
+      let explanationsHtml = '';
+      let hasWrongAnswers = false;
+      
+      questions.forEach((question, index) => {
+        if (userAnswers[index] !== question.correct) {
+          hasWrongAnswers = true;
+          const userAnswerText = question.options.find(opt => opt.id === userAnswers[index]).text;
+          const correctAnswerText = question.options.find(opt => opt.id === question.correct).text;
+          
+          explanationsHtml += `
+            <div class="mb-6 p-4 bg-gray-50 rounded-xl">
+              <h4 class="font-bold mb-2">第${question.id}题：${question.text}</h4>
+              <div class="mb-2">
+                <p class="text-sm text-gray-500">你的答案：<span class="text-danger">${userAnswerText}</span></p>
+                <p class="text-sm text-gray-500">正确答案：<span class="text-success">${correctAnswerText}</span></p>
+              </div>
+              <p class="text-sm text-gray-700"><strong>解析：</strong>${question.explanation}</p>
+            </div>
+          `;
+        }
+      });
+      
+      if (hasWrongAnswers) {
+        explanationsContainer.innerHTML = explanationsHtml;
+      } else {
+        explanationsContainer.innerHTML = '<p class="text-gray-500 text-center">恭喜！你全部答对了，对客户数据合规知识掌握得非常好！</p>';
+      }
+      
+      // 填充证书信息
+      certificateScore.textContent = `得分：${Math.round(result.score)}分`;
+      const now = new Date();
+      certificateDate.textContent = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+      
+      // 设置证书徽章
+      if (result.score >= 80) {
+        certificateBadge.innerHTML = `
+          <div class="inline-block bg-gradient-to-r from-blue-500 to-indigo-600 p-4 rounded-full mb-4 badge-shine">
+            <i class="fa fa-shield text-4xl text-white"></i>
+          </div>
+          <h4 class="text-xl font-bold text-primary mb-2">数据小卫士</h4>
+          <p class="text-gray-600">荣获数据合规专家认证</p>
+        `;
+      } else {
+        certificateBadge.innerHTML = `
+          <div class="inline-block bg-gray-200 p-4 rounded-full mb-4">
+            <i class="fa fa-book text-4xl text-gray-600"></i>
+          </div>
+          <h4 class="text-xl font-bold text-gray-700 mb-2">继续学习</h4>
+          <p class="text-gray-600">再接再厉，提升数据合规知识</p>
+        `;
+      }
+    }
+    
+    // 保存结果到LeanCloud
+    function saveResultToLeanCloud(result) {
+      const QuizResult = AV.Object.extend('CustomerDataComplianceResult');
+      const quizResult = new QuizResult();
+      
+      quizResult.set('score', result.score);
+      quizResult.set('correctAnswers', result.correct);
+      quizResult.set('wrongAnswers', result.wrong);
+      quizResult.set('timestamp', new Date());
+      quizResult.set('passed', result.score >= 80);
+      
+      quizResult.save().then(() => {
+        console.log('测试结果已保存到LeanCloud');
+      }).catch(error => {
+        console.error('保存测试结果失败:', error);
+      });
+    }
+  </script>
+</body>
+</html>
