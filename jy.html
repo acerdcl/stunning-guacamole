@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我适合军营吗？- 大学生适配度测试</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- 配置Tailwind自定义主题 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            army: {
+              green: '#2D5E40',      // 军绿色主色
+              light: '#E8F1EE',      // 浅绿背景
+              dark: '#1A3A2A',       // 深绿强调
+              accent: '#FF7A45'      // 橙色按钮
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .option-hover {
+        @apply transition-all duration-200 hover:bg-army-light/50 cursor-pointer;
+      }
+      .card-shadow {
+        @apply shadow-md hover:shadow-lg transition-shadow duration-300;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+  <!-- 顶部导航 -->
+  <header class="bg-army-green text-white shadow-md">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa fa-shield text-2xl"></i>
+        <h1 class="text-xl md:text-2xl font-bold">军营适配度测试</h1>
+      </div>
+      <div class="text-sm hidden md:block">
+        <i class="fa fa-info-circle mr-1"></i>非官方征兵标准 · 仅供参考
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="container mx-auto px-4 py-8 max-w-4xl">
+    <!-- 标题区域 -->
+    <div class="text-center mb-10">
+      <div class="inline-block p-3 bg-army-light rounded-full mb-4">
+        <i class="fa fa-flag text-3xl text-army-green"></i>
+      </div>
+      <h2 class="text-[clamp(1.8rem,5vw,2.5rem)] font-bold text-army-dark mb-3">我适合军营吗？</h2>
+      <p class="text-gray-600 max-w-2xl mx-auto">通过10道题，初步评估你的特质与军营要求的契合度</p>
+    </div>
+
+    <!-- 测试说明 -->
+    <div class="bg-white rounded-lg p-6 mb-8 card-shadow border-l-4 border-army-green">
+      <h3 class="text-lg font-semibold text-army-dark mb-3 flex items-center">
+        <i class="fa fa-bookmark-o mr-2 text-army-green"></i>测试说明
+      </h3>
+      <p class="text-gray-700 leading-relaxed">
+        军营是锤炼意志、担当责任的特殊环境，对身体素质、纪律意识和心理韧性有较高要求。
+        本测试从核心维度出发，帮助你进行初步自我评估。请根据真实情况选择答案，结果仅作参考，
+        具体征兵标准以官方要求为准。
+      </p>
+    </div>
+
+    <!-- 测试题目区域 -->
+    <div id="test-container" class="space-y-6 mb-10">
+      <!-- 题目将通过JS动态生成，这里预留位置 -->
+    </div>
+
+    <!-- 提交按钮 -->
+    <div class="text-center mb-12">
+      <button id="submit-btn" class="bg-army-accent hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-army-accent/50">
+        <i class="fa fa-calculator mr-2"></i>计算适配度
+      </button>
+    </div>
+
+    <!-- 结果展示区域 (初始隐藏) -->
+    <div id="result-section" class="hidden bg-white rounded-lg p-8 card-shadow border-t-4 border-army-green mb-10">
+      <h3 class="text-xl font-bold text-center text-army-dark mb-6">测试结果</h3>
+      <div class="text-center mb-6">
+        <div id="result-score" class="text-4xl font-bold text-army-green mb-2">0分</div>
+        <div id="result-title" class="text-xl font-semibold text-army-dark"></div>
+      </div>
+      <div id="result-desc" class="text-gray-700 leading-relaxed text-center max-w-2xl mx-auto"></div>
+      
+      <div class="mt-8 text-center">
+        <button id="reset-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-6 rounded-full transition-all duration-300">
+          <i class="fa fa-refresh mr-1"></i>重新测试
+        </button>
+      </div>
+    </div>
+
+    <!-- 底部备注 -->
+    <div class="text-center text-gray-500 text-sm py-4 border-t border-gray-200">
+      <p 军营适配度测试 Copyright © 2025 by 电商杜老师 | 本测试结果不代表官方征兵标准，具体请咨询当地征兵办公室</p>
+    </div>
+  </main>
+
+  <script>
+    // 测试题目数据
+    const questions = [
+      {
+        id: 1,
+        text: "我能坚持每周3次以上、每次30分钟的体能锻炼（如跑步、力量训练）吗？",
+        icon: "fa-heartbeat"
+      },
+      {
+        id: 2,
+        text: "面对明确的规则（如时间限制、行为规范），我能严格遵守且不轻易抵触吗？",
+        icon: "fa-check-square-o"
+      },
+      {
+        id: 3,
+        text: "当任务难度超出预期、连续高强度工作时，我能快速调整心态并坚持完成吗？",
+        icon: "fa-tasks"
+      },
+      {
+        id: 4,
+        text: "在集体活动中，我更倾向于主动配合他人、以团队目标为先，而非强调个人想法吗？",
+        icon: "fa-users"
+      },
+      {
+        id: 5,
+        text: "对于分配给自己的任务，即使无人监督，我也会尽力做到最好吗？",
+        icon: "fa-handshake-o"
+      },
+      {
+        id: 6,
+        text: "当接到上级指令（即使暂时不理解）时，我能先执行再沟通，而非直接质疑或拒绝吗？",
+        icon: "fa-arrow-circle-right"
+      },
+      {
+        id: 7,
+        text: "我能独立完成洗衣、整理内务等日常事务，且保持环境整洁有序吗？",
+        icon: "fa-home"
+      },
+      {
+        id: 8,
+        text: "我是否在意所在团队的评价，愿意为集体荣誉付出额外努力？",
+        icon: "fa-trophy"
+      },
+      {
+        id: 9,
+        text: "面对批评或挫折时，我能快速释怀并从中总结经验，而非长期消沉吗？",
+        icon: "fa-exclamation-triangle"
+      },
+      {
+        id: 10,
+        text: "我了解军营生活可能存在的艰苦（如严格训练、封闭管理），仍愿意尝试吗？",
+        icon: "fa-flag"
+      }
+    ];
+
+    // 选项数据
+    const options = [
+      { value: 1, text: "A. 完全不符合" },
+      { value: 2, text: "B. 不太符合" },
+      { value: 3, text: "C. 比较符合" },
+      { value: 4, text: "D. 完全符合" }
+    ];
+
+    // DOM元素
+    const testContainer = document.getElementById('test-container');
+    const submitBtn = document.getElementById('submit-btn');
+    const resultSection = document.getElementById('result-section');
+    const resultScore = document.getElementById('result-score');
+    const resultTitle = document.getElementById('result-title');
+    const resultDesc = document.getElementById('result-desc');
+    const resetBtn = document.getElementById('reset-btn');
+
+    // 渲染题目
+    function renderQuestions() {
+      questions.forEach(question => {
+        const questionCard = document.createElement('div');
+        questionCard.className = 'bg-white rounded-lg p-6 card-shadow';
+        questionCard.innerHTML = `
+          <div class="flex items-start mb-4">
+            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-army-green text-white flex items-center justify-center mr-3 mt-1">
+              ${question.id}
+            </span>
+            <div>
+              <h4 class="font-medium text-gray-800 flex items-center">
+                <i class="fa ${question.icon} text-army-green mr-2"></i>
+                ${question.text}
+              </h4>
+            </div>
+          </div>
+          <div class="ml-11 space-y-2" data-question-id="${question.id}">
+            ${options.map(option => `
+              <div class="option-hover p-3 border border-gray-200 rounded-md flex items-center" 
+                   data-option-value="${option.value}">
+                <input type="radio" name="q${question.id}" id="q${question.id}o${option.value}" 
+                       class="mr-3 text-army-green focus:ring-army-green" value="${option.value}">
+                <label for="q${question.id}o${option.value}" class="cursor-pointer w-full">
+                  ${option.text}
+                </label>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        testContainer.appendChild(questionCard);
+      });
+
+      // 选项点击事件
+      document.querySelectorAll('.option-hover').forEach(option => {
+        option.addEventListener('click', function() {
+          // 清除同题目的选中状态
+          const questionId = this.parentElement.dataset.questionId;
+          document.querySelectorAll(`[data-question-id="${questionId}"] .option-hover`).forEach(el => {
+            el.classList.remove('border-army-green', 'bg-army-light/30');
+            el.querySelector('input').checked = false;
+          });
+          // 设置当前选项为选中
+          this.classList.add('border-army-green', 'bg-army-light/30');
+          this.querySelector('input').checked = true;
+        });
+      });
+    }
+
+    // 计算结果
+    function calculateResult() {
+      let totalScore = 0;
+      let unanswered = 0;
+
+      // 检查每道题的答案
+      questions.forEach(question => {
+        const selectedOption = document.querySelector(`input[name="q${question.id}"]:checked`);
+        if (selectedOption) {
+          totalScore += parseInt(selectedOption.value);
+        } else {
+          unanswered++;
+        }
+      });
+
+      // 检查是否有未回答的题目
+      if (unanswered > 0) {
+        alert(`请完成所有题目再提交哦，还有 ${unanswered} 道题未回答`);
+        return false;
+      }
+
+      // 显示结果
+      resultScore.textContent = `${totalScore}分`;
+      
+      // 根据分数设置结果
+      let title, desc;
+      if (totalScore >= 32) {
+        title = "【高度适配】";
+        desc = "你的特质与军营要求契合度较高，具备良好的身体素质和心理基础。建议深入了解征兵政策，主动咨询相关部门，军营可能会成为你成长的重要平台。";
+      } else if (totalScore >= 24) {
+        title = "【较适配】";
+        desc = "你具备适应军营的基础条件，但部分维度仍有提升空间。可以针对性加强体能训练和纪律意识培养，进一步了解军营生活细节，再做决定。";
+      } else if (totalScore >= 16) {
+        title = "【需努力】";
+        desc = "你的当前状态与军营要求存在一定差距。建议先通过参与集体活动、体能锻炼等方式提升团队协作能力和身体素质，再评估自身适配度。";
+      } else {
+        title = "【适配度较低】";
+        desc = "你的特质与军营环境可能存在较明显差异，当前状态可能难以适应军营的严格要求。建议优先明确个人职业发展方向，再考虑是否适合军营。";
+      }
+
+      resultTitle.textContent = title;
+      resultDesc.textContent = desc;
+      resultSection.classList.remove('hidden');
+      // 滚动到结果区域
+      resultSection.scrollIntoView({ behavior: 'smooth' });
+      return true;
+    }
+
+    // 重置测试
+    function resetTest() {
+      // 清除所有选中状态
+      document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.checked = false;
+        radio.closest('.option-hover').classList.remove('border-army-green', 'bg-army-light/30');
+      });
+      // 隐藏结果
+      resultSection.classList.add('hidden');
+      // 滚动到顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 事件监听
+    submitBtn.addEventListener('click', calculateResult);
+    resetBtn.addEventListener('click', resetTest);
+
+    // 初始化页面
+    renderQuestions();
+  </script>
+</body>
+</html>
